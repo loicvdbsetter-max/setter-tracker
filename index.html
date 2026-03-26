@@ -1,0 +1,1959 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Setter Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#060a0f;--surface:#0a0f16;--surface2:#040d14;
+  --border:#0d1a24;--border2:#1a2a35;
+  --text:#e8f4ff;--muted:#2a4a5a;--muted2:#7090a8;
+  --cyan:#00d4ff;--cyan2:#00aaff;--cyan-glow:rgba(0,212,255,0.15);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Space Mono',monospace;min-height:100vh;
+  background-image:linear-gradient(rgba(0,170,255,0.022) 1px,transparent 1px),linear-gradient(90deg,rgba(0,170,255,0.022) 1px,transparent 1px);
+  background-size:30px 30px;
+}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--border2);background:#040810;position:sticky;top:0;z-index:100;}
+.tab{display:flex;flex-direction:column;align-items:center;gap:5px;padding:13px 0;flex:1;border-bottom:2px solid transparent;cursor:pointer;transition:all 0.2s;user-select:none;position:relative;}
+.tab::after{content:'';position:absolute;bottom:-1px;left:20%;right:20%;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:0;transition:opacity 0.3s;}
+.tab.active::after{opacity:1;}
+.tab .ticon{width:22px;height:22px;flex-shrink:0;transition:filter 0.3s;}
+.tab.active .ticon{filter:drop-shadow(0 0 5px rgba(0,212,255,0.8));}
+.tab .tlbl{font-size:9px;letter-spacing:2px;color:var(--muted2);transition:color 0.2s;}
+.tab.active .tlbl{color:var(--cyan);}
+.tab:hover:not(.active) .tlbl{color:var(--text);}
+.live-indicator{display:flex;align-items:center;gap:6px;padding:0 16px;border-left:1px solid var(--border2);}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--cyan);}
+.live-lbl{font-size:8px;color:rgba(0,212,255,0.4);letter-spacing:1px;}
+
+/* PAGES */
+.page{display:none;}
+.page.active{display:block;}
+
+/* ===== DASHBOARD ===== */
+.dash-page{padding:20px;}
+.dash-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.dash-logo{display:flex;align-items:center;gap:14px;}
+.dash-title{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:4px;line-height:1;}
+.dash-title .s{background:linear-gradient(180deg,#e8f4ff,#a0b8cc,#6080a0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.dash-title .t{color:var(--cyan);text-shadow:0 0 10px rgba(0,212,255,0.5);}
+.dash-sub{font-size:7px;color:rgba(0,170,255,0.3);letter-spacing:2px;margin-top:2px;}
+.dash-clock{text-align:right;}
+.dash-time{font-size:9px;color:rgba(0,170,255,0.5);}
+.dash-date-lbl{font-size:7px;color:rgba(0,170,255,0.25);margin-top:2px;}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr) 1.2fr;gap:10px;margin-bottom:12px;}
+.kpi-card{background:linear-gradient(135deg,#060e16,#08121c);border-radius:10px;padding:14px;position:relative;overflow:hidden;border:1px solid rgba(0,170,255,0.1);}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--kc,var(--cyan)),transparent);}
+.kpi-label{font-size:8px;color:rgba(0,170,255,0.45);letter-spacing:2px;margin-bottom:5px;}
+.kpi-val{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;line-height:1;color:var(--kc,var(--cyan));}
+.kpi-sub{font-size:8px;color:rgba(0,170,255,0.3);margin-top:3px;}
+.kpi-spark{width:100%;margin-top:6px;opacity:0.45;}
+
+/* RING KPI CARD */
+.kpi-ring-card{background:linear-gradient(135deg,#030a06,#050d08);border-radius:10px;padding:12px 12px 8px;position:relative;overflow:hidden;border:1px solid rgba(0,212,255,0.2);display:flex;flex-direction:column;align-items:center;}
+.kpi-ring-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);}
+.kpi-ring-lbl{font-size:8px;color:rgba(0,212,255,0.4);letter-spacing:2px;margin-bottom:8px;}
+.ring-container{position:relative;display:flex;align-items:center;justify-content:center;}
+.ring-text-overlay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;width:100%;}
+.ring-pct{font-family:'Bebas Neue',sans-serif;font-size:18px;line-height:1;text-shadow:0 0 10px rgba(0,212,255,0.9);}
+.ring-cnt{font-size:7px;color:rgba(0,212,255,0.4);margin-top:1px;}
+
+/* MID ROW */
+.mid-row{display:grid;grid-template-columns:3fr 2fr;gap:10px;margin-bottom:12px;}
+.graph-card{background:linear-gradient(135deg,#060e16,#08121c);border:1px solid rgba(0,170,255,0.1);border-radius:10px;padding:14px;position:relative;overflow:hidden;min-height:180px;}
+.graph-card::before{content:'';position:absolute;top:0;left:20%;right:20%;height:1px;background:linear-gradient(90deg,transparent,var(--cyan2),transparent);}
+.graph-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.graph-title{font-size:8px;color:rgba(0,170,255,0.4);letter-spacing:2px;}
+.graph-legend{display:flex;gap:10px;}
+.graph-legend span{font-size:8px;}
+.funnel-card{background:linear-gradient(135deg,#060e16,#08121c);border:1px solid rgba(0,170,255,0.1);border-radius:10px;padding:14px;position:relative;overflow:hidden;}
+.funnel-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);}
+.funnel-title{font-size:8px;color:rgba(0,170,255,0.4);letter-spacing:2px;margin-bottom:12px;}
+.funnel-row{margin-bottom:7px;}
+.funnel-row-head{display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px;}
+.funnel-row-lbl{color:rgba(0,170,255,0.5);}
+.funnel-row-pct{font-weight:700;}
+.funnel-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
+.funnel-bar-fill{height:100%;border-radius:2px;}
+.funnel-ents{padding-top:8px;border-top:1px solid var(--border);margin-top:6px;}
+.funnel-ent-row{display:flex;justify-content:space-between;font-size:9px;margin-bottom:3px;}
+
+/* ENT CARDS */
+.ents-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;}
+.dash-ent-card{background:linear-gradient(135deg,#060e16,#08121c);border:1px solid rgba(var(--cr),0.12);border-radius:10px;padding:12px;position:relative;overflow:hidden;}
+.dash-ent-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:linear-gradient(180deg,var(--c),transparent);}
+.dash-ent-name{font-family:'Bebas Neue',sans-serif;color:var(--c);font-size:0.9rem;letter-spacing:2px;margin-bottom:8px;padding-left:10px;}
+.dash-ent-body{padding-left:10px;}
+.dash-ent-row{display:flex;justify-content:space-between;font-size:10px;padding:3px 0;border-bottom:1px solid var(--border);}
+.dash-ent-row:last-child{border-bottom:none;}
+.dash-ent-lbl{color:rgba(0,170,255,0.4);}
+.dash-ent-val{color:var(--text);}
+.dash-ent-call{color:var(--c);font-weight:700;}
+.dash-ent-bar{height:2px;background:var(--border);border-radius:1px;margin-top:6px;overflow:hidden;}
+.dash-ent-bar-fill{height:100%;border-radius:1px;}
+.dash-ent-conv{font-size:8px;color:rgba(var(--cr),0.5);text-align:right;margin-top:2px;}
+
+/* BOTTOM ROW */
+.bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.rev-card-dash{background:linear-gradient(135deg,#060e16,#08121c);border:1px solid rgba(52,211,153,0.15);border-radius:10px;padding:14px;position:relative;overflow:hidden;}
+.rev-card-dash::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#34d399,transparent);}
+.rev-title{font-size:8px;color:rgba(52,211,153,0.5);letter-spacing:2px;margin-bottom:10px;}
+.rev-ent-row{display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px;}
+.obj-card-dash{background:linear-gradient(135deg,#060e16,#08121c);border:1px solid rgba(0,170,255,0.1);border-radius:10px;padding:14px;position:relative;overflow:hidden;}
+.obj-card-dash::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan2),transparent);}
+.obj-title{font-size:8px;color:rgba(0,170,255,0.4);letter-spacing:2px;margin-bottom:10px;}
+.obj-row{margin-bottom:8px;}
+.obj-row-head{display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px;}
+.obj-bar{height:2px;background:var(--border);border-radius:1px;overflow:hidden;}
+.obj-bar-fill{height:100%;border-radius:1px;}
+
+/* ===== JOURNALIER ===== */
+.jour-page{padding:20px;}
+.jh{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+.jh-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:4px;}
+.jh-right{display:flex;align-items:center;gap:14px;}
+.jh-total{font-size:13px;color:var(--muted2);}
+.jh-total span{color:var(--cyan);font-family:'Bebas Neue',sans-serif;font-size:1.4rem;}
+.jh-btn{background:var(--surface2);border:1px solid var(--border2);color:var(--cyan);padding:9px 16px;border-radius:8px;cursor:pointer;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:1px;transition:all 0.2s;}
+.jh-btn:hover{border-color:var(--cyan);box-shadow:0 0 8px var(--cyan-glow);}
+
+/* CALENDAR */
+.cal-wrap{background:linear-gradient(135deg,#060e16,#08121c);border:1px solid var(--border2);border-radius:12px;padding:18px;margin-bottom:18px;position:relative;overflow:hidden;}
+.cal-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan2),transparent);}
+.cal-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.cal-label{font-size:11px;color:var(--cyan2);opacity:0.4;letter-spacing:2px;}
+.cal-nav{display:flex;gap:8px;}
+.cal-nav-btn{background:var(--surface2);border:1px solid var(--border2);color:var(--muted2);width:30px;height:30px;border-radius:6px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
+.cal-nav-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.cal-days-header{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:8px;}
+.cal-dh{text-align:center;font-size:11px;color:var(--muted2);padding:6px 0;border-bottom:1px solid var(--border);}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+.cal-cell{min-height:44px;border-radius:8px;cursor:pointer;border:1px solid transparent;color:var(--muted);transition:all 0.15s;background:rgba(255,255,255,0.01);display:flex;flex-direction:column;align-items:center;padding:6px 4px;gap:3px;}
+.cal-cell:hover{background:rgba(0,170,255,0.05);border-color:rgba(0,170,255,0.15);}
+.cal-cell.worked{color:var(--text);background:rgba(0,170,255,0.04);border-color:rgba(0,170,255,0.08);}
+.cal-cell.today{background:rgba(0,212,255,0.1);border-color:rgba(0,212,255,0.35);color:var(--cyan);}
+.cal-cell.selected:not(.today){border-color:rgba(0,170,255,0.4);background:rgba(0,170,255,0.06);}
+.cal-cell.empty{background:transparent;border-color:transparent;cursor:default;pointer-events:none;}
+.cal-cell-num{font-size:12px;font-weight:400;line-height:1;}
+.cal-cell.today .cal-cell-num{font-weight:700;}
+.cal-cell-dots{display:flex;gap:2px;flex-wrap:wrap;justify-content:center;}
+.cal-dot{width:5px;height:5px;border-radius:50%;}
+.cal-cell-total{font-size:9px;color:var(--muted2);margin-top:auto;}
+.cal-cell.worked .cal-cell-total{color:var(--cyan2);opacity:0.6;}
+
+/* 4 ENT METRIC CARDS */
+.ent-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;}
+.ent-card{background:var(--surface);border-radius:12px;overflow:hidden;border-top:3px solid var(--c);}
+.ent-card-head{padding:16px 20px 12px;background:linear-gradient(180deg,rgba(var(--cr),0.05),transparent);}
+.ent-card-head-inner{display:flex;justify-content:space-between;align-items:center;}
+.ent-card-name{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:3px;color:var(--c);}
+.ent-card-total{font-size:11px;color:var(--c);background:var(--surface2);border:1px solid rgba(var(--cr),0.2);padding:4px 10px;border-radius:4px;}
+.ent-card-body{padding:4px 20px 18px;}
+
+/* METRIC ROWS — parfaitement droites */
+.mrow{display:flex;align-items:center;height:56px;border-bottom:1px solid var(--border);white-space:nowrap;}
+.mrow:last-child{border-bottom:none;}
+.mrow.sep{border-top:1px solid rgba(var(--cr),0.2);margin-top:6px;border-bottom:none;}
+.mlbl{flex:1;font-size:13px;color:var(--muted2);white-space:nowrap;overflow:hidden;}
+.mlbl.call{color:var(--c);font-weight:700;}
+
+/* PREMIUM BUTTONS */
+.mbtn-wrap{display:flex;align-items:center;gap:0;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;overflow:hidden;flex-shrink:0;margin-left:12px;}
+.mminus{width:38px;height:38px;border:none;background:transparent;color:var(--muted2);cursor:pointer;font-size:20px;font-weight:300;display:flex;align-items:center;justify-content:center;touch-action:manipulation;transition:all 0.15s;padding:0;line-height:1;border-right:1px solid var(--border2);}
+.mminus:hover{background:rgba(255,255,255,0.05);color:var(--text);}
+.mminus:active{transform:scale(0.9);}
+.mval-input{width:46px;text-align:center;background:transparent;border:none;color:var(--text);font-family:'Space Mono',monospace;font-size:15px;outline:none;padding:0;cursor:text;}
+.mval-input.call-val{color:var(--c);}
+.mval-input::-webkit-inner-spin-button,.mval-input::-webkit-outer-spin-button{-webkit-appearance:none;}
+.mplus{width:38px;height:38px;border:none;background:var(--c);color:#000;cursor:pointer;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center;touch-action:manipulation;transition:all 0.15s;padding:0;line-height:1;border-left:1px solid var(--border2);}
+.mplus:hover{opacity:0.85;}
+.mplus:active{transform:scale(0.9);}
+
+/* TOTAL CALLS */
+.tcrow{display:flex;justify-content:space-between;align-items:center;padding:12px 0 0;border-top:1px solid rgba(var(--cr),0.25);margin-top:6px;}
+.tclbl{font-size:14px;color:var(--cyan);font-weight:700;}
+.tcval{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--cyan);}
+
+/* DAILY TASKS DASH */
+.kpi-tasks-card{background:linear-gradient(135deg,#030a06,#050d08);border-radius:10px;padding:12px;position:relative;overflow:hidden;border:1px solid rgba(0,212,255,0.25);}
+.kpi-tasks-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);}
+.kpi-tasks-bg{position:absolute;inset:0;opacity:0.03;pointer-events:none;background-image:linear-gradient(#00d4ff 1px,transparent 1px),linear-gradient(90deg,#00d4ff 1px,transparent 1px);background-size:18px 18px;}
+.kpi-tasks-lbl{font-size:8px;color:rgba(0,212,255,0.4);letter-spacing:2px;margin-bottom:8px;position:relative;}
+
+/* DAILY TASKS JOUR */
+.tasks-wrap{position:relative;border-radius:12px;padding:18px;overflow:hidden;background:#030a06;border:1px solid rgba(0,212,255,0.15);}
+.tasks-wrap::before{content:'';position:absolute;top:0;left:15%;right:15%;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);}
+.tasks-bg-grid{position:absolute;inset:0;opacity:0.025;pointer-events:none;background-image:linear-gradient(#00d4ff 1px,transparent 1px),linear-gradient(90deg,#00d4ff 1px,transparent 1px);background-size:22px 22px;}
+.tasks-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;position:relative;}
+.tasks-sub{font-size:9px;color:rgba(0,212,255,0.3);letter-spacing:3px;margin-bottom:3px;}
+.tasks-title{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:3px;}
+.tasks-title span{color:var(--cyan);}
+.tasks-list{display:grid;grid-template-columns:1fr 1fr;gap:6px;position:relative;}
+.task-item{display:flex;align-items:center;gap:10px;background:#020706;border:1px solid #081208;border-radius:8px;padding:12px 12px 12px 15px;cursor:pointer;user-select:none;position:relative;overflow:hidden;transition:border-color 0.15s;}
+.task-item:hover{border-color:rgba(0,212,255,0.1);}
+.task-item.done{background:#010503;border-color:#060e07;}
+.task-bar{position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px;}
+.task-cb{width:16px;height:16px;border-radius:4px;border:1px solid #0a2010;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.task-cb.checked{background:var(--cyan);border-color:var(--cyan);box-shadow:0 0 5px rgba(0,212,255,0.4);}
+.task-lbl{flex:1;font-size:13px;color:#c8e8f0;transition:all 0.2s;}
+.task-item.done .task-lbl{text-decoration:line-through;text-decoration-color:rgba(0,212,255,0.2);color:#1a3a44;}
+.task-badge{font-size:10px;padding:2px 7px;border-radius:4px;border:1px solid;flex-shrink:0;font-weight:700;}
+.task-item.done .task-badge{opacity:0.2;}
+.tasks-footer{margin-top:12px;padding-top:8px;border-top:1px solid rgba(0,212,255,0.06);display:flex;justify-content:space-between;position:relative;}
+.tasks-reset{font-size:9px;color:rgba(0,212,255,0.15);}
+.tasks-status{font-size:9px;color:rgba(0,212,255,0.35);}
+.scan-line{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.15),transparent);pointer-events:none;}
+
+/* LEADS */
+.leads-page{padding:20px;}
+.leads-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:12px;}
+.ladd-btn{color:#000;border:none;border-radius:8px;padding:9px 14px;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;cursor:pointer;transition:opacity 0.2s;}
+.ladd-btn:hover{opacity:0.85;}
+.leads-table{width:100%;border-collapse:collapse;font-size:13px;}
+.leads-table th{text-align:left;padding:10px;border-bottom:1px solid var(--border2);font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);}
+.leads-table td{padding:10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.leads-table tr:hover td{background:var(--surface);}
+.linput{background:transparent;border:none;color:var(--text);font-family:'Space Mono',monospace;font-size:13px;outline:none;width:100%;min-width:80px;}
+.linput:focus{background:var(--surface);border-radius:4px;padding:2px 4px;}
+.lcash{font-family:'Space Mono',monospace;font-size:12px;width:70px;background:transparent;border:none;color:var(--text);outline:none;}
+.lcash:focus{background:var(--surface);border-radius:4px;padding:2px 4px;}
+.lcomm{color:var(--cyan);font-family:'Space Mono',monospace;font-size:12px;}
+.ltag{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:11px;background:var(--surface);border:1px solid var(--border2);color:var(--muted2);margin:1px;}
+.ltag-x{cursor:pointer;color:var(--muted2);transition:color 0.2s;}
+.ltag-x:hover{color:#f43f5e;}
+.ldel{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:6px;transition:color 0.2s;}
+.ldel:hover{color:#f43f5e;}
+.leads-sum{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px;}
+.lsum-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;border-left:3px solid var(--c);}
+.lsum-name{font-size:10px;color:var(--c);font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;}
+.lsum-val{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;}
+.lsum-comm{font-size:10px;color:var(--cyan);margin-top:2px;}
+
+/* PARAMS */
+.params-page{padding:20px;}
+.params-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.params-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;border-top:3px solid var(--c);}
+.pfield{margin-bottom:12px;}
+.plabel{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:5px;}
+.pinput{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'Space Mono',monospace;font-size:13px;outline:none;transition:border-color 0.2s;}
+.pinput:focus{border-color:var(--c,var(--cyan));}
+.psave{width:100%;background:var(--c);color:#000;border:none;border-radius:8px;padding:10px;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;margin-top:4px;transition:opacity 0.2s;}
+.psave:hover{opacity:0.85;}
+.pdel{width:100%;background:transparent;color:#f43f5e;border:1px solid rgba(244,63,94,0.3);border-radius:8px;padding:8px;font-family:'Space Mono',monospace;font-size:11px;cursor:pointer;margin-top:4px;transition:all 0.2s;}
+.pdel:hover{background:rgba(244,63,94,0.08);}
+.padd{background:var(--surface2);border:1px dashed var(--border2);border-radius:12px;padding:24px;text-align:center;cursor:pointer;color:var(--muted2);font-size:13px;transition:all 0.2s;}
+.padd:hover{border-color:var(--cyan);color:var(--cyan);}
+.task-config{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:20px;}
+.task-config-title{font-size:10px;color:var(--muted2);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;}
+.task-config-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+.task-config-item{display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:8px;padding:10px 14px;border:1px solid var(--border);}
+.task-config-lbl{flex:1;font-size:13px;}
+.task-config-badge{font-size:10px;color:var(--muted2);background:var(--border2);padding:2px 8px;border-radius:4px;}
+.task-config-del{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:14px;transition:color 0.2s;padding:4px;}
+.task-config-del:hover{color:#f43f5e;}
+.task-add-row{display:flex;gap:8px;}
+.task-add-input{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'Space Mono',monospace;font-size:13px;outline:none;}
+.task-add-input:focus{border-color:var(--cyan);}
+.task-add-btn{background:var(--cyan);color:#000;border:none;border-radius:8px;padding:8px 16px;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;transition:opacity 0.2s;}
+.task-add-btn:hover{opacity:0.85;}
+
+.stitle{font-size:10px;color:var(--muted2);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;}
+</style>
+</head>
+<body>
+
+<!-- TABS -->
+<div class="tabs" id="tabBar">
+  <div class="tab active" data-tab="dash" onclick="switchTab('dash',this)">
+    <svg class="ticon" id="ti_dash" viewBox="0 0 52 52" fill="none">
+      <defs><linearGradient id="sga" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#dde4ec"/><stop offset="50%" stop-color="#9aaabb"/><stop offset="100%" stop-color="#4a5a6a"/></linearGradient></defs>
+      <rect x="4" y="4" width="44" height="44" rx="6" fill="#040d14" stroke="url(#sga)" stroke-width="1.8"/>
+      <rect x="10" y="30" width="6" height="13" rx="1.5" fill="url(#sga)" opacity="0.5"/>
+      <rect x="19" y="23" width="6" height="20" rx="1.5" fill="url(#sga)" opacity="0.7"/>
+      <rect x="28" y="18" width="6" height="25" rx="1.5" fill="url(#sga)" opacity="0.9"/>
+      <rect x="37" y="25" width="6" height="18" rx="1.5" fill="url(#sga)" opacity="0.5"/>
+      <path d="M11 28 Q19 16 28 18 Q37 20 44 12" fill="none" stroke="url(#sga)" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <span class="tlbl">DASH</span>
+  </div>
+  <div class="tab" data-tab="jour" onclick="switchTab('jour',this)">
+    <svg class="ticon" id="ti_jour" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <defs><linearGradient id="sgb" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#dde4ec"/><stop offset="50%" stop-color="#9aaabb"/><stop offset="100%" stop-color="#4a5a6a"/></linearGradient></defs>
+      <rect x="3" y="4" width="18" height="18" rx="2" stroke="url(#sgb)"/>
+      <line x1="16" y1="2" x2="16" y2="6" stroke="url(#sgb)"/>
+      <line x1="8" y1="2" x2="8" y2="6" stroke="url(#sgb)"/>
+      <line x1="3" y1="10" x2="21" y2="10" stroke="url(#sgb)"/>
+      <circle cx="8" cy="15" r="1.2" fill="#8a9aaa"/>
+      <circle cx="12" cy="15" r="1.2" fill="#8a9aaa"/>
+      <circle cx="16" cy="15" r="1.2" fill="#8a9aaa"/>
+    </svg>
+    <span class="tlbl">JOUR</span>
+  </div>
+  <div class="tab" data-tab="leads" onclick="switchTab('leads',this)">
+    <svg class="ticon" id="ti_leads" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <defs><linearGradient id="sgc" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#dde4ec"/><stop offset="50%" stop-color="#9aaabb"/><stop offset="100%" stop-color="#4a5a6a"/></linearGradient></defs>
+      <line x1="12" y1="1" x2="12" y2="23" stroke="url(#sgc)"/>
+      <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke="url(#sgc)"/>
+    </svg>
+    <span class="tlbl">LEADS</span>
+  </div>
+  <div class="tab" data-tab="params" onclick="switchTab('params',this)">
+    <svg class="ticon" id="ti_params" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <defs><linearGradient id="sgd" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#dde4ec"/><stop offset="50%" stop-color="#9aaabb"/><stop offset="100%" stop-color="#4a5a6a"/></linearGradient></defs>
+      <circle cx="12" cy="12" r="3" stroke="url(#sgd)"/>
+      <path stroke="url(#sgd)" d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+    </svg>
+    <span class="tlbl">PARAMS</span>
+  </div>
+  <div class="live-indicator">
+    <div class="live-dot" id="liveDot"></div>
+    <span class="live-lbl">LIVE</span>
+  </div>
+</div>
+
+<!-- PAGES -->
+<div class="page active" id="page_dash"></div>
+<div class="page" id="page_jour"></div>
+<div class="page" id="page_leads"></div>
+<div class="page" id="page_params"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, set, get, push, remove, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const FB={apiKey:"AIzaSyA9s3pyDNcIKkb2bewa_xW80lQeajwe1PU",authDomain:"setter-tracker-8ef58.firebaseapp.com",databaseURL:"https://setter-tracker-8ef58-default-rtdb.europe-west1.firebasedatabase.app",projectId:"setter-tracker-8ef58",storageBucket:"setter-tracker-8ef58.firebasestorage.app",messagingSenderId:"800999132152",appId:"1:800999132152:web:0914fa2b08e0e9eb13a40d"};
+const app=initializeApp(FB);
+const db=getDatabase(app);
+
+const MFR=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const PRESET_TAGS=['Full','2x','3x','Acompte','Formation'];
+const DEF_ENTS=[{key:'O',name:'Ozcan',hex:'#3b9eff',rate:5},{key:'J',name:'Jorann',hex:'#a78bfa',rate:5},{key:'G',name:'Gaël',hex:'#34d399',rate:10},{key:'M',name:'Mika',hex:'#fb923c',rate:5}];
+const UNIFIED_METRICS=[
+  {k:'firstmsg',  l:'Premiers msgs'},
+  {k:'replies',   l:'Réponses'},
+  {k:'followup',  l:'Follow ups'},
+  {k:'repliesfu', l:'Réponses FU'},
+  {k:'lien',      l:'Lien envoyé'},
+  {k:'callrelance',l:'Call relance'},
+  {k:'call',      l:'Call pris'},
+];
+const DEF_MET={O:UNIFIED_METRICS,J:UNIFIED_METRICS,G:UNIFIED_METRICS,M:UNIFIED_METRICS};
+
+let ENTS=[...DEF_ENTS];
+let METRICS={...DEF_MET};
+
+// TASKS — sauvegardées Firebase
+let TASKS=[
+  {id:'t1',label:'Checker DMs — Ozcan',color:'#3b9eff',badge:'Ozcan',done:false},
+  {id:'t2',label:'Checker DMs — Mika',color:'#fb923c',badge:'Mika',done:false},
+  {id:'t3',label:'VOC nouveaux followers Jorann',color:'#a78bfa',badge:'Jorann',done:false},
+  {id:'t4',label:'Follow up leads en cours',color:'rgba(0,212,255,0.35)',badge:'Tous',done:false},
+  {id:'t5',label:'Appels qualification Mika',color:'rgba(251,146,60,0.35)',badge:'Mika',done:false},
+  {id:'t6',label:'Check ressource Gaël',color:'rgba(52,211,153,0.35)',badge:'Gaël',done:false},
+  {id:'t7',label:'Remplir Setter Tracker',color:'rgba(0,212,255,0.5)',badge:'📊',done:false},
+];
+
+const now=new Date();
+let cY=now.getFullYear(),cM=now.getMonth(),selDay=now.getDate();
+let curTab='dash';
+let mCache={},lCache={},oCache={},rCache={};
+let rafId=null;
+let orbits=[
+  {r:0.42,speed:0.018,len:0.35,off:0,color:'#00d4ff',w:1.3,op:0.55},
+  {r:0.46,speed:-0.011,len:0.2,off:2,color:'#00aaff',w:0.9,op:0.35},
+  {r:0.38,speed:0.025,len:0.15,off:4,color:'#00d4ff',w:0.7,op:0.25},
+];
+
+// Task reset
+function checkTaskReset(){
+  const today=now.toDateString();
+  if(localStorage.getItem('taskReset')!==today){
+    TASKS.forEach(t=>t.done=false);
+    localStorage.setItem('taskReset',today);
+  }
+}
+checkTaskReset();
+
+function hex2rgb(h){if(!h.startsWith('#'))return '0,0,0';const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return `${r},${g},${b}`;}
+function getMet(k){return [...UNIFIED_METRICS];}
+function getTotalCalls(ek,dd){if(!dd||!dd[ek])return 0;const d=dd[ek];return(d.call||0)+(d.callrelance||0);}
+function gv(md,day,ek,mk){if(!md[day]||!md[day][ek])return 0;return md[day][ek][mk]||0;}
+
+// Live dot
+setInterval(()=>{const d=document.getElementById('liveDot');if(d)d.style.opacity=d.style.opacity==='0.3'?'1':'0.3';},1500);
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){
+    if(rafId){cancelAnimationFrame(rafId);rafId=null;}
+    if(_uRaf){cancelAnimationFrame(_uRaf);_uRaf=null;}
+  } else {
+    if(curTab==='dash')setTimeout(startUnifiedLoop,100);
+  }
+});
+
+// Clock
+function updateClock(){
+  if(curTab!=='dash'||document.hidden)return;
+  const el=document.getElementById('dashClock');if(!el)return;
+  const n=new Date();
+  el.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
+}
+setInterval(updateClock,1000);
+
+// ===== FIREBASE =====
+// Realtime listeners
+const _listeners={};
+
+async function loadMonth(y,mo){
+  const k=y+'_'+mo;
+  if(_listeners[k])return mCache[k]||{};
+  return new Promise(resolve=>{
+    let resolved=false;
+    const unsub=onValue(ref(db,'v2/'+y+'/'+mo),snap=>{
+      mCache[k]=snap.exists()?snap.val():{};
+      if(!resolved){
+        resolved=true;
+        resolve(mCache[k]);
+      } else {
+        // Update from another device — invalidate and re-render
+        delete mCache[k]; // force fresh data next load
+        mCache[k]=snap.exists()?snap.val():{};
+        if(curTab==='jour') renderJour();
+        else if(curTab==='dash') renderDash();
+      }
+    },()=>{if(!resolved){resolved=true;resolve({})}});
+    _listeners[k]=unsub;
+  });
+}
+async function loadLeads(y,mo){const k=`${y}_${mo}`;if(lCache[k])return lCache[k];try{const s=await get(ref(db,`leads/${y}/${mo}`));lCache[k]=s.exists()?s.val():{};return lCache[k];}catch(e){return {};}}
+async function loadObjectifs(y,mo){const k=`${y}_${mo}`;if(oCache[k])return oCache[k];try{const s=await get(ref(db,`objectifs/${y}/${mo}`));oCache[k]=s.exists()?s.val():{};return oCache[k];}catch(e){return {};}}
+async function loadRevenus(y,mo){const k=`${y}_${mo}`;if(rCache[k])return rCache[k];try{const s=await get(ref(db,`revenus/${y}/${mo}`));rCache[k]=s.exists()?s.val():{};return rCache[k];}catch(e){return {};}}
+async function loadEntrepreneurs(){
+  try{
+    const s=await get(ref(db,'config/entrepreneurs'));
+    if(s.exists()){
+      const val=s.val();
+      // Firebase object to array
+      ENTS=Object.values(val).filter(e=>e&&e.key&&e.name);
+      if(ENTS.length===0)ENTS=[...DEF_ENTS];
+      ENTS.forEach(e=>{if(!METRICS[e.key])METRICS[e.key]=[...UNIFIED_METRICS];});
+    }
+  }catch(e){}
+}
+
+// Metric order per ent (drag & drop)
+let METRIC_ORDER = {};
+function getMetricsOrdered(key){
+  const base=[...UNIFIED_METRICS];// Always start from full universal list
+  let order=METRIC_ORDER[key];
+  // Firebase may return {0:'firstmsg',1:'replies'} instead of array
+  if(order&&typeof order==='object'&&!Array.isArray(order)){
+    order=Object.values(order).filter(v=>typeof v==='string');
+  }
+  if(!order||!Array.isArray(order)||order.length===0)return base;
+  // Reorder base according to saved order
+  const ordered=order.map(k=>base.find(m=>m.k===k)).filter(Boolean);
+  // Add any new metrics not yet in saved order
+  base.forEach(m=>{if(!ordered.find(o=>o.k===m.k))ordered.push(m);});
+  return ordered;
+}
+async function saveMetricOrder(key,order){
+  METRIC_ORDER[key]=order;
+  try{await set(ref(db,`config/metricOrder/${key}`),order);}catch(e){}
+}
+async function loadMetricOrders(){
+  try{
+    const s=await get(ref(db,'config/metricOrder'));
+    if(s.exists()){
+      const data=s.val()||{};
+      // Firebase stores arrays as objects {0:'a',1:'b'} - convert back to arrays
+      Object.keys(data).forEach(ek=>{
+        const val=data[ek];
+        if(val&&typeof val==='object'&&!Array.isArray(val)){
+          METRIC_ORDER[ek]=Object.values(val);
+        } else if(Array.isArray(val)){
+          METRIC_ORDER[ek]=val;
+        }
+      });
+    }
+  }catch(e){}
+}
+window.moveMetricUp=async function(ek,idx){
+  const order=getMetricsOrdered(ek).map(m=>m.k);
+  if(idx===0)return;
+  [order[idx-1],order[idx]]=[order[idx],order[idx-1]];
+  await saveMetricOrder(ek,order);
+  renderJour();
+};
+window.moveMetricDown=async function(ek,idx){
+  const order=getMetricsOrdered(ek).map(m=>m.k);
+  if(idx>=order.length-1)return;
+  [order[idx],order[idx+1]]=[order[idx+1],order[idx]];
+  await saveMetricOrder(ek,order);
+  renderJour();
+};
+async function loadTasksConfig(){
+  try{
+    const s=await get(ref(db,'config/tasks'));
+    if(s.exists()){
+      const data=Object.values(s.val());
+      const doneMap={};TASKS.forEach(t=>doneMap[t.id]=t.done);
+      TASKS=data.map(t=>({...t,done:doneMap[t.id]||false}));
+    }
+  }catch(e){}
+}
+async function saveTasksConfig(){
+  try{
+    const obj={};TASKS.forEach(t=>obj[t.id]={id:t.id,label:t.label,color:t.color,badge:t.badge});
+    await set(ref(db,'config/tasks'),obj);
+  }catch(e){}
+}
+
+async function sv(y,mo,day,ek,mk,val){
+  val=Math.max(0,val);
+  const k=`${y}_${mo}`;
+  if(!mCache[k])mCache[k]={};
+  if(!mCache[k][day])mCache[k][day]={};
+  if(!mCache[k][day][ek])mCache[k][day][ek]={};
+  mCache[k][day][ek][mk]=val;
+  // Update DOM immediately for responsiveness
+  const inp=document.getElementById('mv_'+ek+'_'+mk);
+  if(inp&&document.activeElement!==inp)inp.value=val;
+  
+  updateDayTotal();
+  // Save to Firebase - onValue listener will sync to other devices automatically
+  set(ref(db,'v2/'+y+'/'+mo+'/'+day+'/'+ek+'/'+mk),val).catch(()=>{});
+}
+window.setValue=sv;
+window.renderLeads=()=>renderLeads();
+window.renderParams=()=>renderParams();
+window.saveRevenu=async function(y,mo,ek,field,val){try{await set(ref(db,'revenus/'+y+'/'+mo+'/'+ek+'/'+field),val);delete rCache[y+'_'+mo];}catch(e){}};
+window.setLeadsFilter=(k)=>{window.leadsFilter=k;renderLeads();};
+window.setLeadsSearch=(v)=>{window.leadsSearch=v;renderLeads();};
+
+function updateJourCard(ek){
+  const md=mCache[cY+'_'+cM]||{};
+  const metrics=getMet(ek);
+  let total=0;
+  metrics.forEach(m=>{
+    const val=gv(md,selDay,ek,m.k);
+    const inp=document.getElementById(`mv_${ek}_${m.k}`);
+    if(inp&&document.activeElement!==inp)inp.value=val;
+    total+=val;
+  });
+  const totEl=document.getElementById(`etot_${ek}`);
+  if(totEl)totEl.textContent=total;
+
+}
+function updateDayTotal(){
+  const md=mCache[cY+'_'+cM]||{};
+  let t=0;ENTS.forEach(e=>getMet(e.key).forEach(m=>t+=gv(md,selDay,e.key,m.k)));
+  const el=document.getElementById('dayTotalEl');if(el)el.textContent=t;
+}
+
+// ===== CHAMEO =====
+function drawChameo(svg){
+  svg.innerHTML=`
+  <path d="M6 38 Q2 33 2 27 Q2 21 7 20 Q13 19 13 25 Q13 31 9 32 Q5 32 5 29" fill="none" stroke="#2a9aaa" stroke-width="3" stroke-linecap="round"/>
+  <path d="M13 42 Q12 24 26 18 Q38 13 50 19 Q60 24 61 33 Q61 43 50 46 Q36 51 22 47 Q13 44 13 42Z" fill="#0e5a6a"/>
+  <path d="M16 41 Q15 26 27 21 Q38 17 48 22 Q56 27 56 34 Q56 42 47 45 Q35 48 23 45 Q16 43 16 41Z" fill="#1a7a8a"/>
+  <path d="M19 40 Q19 30 27 26 Q36 22 44 26 Q50 30 50 36 Q50 42 43 44 Q33 46 25 43 Q19 41 19 40Z" fill="#2a9aaa"/>
+  <circle cx="28" cy="30" r="2" fill="#1a7a8a" opacity="0.5"/><circle cx="34" cy="27" r="2" fill="#1a7a8a" opacity="0.5"/><circle cx="40" cy="28" r="2" fill="#1a7a8a" opacity="0.5"/>
+  <path d="M18 22 L17 15 L21 19 L24 11 L27 17 L31 9 L34 16 L37 12 L40 17 L44 14 L47 19" fill="none" stroke="#00d4ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M51 19 Q60 15 68 20 Q76 25 75 33 Q74 39 67 40 Q59 41 54 35 Q51 30 51 19Z" fill="#0e5a6a"/>
+  <path d="M55 23 Q61 20 67 24 Q71 28 70 33 Q69 37 65 37 Q59 37 56 33 Q55 30 55 23Z" fill="#2a9aaa"/>
+  <circle cx="68" cy="27" r="9" fill="#0a0a0a"/>
+  <circle cx="68" cy="27" r="7.5" fill="#cc5500"/>
+  <circle cx="68" cy="27" r="6" fill="#dd6600"/>
+  <ellipse cx="68" cy="27" rx="2.5" ry="4.5" fill="#0a0a0a"/>
+  <circle cx="70" cy="24" r="1.5" fill="white" opacity="0.9"/>
+  <path id="chLidT" d="M59 27 Q68 27 77 27 Q77 20 68 18 Q59 18 59 27Z" fill="#1a7a8a" style="clip-path:inset(0 0 100% 0);transition:clip-path 0.12s;"/>
+  <path id="chLidB" d="M59 27 Q68 27 77 27 Q77 34 68 36 Q59 36 59 27Z" fill="#156070" style="clip-path:inset(100% 0 0 0);transition:clip-path 0.12s;"/>
+  <path d="M22 47 Q19 52 16 54" fill="none" stroke="#0e5a6a" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M32 49 Q30 54 28 56" fill="none" stroke="#0e5a6a" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M44 48 Q45 53 47 55" fill="none" stroke="#0e5a6a" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M54 44 Q57 49 59 51" fill="none" stroke="#0e5a6a" stroke-width="2.5" stroke-linecap="round"/>`;
+}
+function blink(){const t=document.getElementById('chLidT'),b=document.getElementById('chLidB');if(!t||!b)return;t.style.clipPath='inset(0 0 0% 0)';b.style.clipPath='inset(0% 0 0 0)';setTimeout(()=>{t.style.clipPath='inset(0 0 100% 0)';b.style.clipPath='inset(100% 0 0 0)';},140);}
+setInterval(()=>blink(),2800+Math.random()*2000);
+window.blink=blink;
+
+// ===== RING CANVAS =====
+function drawRingFrame(canvasId, progress, size){
+  const c=document.getElementById(canvasId);if(!c)return false;
+  const ctx=c.getContext('2d');
+  const cx=size/2,cy=size/2,r=size*0.32;
+  ctx.clearRect(0,0,size,size);
+  // Track
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.strokeStyle='#0a2030';ctx.lineWidth=size*0.09;ctx.stroke();
+  // Progress glow
+  ctx.save();ctx.shadowColor='#00d4ff';ctx.shadowBlur=10;
+  const sa=-Math.PI/2,ea=sa+progress*Math.PI*2;
+  ctx.beginPath();ctx.arc(cx,cy,r,sa,ea);
+  ctx.strokeStyle=progress>=1?'#00ff88':'#00d4ff';ctx.lineWidth=size*0.09;ctx.lineCap='round';ctx.stroke();
+  ctx.restore();
+  // Tip dot
+  if(progress>0.01){
+    const a=ea;
+    ctx.save();ctx.shadowColor='#00d4ff';ctx.shadowBlur=12;
+    ctx.beginPath();ctx.arc(cx+Math.cos(a)*r,cy+Math.sin(a)*r,size*0.05,0,Math.PI*2);
+    ctx.fillStyle='#fff';ctx.fill();ctx.restore();
+  }
+  // Orbits
+  orbits.forEach(o=>{
+    o.off+=o.speed;
+    const or=o.r*size;
+    ctx.save();ctx.globalAlpha=o.op;ctx.shadowColor=o.color;ctx.shadowBlur=5;
+    ctx.beginPath();ctx.arc(cx,cy,or,o.off,o.off+o.len*Math.PI*2);
+    ctx.strokeStyle=o.color;ctx.lineWidth=o.w;ctx.stroke();
+    const px=cx+Math.cos(o.off+o.len*Math.PI*2)*or;
+    const py=cy+Math.sin(o.off+o.len*Math.PI*2)*or;
+    ctx.beginPath();ctx.arc(px,py,1.8,0,Math.PI*2);ctx.fillStyle=o.color;ctx.fill();
+    ctx.restore();
+  });
+  return true;
+}
+function startRingAnim(canvasId, progressFn, size){
+  window._ringCanvas=canvasId;
+  window._ringProgressFn=progressFn;
+  window._ringSize=size;
+}
+let _uRaf=null,_uLastT=0,_uFrame=0;
+function startUnifiedLoop(){
+  if(_uRaf)cancelAnimationFrame(_uRaf);
+  function loop(ts){
+    if(curTab!=='dash'||document.hidden){_uRaf=null;return;}
+    if(ts-_uLastT>50){
+      _uLastT=ts;_uFrame++;
+      if(window._ringCanvas&&window._ringProgressFn)drawRingFrame(window._ringCanvas,window._ringProgressFn(),window._ringSize||90);
+      if(window._convData&&window._convDim)drawConvChart(window._convData,window._convDim);
+      if(_uFrame%2===0&&window._lastEntData)drawHexDash(window._lastEntData);
+    }
+    _uRaf=requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+}
+window.startUnifiedLoop=startUnifiedLoop;
+
+// ===== TAB SWITCHING =====
+// Icon stroke colors
+const ACTIVE_STROKES={
+  dash:'#00d4ff',jour:'#00d4ff',leads:'#00d4ff',params:'#00d4ff'
+};
+function setTabIconActive(tab,active){
+  const svg=document.getElementById(`ti_${tab}`);
+  if(!svg)return;
+  if(active){
+    svg.querySelectorAll('[stroke]').forEach(el=>{
+      el.setAttribute('stroke','#00d4ff');
+      el.removeAttribute('fill');
+    });
+    svg.querySelectorAll('circle[fill="#8a9aaa"]').forEach(el=>el.setAttribute('fill','#00d4ff'));
+    svg.style.filter='drop-shadow(0 0 5px rgba(0,212,255,0.8))';
+  }else{
+    // restore gradient strokes
+    svg.querySelectorAll('[stroke]').forEach(el=>{
+      if(!el.id.startsWith('sga')&&!el.id.startsWith('sgb')&&!el.id.startsWith('sgc')&&!el.id.startsWith('sgd')){
+        el.setAttribute('stroke',`url(#sg${tab==='dash'?'a':tab==='jour'?'b':tab==='leads'?'c':'d'})`);
+      }
+    });
+    svg.querySelectorAll('circle[fill="#00d4ff"]').forEach(el=>el.setAttribute('fill','#8a9aaa'));
+    svg.style.filter='';
+  }
+}
+
+function switchTab(tab,el){
+  if(rafId){cancelAnimationFrame(rafId);rafId=null;}
+  if(_uRaf){cancelAnimationFrame(_uRaf);_uRaf=null;}
+  curTab=tab;
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.classList.remove('active');
+    setTabIconActive(t.dataset.tab,false);
+  });
+  el.classList.add('active');
+  setTabIconActive(tab,true);
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page_'+tab).classList.add('active');
+  render();
+}
+window.switchTab=switchTab;
+
+function changeMonth(dir){
+  // Unsubscribe old month listener to save bandwidth
+  const oldK=`${cY}_${cM}`;
+  if(_listeners[oldK]){_listeners[oldK]();delete _listeners[oldK];delete mCache[oldK];}
+  cM+=dir;if(cM>11){cM=0;cY++;}if(cM<0){cM=11;cY--;}selDay=1;render();
+}
+window.changeMonth=changeMonth;
+function selectDay(d){selDay=d;renderJour();}
+window.selectDay=selectDay;
+
+async function render(){
+  if(curTab==='dash')await renderDash();
+  else if(curTab==='jour')await renderJour();
+  else if(curTab==='leads')await renderLeads();
+  else renderParams();
+}
+
+// ===== DASHBOARD =====
+
+// ===== HEX DASHBOARD =====
+let _hexFrame=0;
+function drawHexDash(entData){
+  window._lastEntData=entData;
+  _hexFrame++;
+  const canvas=document.getElementById('hexDash');if(!canvas)return;
+    const dpr=window.devicePixelRatio||1;
+    const W=canvas.offsetWidth||300,H=120;
+    if(canvas.width!==W*dpr||canvas.height!==H*dpr){canvas.width=W*dpr;canvas.height=H*dpr;}
+    const ctx=canvas.getContext('2d');ctx.save();ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
+    const r=Math.min(W/6,H*0.38);
+    const positions=[{x:W*0.13,y:H*0.52},{x:W*0.38,y:H*0.52},{x:W*0.63,y:H*0.52},{x:W*0.88,y:H*0.52}];
+    function hexPath(cx,cy,r2){
+      ctx.beginPath();
+      for(let i=0;i<6;i++){const a=Math.PI/6+i*Math.PI/3;i===0?ctx.moveTo(cx+Math.cos(a)*r2,cy+Math.sin(a)*r2):ctx.lineTo(cx+Math.cos(a)*r2,cy+Math.sin(a)*r2);}
+      ctx.closePath();
+    }
+    entData.forEach((d,i)=>{
+      const p=positions[i];
+      const pulse=1+Math.sin(_hexFrame*0.04+i*1.2)*0.02;
+      const rp=r*pulse;
+      // Outer rings
+      [1.45,1.22].forEach(s=>{hexPath(p.x,p.y,rp*s);ctx.strokeStyle=d.e.hex+'14';ctx.lineWidth=0.6;ctx.stroke();});
+      // Main hex
+      hexPath(p.x,p.y,rp);
+      const g=ctx.createRadialGradient(p.x,p.y-rp*0.2,0,p.x,p.y,rp);
+      g.addColorStop(0,d.e.hex+'30');g.addColorStop(1,d.e.hex+'06');
+      ctx.fillStyle=g;ctx.fill();
+      ctx.save();ctx.shadowColor=d.e.hex;ctx.shadowBlur=10;ctx.strokeStyle=d.e.hex;ctx.lineWidth=1.2;ctx.stroke();ctx.restore();
+      // Arc conversion
+      const cv=Math.min(d.conv/100,1);
+      if(cv>0){
+        ctx.save();ctx.shadowColor=d.e.hex;ctx.shadowBlur=8;
+        ctx.beginPath();ctx.arc(p.x,p.y,rp*0.72,-Math.PI/2,-Math.PI/2+cv*Math.PI*2);
+        ctx.strokeStyle=d.e.hex;ctx.lineWidth=2.5;ctx.lineCap='round';ctx.stroke();ctx.restore();
+        // Tip dot
+        const ea=-Math.PI/2+cv*Math.PI*2;
+        ctx.save();ctx.shadowColor=d.e.hex;ctx.shadowBlur=6;
+        ctx.beginPath();ctx.arc(p.x+Math.cos(ea)*rp*0.72,p.y+Math.sin(ea)*rp*0.72,2,0,Math.PI*2);
+        ctx.fillStyle='#fff';ctx.fill();ctx.restore();
+      }
+      // Labels
+      ctx.fillStyle=d.e.hex;ctx.font='bold 8px monospace';ctx.textAlign='center';
+      ctx.fillText(d.e.name,p.x,p.y-7);
+      ctx.fillStyle='#e8f4ff';ctx.font='bold 11px monospace';
+      ctx.fillText(d.conv+'%',p.x,p.y+5);
+      ctx.fillStyle=d.e.hex+'88';ctx.font='7px monospace';
+      ctx.fillText(d.calls+' calls',p.x,p.y+16);
+    });
+    ctx.restore();
+}
+
+// ===== PODIUM =====
+function drawPodium(entData){
+  const canvas=document.getElementById('podiumCanvas');
+  if(!canvas)return;
+  const dpr=window.devicePixelRatio||1;
+  const rect=canvas.getBoundingClientRect();
+  const W=rect.width||canvas.offsetWidth||260;
+  const H=115;
+  if(W<10)return;
+  canvas.width=Math.round(W*dpr);
+  canvas.height=H*dpr;
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+
+  // Scores basés sur commission réelle
+  const scores=entData.map(d=>({
+    e:d.e,
+    score:d.comm,
+    label:d.comm>0?d.comm.toFixed(0)+'€':'—'
+  })).sort((a,b)=>b.score-a.score);
+
+  const MEDALS=['#ffd700','#c0c0c0','#cd7f32'];
+  const GLOW=['rgba(255,215,0,0.8)','rgba(192,192,192,0.6)','rgba(205,127,50,0.6)'];
+  const baseY=H-8;
+  const first=scores[0];
+
+  // Couronne géométrique SVG-like
+  function drawCrown(cx,cy,size,color,glow){
+    ctx.save();ctx.shadowColor=glow;ctx.shadowBlur=14;
+    ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.fillStyle=color+'22';
+    const bw=size*0.9,bh=size*0.25;
+    // Base
+    ctx.beginPath();ctx.moveTo(cx-bw/2,cy+size*0.1);ctx.lineTo(cx+bw/2,cy+size*0.1);ctx.lineTo(cx+bw/2,cy+size*0.35);ctx.lineTo(cx-bw/2,cy+size*0.35);ctx.closePath();ctx.fill();ctx.stroke();
+    // 3 pointes
+    [[cx-bw/2,cy+size*0.1,cx-bw/2,cy-size*0.28,cx-bw*0.18,cy+size*0.1],
+     [cx-bw*0.18,cy+size*0.1,cx,cy-size*0.48,cx+bw*0.18,cy+size*0.1],
+     [cx+bw*0.18,cy+size*0.1,cx+bw/2,cy-size*0.28,cx+bw/2,cy+size*0.1]
+    ].forEach(p=>{ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(p[2],p[3]);ctx.lineTo(p[4],p[5]);ctx.closePath();ctx.fill();ctx.stroke();});
+    // Losanges aux pointes
+    [[cx-bw/2,cy-size*0.28,size*0.07],[cx,cy-size*0.48,size*0.1],[cx+bw/2,cy-size*0.28,size*0.07]].forEach(p=>{
+      const ds=p[2];ctx.save();ctx.shadowBlur=10;ctx.fillStyle=color;
+      ctx.beginPath();ctx.moveTo(p[0],p[1]-ds);ctx.lineTo(p[0]+ds,p[1]);ctx.lineTo(p[0],p[1]+ds);ctx.lineTo(p[0]-ds,p[1]);ctx.closePath();ctx.fill();ctx.restore();
+    });
+    // Ligne déco pointillée
+    ctx.beginPath();ctx.setLineDash([2,3]);ctx.moveTo(cx-bw/2+3,cy+size*0.22);ctx.lineTo(cx+bw/2-3,cy+size*0.22);ctx.stroke();ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  // Médaille circulaire
+  function drawMedal(cx,cy,rank,color,glow,size){
+    ctx.save();ctx.shadowColor=glow;ctx.shadowBlur=12;
+    ctx.beginPath();ctx.arc(cx,cy,size,0,Math.PI*2);ctx.strokeStyle=color+'55';ctx.lineWidth=0.7;ctx.stroke();
+    const gr=ctx.createRadialGradient(cx,cy-size*0.2,0,cx,cy,size);
+    gr.addColorStop(0,color+'40');gr.addColorStop(1,color+'08');
+    ctx.beginPath();ctx.arc(cx,cy,size*0.8,0,Math.PI*2);ctx.fillStyle=gr;ctx.fill();ctx.strokeStyle=color+'88';ctx.lineWidth=1;ctx.stroke();
+    const prog=rank===2?0.8:0.55;
+    ctx.beginPath();ctx.arc(cx,cy,size*0.8,-Math.PI/2,-Math.PI/2+prog*Math.PI*2);
+    ctx.shadowBlur=8;ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.lineCap='round';ctx.stroke();
+    ctx.fillStyle=color;ctx.font='bold '+(size*0.9)+'px monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(rank,cx,cy+1);ctx.textBaseline='alphabetic';
+    ctx.restore();
+  }
+
+  // === 1ER AU CENTRE ===
+  const fw=W*0.3, fh=72;
+  const fcx=W*0.5, fby=baseY-fh;
+
+  // Halo
+  const halo=ctx.createRadialGradient(fcx,baseY,0,fcx,baseY,fw*1.8);
+  halo.addColorStop(0,'rgba(255,215,0,0.1)');halo.addColorStop(1,'transparent');
+  ctx.fillStyle=halo;ctx.fillRect(fcx-fw*1.5,0,fw*3,H);
+
+  // Bloc 1er
+  ctx.save();ctx.shadowColor='rgba(255,215,0,0.7)';ctx.shadowBlur=20;
+  const gr1=ctx.createLinearGradient(0,fby,0,fby+fh);
+  gr1.addColorStop(0,'rgba(255,215,0,0.35)');gr1.addColorStop(1,'rgba(255,215,0,0.05)');
+  ctx.fillStyle=gr1;
+  ctx.beginPath();if(ctx.roundRect)ctx.roundRect(fcx-fw/2,fby,fw,fh,5);else ctx.rect(fcx-fw/2,fby,fw,fh);
+  ctx.fill();ctx.strokeStyle='rgba(255,215,0,0.85)';ctx.lineWidth=1.5;ctx.stroke();ctx.restore();
+
+  // Top line néon
+  ctx.save();ctx.shadowColor='#ffd700';ctx.shadowBlur=14;
+  ctx.beginPath();ctx.moveTo(fcx-fw/2+3,fby);ctx.lineTo(fcx+fw/2-3,fby);
+  ctx.strokeStyle='#ffd700';ctx.lineWidth=2.5;ctx.stroke();ctx.restore();
+
+  // Couronne au-dessus
+  drawCrown(fcx,fby-10,14,'#ffd700','rgba(255,215,0,0.9)');
+
+  // Nom + montant 1er
+  ctx.save();ctx.shadowColor='#ffd700';ctx.shadowBlur=8;
+  ctx.fillStyle='#ffd700';ctx.font='bold 10px monospace';ctx.textAlign='center';
+  ctx.fillText(first.e.name,fcx,fby+22);ctx.restore();
+  ctx.save();ctx.shadowColor='#ffd700';ctx.shadowBlur=6;
+  ctx.fillStyle='rgba(255,215,0,0.95)';ctx.font='bold 13px monospace';ctx.textAlign='center';
+  ctx.fillText(first.label,fcx,fby+40);ctx.restore();
+  ctx.fillStyle='rgba(255,215,0,0.22)';ctx.font='7px monospace';ctx.textAlign='center';
+  ctx.fillText('// 1ER //',fcx,fby+fh-9);
+
+  // === 2E ET 3E ===
+  [[1,W*0.17,50],[2,W*0.83,38]].forEach(([si,x,bh])=>{
+    if(si>=scores.length)return;
+    const s=scores[si];
+    const mc=MEDALS[si],glow=GLOW[si];
+    const bw=W*0.18,by=baseY-bh;
+    // Glow sol
+    const gg=ctx.createRadialGradient(x,baseY,0,x,baseY,bw);
+    gg.addColorStop(0,mc+'18');gg.addColorStop(1,'transparent');
+    ctx.fillStyle=gg;ctx.fillRect(x-bw,baseY-10,bw*2,14);
+    // Bloc
+    const gr=ctx.createLinearGradient(0,by,0,by+bh);
+    gr.addColorStop(0,mc+'28');gr.addColorStop(1,mc+'05');
+    ctx.save();ctx.shadowColor=glow;ctx.shadowBlur=10;
+    ctx.fillStyle=gr;
+    ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x-bw/2,by,bw,bh,4);else ctx.rect(x-bw/2,by,bw,bh);
+    ctx.fill();ctx.strokeStyle=mc+'44';ctx.lineWidth=0.8;ctx.stroke();ctx.restore();
+    // Top line
+    ctx.save();ctx.shadowColor=mc;ctx.shadowBlur=8;
+    ctx.beginPath();ctx.moveTo(x-bw/2+2,by);ctx.lineTo(x+bw/2-2,by);
+    ctx.strokeStyle=mc;ctx.lineWidth=1.2;ctx.stroke();ctx.restore();
+    // Médaille
+    drawMedal(x,by-14,si+1,mc,glow,10);
+    // Nom + montant
+    ctx.fillStyle=mc+'cc';ctx.font='bold 8px monospace';ctx.textAlign='center';ctx.fillText(s.e.name,x,by+18);
+    ctx.fillStyle=mc+'77';ctx.font='7px monospace';ctx.textAlign='center';ctx.fillText(s.label,x,by+30);
+  });
+
+  // Sol lumineux
+  ctx.save();ctx.shadowColor='rgba(255,215,0,0.3)';ctx.shadowBlur=6;
+  const solG=ctx.createLinearGradient(0,0,W,0);
+  solG.addColorStop(0,'transparent');solG.addColorStop(0.3,'rgba(255,215,0,0.25)');
+  solG.addColorStop(0.7,'rgba(255,215,0,0.25)');solG.addColorStop(1,'transparent');
+  ctx.strokeStyle=solG;ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(W*0.05,baseY);ctx.lineTo(W*0.95,baseY);ctx.stroke();
+  ctx.restore();
+}
+
+async function renderDash(){
+  const div=document.getElementById('page_dash');
+  const md=await loadMonth(cY,cM);
+  const leads=await loadLeads(cY,cM);
+  const revenus=await loadRevenus(cY,cM);
+  const obj=await loadObjectifs(cY,cM);
+  const rev=await loadRevenus(cY,cM);
+  const dim=new Date(cY,cM+1,0).getDate();
+  const today=now.getDate();
+
+  // Totals
+  let todayTotal=0;ENTS.forEach(e=>getMet(e.key).forEach(m=>todayTotal+=gv(md,today,e.key,m.k)));
+  let monthCalls=0;for(let d=1;d<=dim;d++)ENTS.forEach(e=>{monthCalls+=getTotalCalls(e.key,md[d]);});
+
+  // Revenus
+  let myPart=0;
+  ENTS.forEach(e=>{
+    const rMan=parseFloat(rev[e.key]?.montant||0);
+    // Revenus manuels = directement ce que tu touches (pas de calcul %)
+    const rLead=Object.values(leads).filter(l=>l.entKey===e.key).reduce((s,l)=>s+(parseFloat(l.cashReceived)||0)*(e.rate/100),0);
+    myPart+=rMan>0?rMan:rLead;
+  });
+
+  // Funnel
+  let tfm=0,trep=0,tfu=0,trfu=0,tln=0,tc=0;
+  for(let d=1;d<=dim;d++)ENTS.forEach(e=>{
+    tfm+=gv(md,d,e.key,'firstmsg');trep+=gv(md,d,e.key,'replies');
+    tfu+=gv(md,d,e.key,'followup');trfu+=gv(md,d,e.key,'repliesfu');
+    tln+=gv(md,d,e.key,'lien');tc+=getTotalCalls(e.key,md[d]);
+  });
+  const pct=(a,b)=>b>0?Math.round(a/b*100):0;
+
+  // Sparkline — TOUTES les métriques agrégées par jour
+  const sparkDays=Math.min(dim,14);
+  const sparkRaw=[];
+  for(let d=Math.max(1,dim-sparkDays+1);d<=dim;d++){
+    let t=0;ENTS.forEach(e=>getMet(e.key).forEach(m=>t+=gv(md,d,e.key,m.k)));
+    sparkRaw.push(t);
+  }
+  const sMax=Math.max(...sparkRaw,1);
+  const spark=(data,max,color)=>{
+    if(!data||data.length<2)return '';
+    const m=Math.max(max||1,1);
+    const pts=data.map((v,i)=>`${i/(data.length-1)*60},${12-(v/m)*11}`).join(' ');
+    return `<svg viewBox="0 0 60 12" class="kpi-spark"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+  };
+  // callsRaw for calls sparkline
+  const callsRaw=[];
+  for(let d=Math.max(1,dim-sparkDays+1);d<=dim;d++){let t=0;ENTS.forEach(e=>{t+=getTotalCalls(e.key,md[d]);});callsRaw.push(t);}
+
+  // Graph conversion cumulée par entrepreneur — taux msgs→calls cumulatif jour par jour
+  window._convDim=dim;
+  window._convData=ENTS.map(e=>{
+    let cumFm=0,cumCalls=0;
+    const pts=[];
+    for(let d=1;d<=dim;d++){
+      cumFm+=gv(md,d,e.key,'firstmsg');
+      cumCalls+=getTotalCalls(e.key,md[d]);
+      pts.push(cumFm>0?Math.round(cumCalls/cumFm*100):null);
+    }
+    return{e,pts};
+  });
+  const convData=window._convData;
+
+  // Ents data
+  const entData=ENTS.map(e=>{
+    let calls=0,fm=0,rep=0,ln=0,fu=0;
+    for(let d=1;d<=dim;d++){calls+=getTotalCalls(e.key,md[d]);fm+=gv(md,d,e.key,'firstmsg');rep+=gv(md,d,e.key,'replies');ln+=gv(md,d,e.key,'lien');fu+=gv(md,d,e.key,'followup');}
+    const conv=fm>0?Math.round(calls/fm*100):0;
+    const oc=obj[e.key]?.call||0;
+    const op=oc>0?Math.min(Math.round(calls/oc*100),100):0;
+    const rMan=parseFloat(rev[e.key]?.montant||0);
+    const rL=Object.values(leads).filter(l=>l.entKey===e.key).reduce((s,l)=>s+(parseFloat(l.cashReceived)||0),0);
+    const totR=rMan>0?rMan:rL;
+    // comm = revenu manuel direct OU commission calculée sur leads
+    const comm=rMan>0?rMan:rL*(e.rate/100);
+    return{e,calls,fm,rep,ln,fu,conv,oc,op,totR,comm};
+  });
+  const totalRev=entData.reduce((s,d)=>s+d.totR,0);
+
+  // Tasks
+  const tDone=TASKS.filter(t=>t.done).length;
+  const tPct=tDone/TASKS.length;
+
+  div.innerHTML=`
+  <div class="dash-page">
+    <div class="dash-header">
+      <div class="dash-logo">
+        <svg width="72" height="44" viewBox="0 0 90 60" style="cursor:pointer;overflow:visible;" onclick="blink()" id="chameoSvg"></svg>
+        <div>
+          <div class="dash-title"><span class="s">SETTER </span><span class="t">TRACKER</span></div>
+          <div class="dash-sub">// ${MFR[cM].toUpperCase()} ${cY}</div>
+        </div>
+      </div>
+      <div class="dash-clock">
+        <div class="dash-time" id="dashClock">--:--:--</div>
+        <div class="dash-date-lbl">${now.toLocaleDateString('fr-BE',{weekday:'long',day:'numeric',month:'long'})}</div>
+      </div>
+    </div>
+
+    <!-- KPI -->
+    <div class="kpi-row">
+      <div class="kpi-card" style="--kc:#ffd700;padding:10px 12px;background:linear-gradient(135deg,#060e16,#08121c);border:1px solid rgba(255,215,0,0.15);">
+        <div class="kpi-label" style="color:rgba(255,215,0,0.5)">TOP CE MOIS</div>
+        <canvas id="podiumCanvas" style="width:100%;display:block;margin-top:4px" height="115"></canvas>
+      </div>
+      <div class="kpi-card" style="--kc:#34d399">
+        <div class="kpi-label">MA PART CE MOIS</div>
+        <div class="kpi-val">${myPart.toFixed(0)}€</div>
+        <div class="kpi-sub">Générées : ${totalRev.toFixed(0)}€</div>
+        <canvas id="spark_rev" style="width:100%;display:block;margin-top:6px" height="28"></canvas>
+      </div>
+      <div class="kpi-card" style="--kc:#a78bfa">
+        <div class="kpi-label">CALLS CE MOIS</div>
+        <div class="kpi-val">${monthCalls}</div>
+        <div class="kpi-sub">tous entrepreneurs</div>
+        <canvas id="spark_calls" style="width:100%;display:block;margin-top:6px" height="28"></canvas>
+      </div>
+      <div class="kpi-card" style="--kc:#fb923c">
+        <div class="kpi-label">CONVERSION</div>
+        <div class="kpi-val">${pct(tc,tfm)}%</div>
+        <div class="kpi-sub">msgs → calls</div>
+        <canvas id="spark_conv" style="width:100%;display:block;margin-top:6px" height="28"></canvas>
+      </div>
+      <!-- DAILY TASKS RING -->
+      <div class="kpi-tasks-card">
+        <div class="kpi-tasks-bg"></div>
+        <div class="kpi-tasks-lbl">DAILY TASKS</div>
+        <div class="ring-container">
+          <canvas id="dashRing" width="90" height="90"></canvas>
+          <div class="ring-text-overlay">
+            <div class="ring-pct" id="dashRingPct" style="color:${tPct>=1?'#00ff88':'#00d4ff'}">${Math.round(tPct*100)}%</div>
+            <div class="ring-cnt" id="dashRingCnt">${tDone}/${TASKS.length}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GRAPH + FUNNEL -->
+    <div class="mid-row">
+      <div class="graph-card">
+        <div class="graph-head" style="position:relative;z-index:2">
+          <div class="graph-title">TAUX DE CONVERSION — msgs → calls (cumulatif)</div>
+          <div class="graph-legend" style="display:flex;gap:10px;flex-wrap:wrap">
+            ${entData.map(d=>`<span style="color:${d.e.hex};font-size:8px">● ${d.e.name}</span>`).join('')}
+          </div>
+        </div>
+        <canvas id="convChart" style="width:100%;height:100%;display:block;position:absolute;top:0;left:0"></canvas>
+        <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--muted);margin-top:4px;position:relative;z-index:2">
+          <span>1</span><span>${Math.round(dim/4)}</span><span>${Math.round(dim/2)}</span><span>${Math.round(dim*3/4)}</span><span>${dim}</span>
+        </div>
+      </div>
+      <div class="funnel-card">
+        <div class="funnel-title">FUNNEL CONVERSION</div>
+        ${[
+          {l:'Msgs → Réponses',v:pct(trep,tfm),c:'#00d4ff'},
+          {l:'Msgs → Follow ups',v:pct(tfu,tfm),c:'#a78bfa'},
+          {l:'FU → Réponses FU',v:pct(trfu,tfu),c:'#34d399'},
+          {l:'Msgs → Lien',v:pct(tln,tfm),c:'#00ff88'},
+          {l:'Msgs → Call',v:pct(tc,tfm),c:'#fb923c'},
+        ].map(f=>`<div class="funnel-row">
+          <div class="funnel-row-head"><span class="funnel-row-lbl">${f.l}</span><span class="funnel-row-pct" style="color:${f.c}">${f.v}%</span></div>
+          <div class="funnel-bar"><div class="funnel-bar-fill" style="width:${f.v}%;background:${f.c}"></div></div>
+        </div>`).join('')}
+        <div class="funnel-ents">
+          ${entData.map(d=>`<div class="funnel-ent-row"><span style="color:${d.e.hex}77">${d.e.name}</span><span style="color:${d.e.hex}">${d.conv}%</span></div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- ENT CARDS -->
+    <div class="ents-row">
+      ${entData.map(d=>`
+        <div class="dash-ent-card" style="--c:${d.e.hex};--cr:${hex2rgb(d.e.hex)}">
+          <div class="dash-ent-name">${d.e.name} <span style="font-size:0.5rem;opacity:0.4">${d.e.rate}%</span></div>
+          <div class="dash-ent-body">
+            <div class="dash-ent-row"><span class="dash-ent-lbl">Premiers msgs</span><span class="dash-ent-val">${d.fm}</span></div>
+            <div class="dash-ent-row"><span class="dash-ent-lbl">Réponses</span><span class="dash-ent-val">${d.rep}</span></div>
+            <div class="dash-ent-row"><span class="dash-ent-lbl">Lien envoyé</span><span class="dash-ent-val">${d.ln}</span></div>
+            <div class="dash-ent-row"><span class="dash-ent-lbl">Follow ups</span><span class="dash-ent-val">${d.fu}</span></div>
+            <div class="dash-ent-row"><span class="dash-ent-lbl dash-ent-call">Calls</span><span class="dash-ent-call">${d.calls}</span></div>
+            <div class="dash-ent-bar"><div class="dash-ent-bar-fill" style="width:${d.conv}%;background:${d.e.hex}"></div></div>
+            <div class="dash-ent-conv">${d.conv}% conv.</div>
+          </div>
+        </div>`).join('')}
+    </div>
+
+    <!-- REVENUS + OBJECTIFS -->
+    <div class="bottom-row">
+      <div class="rev-card-dash">
+        <div class="rev-title">REVENUS CE MOIS — par entrepreneur</div>
+
+        <!-- Totaux en haut : 4 colonnes bien remplies -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border2);">
+          <div style="background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:8px;padding:10px 12px;">
+            <div style="font-size:7px;color:rgba(0,212,255,0.45);letter-spacing:2px;margin-bottom:4px">MA PART</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:#00d4ff;text-shadow:0 0 12px rgba(0,212,255,0.5)">${myPart.toFixed(0)}€</div>
+          </div>
+          <div style="background:rgba(52,211,153,0.04);border:1px solid rgba(52,211,153,0.1);border-radius:8px;padding:10px 12px;">
+            <div style="font-size:7px;color:rgba(52,211,153,0.4);letter-spacing:2px;margin-bottom:4px">TOTAL GÉNÉRÉ</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:#34d39988">${totalRev.toFixed(0)}€</div>
+          </div>
+          <div style="background:rgba(167,139,250,0.04);border:1px solid rgba(167,139,250,0.1);border-radius:8px;padding:10px 12px;">
+            <div style="font-size:7px;color:rgba(167,139,250,0.4);letter-spacing:2px;margin-bottom:4px">LEADS CLOSÉS</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:#a78bfa88">${Object.values(leads).length}</div>
+          </div>
+          <div style="background:rgba(251,146,60,0.04);border:1px solid rgba(251,146,60,0.1);border-radius:8px;padding:10px 12px;">
+            <div style="font-size:7px;color:rgba(251,146,60,0.4);letter-spacing:2px;margin-bottom:4px">MEILLEUR MOIS</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:#fb923c88">${entData.reduce((a,d)=>d.comm>a?d.comm:a,0).toFixed(0)}€</div>
+          </div>
+        </div>
+
+        <!-- Détail par entrepreneur -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+          ${entData.map(d=>`
+            <div style="border-left:2px solid ${d.e.hex}44;padding-left:10px;">
+              <div style="font-size:9px;color:${d.e.hex}88;letter-spacing:1px;margin-bottom:4px">${d.e.name} · ${d.e.rate}%</div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--cyan)">${d.comm.toFixed(0)}€</div>
+              <div style="font-size:9px;color:var(--muted2);margin-top:2px">Généré : ${d.totR.toFixed(0)}€</div>
+              <div style="height:2px;background:var(--border);border-radius:1px;margin-top:6px;overflow:hidden">
+                <div style="height:100%;width:${totalRev>0?Math.round(d.totR/totalRev*100):0}%;background:${d.e.hex};border-radius:1px"></div>
+              </div>
+              <div style="font-size:8px;color:${d.e.hex}66;margin-top:2px">${totalRev>0?Math.round(d.totR/totalRev*100):0}% du total</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div style="background:linear-gradient(135deg,#030a0f,#060e14);border:1px solid rgba(0,212,255,0.2);border-radius:10px;padding:14px;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#00d4ff,transparent)"></div>
+        <div style="position:absolute;inset:0;opacity:0.025;background-image:linear-gradient(#00d4ff 1px,transparent 1px),linear-gradient(90deg,#00d4ff 1px,transparent 1px);background-size:18px 18px;pointer-events:none"></div>
+        <div style="font-size:8px;color:rgba(0,212,255,0.4);letter-spacing:2px;margin-bottom:10px;position:relative">CONVERSION — par entrepreneur</div>
+        <canvas id="hexDash" style="width:100%;display:block;position:relative" height="120"></canvas>
+      </div>
+    </div>
+  </div>`;
+
+  const svg=document.getElementById('chameoSvg');if(svg)drawChameo(svg);
+  updateClock();
+
+  // Draw conversion chart on canvas
+  // Sparklines once
+  setTimeout(()=>{
+    const sD=Math.min(dim,14);
+    const spk=[];for(let d=Math.max(1,dim-sD+1);d<=dim;d++){let t=0;ENTS.forEach(e=>getMet(e.key).forEach(m=>t+=gv(md,d,e.key,m.k)));spk.push(t);}
+    const cspk=[];for(let d=Math.max(1,dim-sD+1);d<=dim;d++){let t=0;ENTS.forEach(e=>{t+=getTotalCalls(e.key,md[d]);});cspk.push(t);}
+    drawSparkIron('spark_rev',spk,'#34d399');
+    drawSparkIron('spark_calls',cspk,'#a78bfa');
+    drawSparkIron('spark_conv',cspk,'#fb923c');
+    // Podium - setTimeout pour laisser le DOM se stabiliser
+    setTimeout(()=>drawPodium(entData),80);
+  },50);
+
+  // Start ring animation
+  window._lastEntData=entData;
+  startRingAnim('dashRing',()=>TASKS.filter(t=>t.done).length/TASKS.length,90);
+  setTimeout(()=>{
+    drawHexDash(entData);
+    if(window._convData&&window._convDim)drawConvChart(window._convData,window._convDim);
+    startUnifiedLoop();
+  },80);
+}
+
+// ===== IRON MAN CHARTS =====
+function splinePath(ctx, pts, tension=0.25){
+  if(pts.length<2)return;
+  ctx.moveTo(pts[0].x,pts[0].y);
+  for(let i=1;i<pts.length;i++){
+    const p0=pts[Math.max(0,i-2)];
+    const p1=pts[i-1];
+    const p2=pts[i];
+    const p3=pts[Math.min(pts.length-1,i+1)];
+    const cp1x=p1.x+(p2.x-p0.x)*tension;
+    const cp1y=p1.y+(p2.y-p0.y)*tension;
+    const cp2x=p2.x-(p3.x-p1.x)*tension;
+    const cp2y=p2.y-(p3.y-p1.y)*tension;
+    ctx.bezierCurveTo(cp1x,cp1y,cp2x,cp2y,p2.x,p2.y);
+  }
+}
+
+function drawSparkIron(canvasId, data, color){
+  const canvas=document.getElementById(canvasId);
+  if(!canvas)return;
+  const dpr=window.devicePixelRatio||1;
+  const W=canvas.offsetWidth||120, H=28;
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  const max=Math.max(...data,1);
+  const pts=data.map((v,i)=>({x:i/(data.length-1||1)*W, y:H-4-v/max*(H-8)}));
+  // Area
+  const grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,color+'45'); grad.addColorStop(1,color+'00');
+  ctx.beginPath(); splinePath(ctx,pts);
+  ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
+  ctx.fillStyle=grad; ctx.fill();
+  // Line
+  ctx.save(); ctx.shadowColor=color; ctx.shadowBlur=7;
+  ctx.beginPath(); splinePath(ctx,pts);
+  ctx.strokeStyle=color; ctx.lineWidth=1.3; ctx.lineCap='round'; ctx.stroke();
+  ctx.restore();
+  // Tip
+  const last=pts[pts.length-1];
+  ctx.save(); ctx.shadowColor=color; ctx.shadowBlur=10;
+  ctx.beginPath(); ctx.arc(last.x,last.y,2.5,0,Math.PI*2);
+  ctx.fillStyle='#fff'; ctx.fill(); ctx.restore();
+}
+function drawConvChart(convData,dim){
+  const canvas=document.getElementById('convChart');
+  if(!canvas)return;
+  const rect=canvas.getBoundingClientRect();
+  const W=rect.width;
+  const H=rect.height||canvas.parentElement.getBoundingClientRect().height||160;
+  if(W<10||H<10)return;
+  const dpr=window.devicePixelRatio||1;
+  canvas.width=Math.round(W*dpr);
+  canvas.height=H*dpr;
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+
+  // Padding
+  const pL=30,pR=52,pT=10,pB=4;
+  const cW=W-pL-pR, cH=H-pT-pB;
+
+  // Trouver maxV à partir des vraies données
+  const allVals=convData.flatMap(d=>d.pts.filter(v=>v!==null&&v>0));
+  const dataMax=allVals.length>0?Math.max(...allVals):30;
+  const maxV=dataMax<=30?40:dataMax<=60?70:dataMax<=90?100:110;
+
+  // === FOND IRON MAN ===
+  // Grille
+  const gs=22;
+  ctx.strokeStyle='rgba(0,212,255,0.025)';ctx.lineWidth=0.4;
+  for(let x=0;x<W;x+=gs){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=gs){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  // Particules
+  if(!drawConvChart._p){
+    drawConvChart._p=[];
+    for(let i=0;i<12;i++)drawConvChart._p.push({
+      x:Math.random()*W,y:Math.random()*H,
+      vx:(Math.random()-0.5)*0.15,vy:-Math.random()*0.35-0.1,
+      s:Math.random()*1.1+0.3,op:Math.random()*0.25+0.05,
+      pulse:Math.random()*Math.PI*2
+    });
+  }
+  drawConvChart._p.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;p.pulse+=0.05;
+    if(p.y<-2)p.y=H+2;
+    if(p.x<0)p.x=W;if(p.x>W)p.x=0;
+    const op=p.op*(0.6+Math.sin(p.pulse)*0.4);
+    ctx.save();ctx.shadowColor='#00d4ff';ctx.shadowBlur=4;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.s,0,Math.PI*2);
+    ctx.fillStyle='#00d4ff';ctx.globalAlpha=op;ctx.fill();
+    ctx.restore();
+  });
+
+  // Rain columns
+  if(!drawConvChart._r){
+    drawConvChart._r=[];
+    for(let i=0;i<8;i++)drawConvChart._r.push({
+      x:Math.random()*W,y:Math.random()*H,
+      speed:0.4+Math.random()*0.6,len:15+Math.random()*25,op:0.03+Math.random()*0.04
+    });
+  }
+  drawConvChart._r.forEach(c=>{
+    c.y+=c.speed;if(c.y>H+c.len)c.y=-c.len;
+    const y0=Math.max(0,c.y-c.len),y1=Math.min(H,c.y);
+    if(y1>y0){
+      const g=ctx.createLinearGradient(0,y0,0,y1);
+      g.addColorStop(0,'rgba(0,212,255,0)');
+      g.addColorStop(0.5,'rgba(0,212,255,'+c.op+')');
+      g.addColorStop(1,'rgba(0,212,255,0)');
+      ctx.fillStyle=g;ctx.fillRect(c.x-0.5,y0,1,y1-y0);
+    }
+  });
+
+  // Scan line
+  if(drawConvChart._s===undefined)drawConvChart._s=0;
+  drawConvChart._s=(drawConvChart._s+0.5)%H;
+  const sg=ctx.createLinearGradient(0,drawConvChart._s-10,0,drawConvChart._s+10);
+  sg.addColorStop(0,'rgba(0,212,255,0)');
+  sg.addColorStop(0.5,'rgba(0,212,255,0.07)');
+  sg.addColorStop(1,'rgba(0,212,255,0)');
+  ctx.fillStyle=sg;ctx.fillRect(0,drawConvChart._s-10,W,20);
+
+  // === GRILLE DATA ===
+  const gridSteps=maxV<=40?[0,10,20,30,40]:maxV<=70?[0,20,40,60]:maxV<=100?[0,25,50,75,100]:[0,25,50,75,100];
+  gridSteps.forEach(v=>{
+    const y=pT+cH-v/maxV*cH;
+    ctx.beginPath();ctx.strokeStyle='rgba(0,170,255,0.08)';ctx.lineWidth=0.4;
+    ctx.setLineDash([3,5]);ctx.moveTo(pL,y);ctx.lineTo(pL+cW,y);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='rgba(0,170,255,0.28)';ctx.font='7px monospace';ctx.textAlign='right';
+    ctx.fillText(v+'%',pL-4,y+2.5);
+  });
+
+  // Today line
+  const n=new Date();
+  if(n.getFullYear()===cY&&n.getMonth()===cM&&dim>1){
+    const todayD=Math.min(n.getDate(),dim);
+    const tx=pL+(todayD-1)/(dim-1)*cW;
+    ctx.strokeStyle='rgba(0,212,255,0.25)';ctx.lineWidth=0.7;ctx.setLineDash([2,4]);
+    ctx.beginPath();ctx.moveTo(tx,pT);ctx.lineTo(tx,pT+cH);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='rgba(0,212,255,0.35)';ctx.font='7px monospace';ctx.textAlign='center';
+    ctx.fillText('auj.',tx,pT+cH+9);
+  }
+
+  // === COURBES ===
+  convData.forEach(({e,pts})=>{
+    const vPts=pts.map((v,i)=>({
+      x:pL+i/(dim-1||1)*cW,
+      y:v!==null?pT+cH-Math.min(v,maxV)/maxV*cH:null,
+      v
+    })).filter(p=>p.y!==null);
+    if(vPts.length<2)return;
+
+    // Clip area to chart bounds
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(pL,pT,cW,cH);
+    ctx.clip();
+
+    // Aire dégradée très légère
+    const aG=ctx.createLinearGradient(0,pT,0,pT+cH);
+    aG.addColorStop(0,e.hex+'15');
+    aG.addColorStop(0.6,e.hex+'05');
+    aG.addColorStop(1,e.hex+'00');
+    ctx.beginPath();
+    ctx.moveTo(vPts[0].x,vPts[0].y);
+    for(let i=1;i<vPts.length;i++){
+      const p0=vPts[Math.max(0,i-2)],p1=vPts[i-1],p2=vPts[i],p3=vPts[Math.min(vPts.length-1,i+1)];
+      ctx.bezierCurveTo(p1.x+(p2.x-p0.x)*0.25,p1.y+(p2.y-p0.y)*0.25,p2.x-(p3.x-p1.x)*0.25,p2.y-(p3.y-p1.y)*0.25,p2.x,p2.y);
+    }
+    ctx.lineTo(vPts[vPts.length-1].x,pT+cH);
+    ctx.lineTo(vPts[0].x,pT+cH);
+    ctx.closePath();
+    ctx.fillStyle=aG;ctx.fill();
+    ctx.restore();
+
+    // Ligne
+    ctx.save();ctx.shadowColor=e.hex;ctx.shadowBlur=6;
+    ctx.beginPath();
+    ctx.moveTo(vPts[0].x,vPts[0].y);
+    for(let i=1;i<vPts.length;i++){
+      const p0=vPts[Math.max(0,i-2)],p1=vPts[i-1],p2=vPts[i],p3=vPts[Math.min(vPts.length-1,i+1)];
+      ctx.bezierCurveTo(p1.x+(p2.x-p0.x)*0.25,p1.y+(p2.y-p0.y)*0.25,p2.x-(p3.x-p1.x)*0.25,p2.y-(p3.y-p1.y)*0.25,p2.x,p2.y);
+    }
+    ctx.strokeStyle=e.hex;ctx.lineWidth=1.5;ctx.lineCap='round';ctx.stroke();
+    ctx.restore();
+
+    // Dernier point + badge
+    const last=vPts[vPts.length-1];
+    ctx.save();ctx.shadowColor=e.hex;ctx.shadowBlur=10;
+    ctx.beginPath();ctx.arc(last.x,last.y,4.5,0,Math.PI*2);ctx.strokeStyle=e.hex+'44';ctx.lineWidth=1;ctx.stroke();
+    ctx.beginPath();ctx.arc(last.x,last.y,2,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
+    ctx.restore();
+    if(last.v!==null){
+      const lbl=last.v+'%';
+      const tw=ctx.measureText(lbl).width+8;
+      const bx=Math.min(last.x+5,W-tw-4),by=last.y-8;
+      ctx.fillStyle=e.hex+'20';ctx.strokeStyle=e.hex+'55';ctx.lineWidth=0.5;
+      ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,by,tw,11,2);else ctx.rect(bx,by,tw,11);
+      ctx.fill();ctx.stroke();
+      ctx.fillStyle=e.hex;ctx.font='bold 7px monospace';ctx.textAlign='left';
+      ctx.fillText(lbl,bx+4,by+8);
+    }
+  });
+}
+
+
+// ===== JOURNALIER =====
+async function renderJour(){
+  if(rafId){cancelAnimationFrame(rafId);rafId=null;}
+  const div=document.getElementById('page_jour');
+  const md=await loadMonth(cY,cM);
+  const leadsDay=await loadLeads(cY,cM);
+  const dim=new Date(cY,cM+1,0).getDate();
+  const firstDay=new Date(cY,cM,1).getDay();
+  const offset=firstDay===0?6:firstDay-1;
+
+  let dayTotal=0;ENTS.forEach(e=>getMet(e.key).forEach(m=>dayTotal+=gv(md,selDay,e.key,m.k)));
+
+  // Calendar with richer cells
+  let calCells='';
+  for(let i=0;i<offset;i++)calCells+='<div class="cal-cell empty"></div>';
+  for(let d=1;d<=dim;d++){
+    let total=0;const dots={};
+    ENTS.forEach(e=>{
+      let s=0;getMet(e.key).forEach(m=>s+=gv(md,d,e.key,m.k));
+      if(s>0){dots[e.key]={color:e.hex,sum:s};total+=s;}
+    });
+    const isToday=d===now.getDate()&&cM===now.getMonth()&&cY===now.getFullYear();
+    const isSel=d===selDay;
+    const hasData=total>0;
+    const dotHtml=Object.values(dots).map(dot=>`<div class="cal-dot" style="background:${dot.color}"></div>`).join('');
+    calCells+=`<div class="cal-cell${isToday?' today':''}${hasData&&!isToday?' worked':''}${isSel&&!isToday?' selected':''}" onclick="selectDay(${d})">
+      <span class="cal-cell-num">${d}</span>
+      ${dotHtml?`<div class="cal-cell-dots">${dotHtml}</div>`:''}
+      ${hasData?`<span class="cal-cell-total">${total}</span>`:''}
+    </div>`;
+  }
+
+  // Ent cards
+  const entCards=ENTS.map(e=>{
+    const metrics=getMetricsOrdered(e.key);
+    const rgb=hex2rgb(e.hex);
+    let total=0;metrics.forEach(m=>total+=gv(md,selDay,e.key,m.k));
+    const rows=metrics.map(m=>{
+      const val=gv(md,selDay,e.key,m.k);
+      const isCall=m.k==='call'||m.k==='callrelance';
+      return `<div class="mrow${isCall?' sep':''}">
+        <span class="mlbl${isCall?' call':''}">${m.l}</span>
+        <div class="mbtn-wrap">
+          <button class="mminus" onclick="setValue(${cY},${cM},${selDay},'${e.key}','${m.k}',parseInt(document.getElementById('mv_${e.key}_${m.k}').value||0)-1)">−</button>
+          <input class="mval-input${isCall?' call-val':''}" id="mv_${e.key}_${m.k}" type="number" value="${val}" min="0"
+            onchange="setValue(${cY},${cM},${selDay},'${e.key}','${m.k}',parseInt(this.value)||0)"
+            style="${isCall?`color:${e.hex}`:''}">
+          <button class="mplus" style="background:${e.hex}" onclick="setValue(${cY},${cM},${selDay},'${e.key}','${m.k}',parseInt(document.getElementById('mv_${e.key}_${m.k}').value||0)+1)">+</button>
+        </div>
+      </div>`;
+    }).join('');
+    const tcRow=`<div class="tcrow"><span class="tclbl">Total calls</span><span class="tcval">${getTotalCalls(e.key,md[selDay])}</span></div>`;
+    return `<div class="ent-card" style="--c:${e.hex};--cr:${rgb}">
+      <div class="ent-card-head" style="background:linear-gradient(180deg,rgba(${rgb},0.05),transparent)">
+        <div class="ent-card-head-inner">
+          <span class="ent-card-name">${e.name}</span>
+          <span class="ent-card-total" id="etot_${e.key}" style="color:${e.hex};border-color:rgba(${rgb},0.2)">${total}</span>
+        </div>
+      </div>
+      <div class="ent-card-body">${rows}${tcRow}</div>
+    </div>`;
+  }).join('');
+
+  // Tasks
+  const tDone=TASKS.filter(t=>t.done).length;
+  const tPct=tDone/TASKS.length;
+  const taskItems=TASKS.map(t=>`
+    <div class="task-item${t.done?' done':''}" onclick="toggleTask('${t.id}')">
+      <div class="task-bar" style="background:linear-gradient(180deg,${t.color},transparent)"></div>
+      <div class="task-cb${t.done?' checked':''}">${t.done?`<svg width="8" height="8" viewBox="0 0 12 12"><path d="M2 6 L5 9 L10 3" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`:''}</div>
+      <span class="task-lbl">${t.label}</span>
+      <span class="task-badge" style="border-color:${t.color};color:${t.done?'rgba(255,255,255,0.15)':t.color}">${t.badge}</span>
+    </div>`).join('');
+
+  div.innerHTML=`
+  <div class="jour-page">
+    <div class="jh">
+      <div class="jh-title">${selDay} ${MFR[cM].toUpperCase()} ${cY}</div>
+      <div class="jh-right">
+        <div class="jh-total">Total : <span id="dayTotalEl">${dayTotal}</span></div>
+        <button class="jh-btn" onclick="selDay=${now.getDate()};cM=${now.getMonth()};cY=${now.getFullYear()};renderJour()">📅 Aujourd'hui</button>
+      </div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div class="cal-wrap">
+      <div class="cal-top">
+        <span class="cal-label">${MFR[cM].toUpperCase()} ${cY}</span>
+        <div class="cal-nav">
+          <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+          <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+        </div>
+      </div>
+      <div class="cal-days-header">
+        <div class="cal-dh">Lun</div><div class="cal-dh">Mar</div><div class="cal-dh">Mer</div>
+        <div class="cal-dh">Jeu</div><div class="cal-dh">Ven</div>
+        <div class="cal-dh" style="color:rgba(0,170,255,0.25)">Sam</div>
+        <div class="cal-dh" style="color:rgba(0,170,255,0.25)">Dim</div>
+      </div>
+      <div class="cal-grid">${calCells}</div>
+    </div>
+
+    <!-- ENT CARDS -->
+    <div class="ent-grid">${entCards}</div>
+
+    <!-- STATS DU JOUR -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;">
+      ${ENTS.map(e=>{
+        const rgb=hex2rgb(e.hex);
+        const fm=gv(md,selDay,e.key,'firstmsg');
+        const rep=gv(md,selDay,e.key,'replies');
+        const fu=gv(md,selDay,e.key,'followup');
+        const rfu=gv(md,selDay,e.key,'repliesfu');
+        const cr=gv(md,selDay,e.key,'callrelance');
+        const call=gv(md,selDay,e.key,'call');
+        const totalCalls=getTotalCalls(e.key,md[selDay]);
+        // Leads closés ce jour par cet entrepreneur
+        const todayLeads=Object.values(leadsDay).filter(l=>l.entKey===e.key&&l.date===new Date().toLocaleDateString('fr-BE')).length;
+        // Ratios
+        const pctMsgRep=fm>0?Math.round(rep/fm*100):null;
+        const pctFuRfu=fu>0?Math.round(rfu/fu*100):null;
+        const pctMsgCall=(fm+fu)>0?Math.round(totalCalls/(fm+fu)*100):null;
+        const pctCallVente=totalCalls>0?Math.round(todayLeads/totalCalls*100):null;
+        function statRow(label,val,color){
+          const hasData=val!==null;
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba('+rgb+',0.08);">'
+            +'<span style="font-size:10px;color:rgba('+rgb+',0.5)">'+label+'</span>'
+            +'<span style="font-size:11px;font-weight:700;color:'+(hasData?color:'rgba('+rgb+',0.25)')+'">'+( hasData?val+'%':'—')+'</span>'
+            +'</div>';
+        }
+        return '<div style="background:var(--surface);border-radius:12px;overflow:hidden;border-top:2px solid '+e.hex+';border:1px solid rgba('+rgb+',0.12);border-top:2px solid '+e.hex+';">'
+          +'<div style="padding:12px 16px 4px;background:linear-gradient(180deg,rgba('+rgb+',0.06),transparent);">'
+          +'<div style="font-family:Bebas Neue,sans-serif;color:'+e.hex+';font-size:0.9rem;letter-spacing:2px;margin-bottom:2px">'+e.name+'</div>'
+          +'<div style="font-size:8px;color:rgba('+rgb+',0.35);letter-spacing:1px">STATS DU JOUR</div>'
+          +'</div>'
+          +'<div style="padding:4px 16px 12px;">'
+          +statRow('Msgs → Réponses',pctMsgRep,e.hex)
+          +statRow('FU → Réponses FU',pctFuRfu,e.hex)
+          +statRow('Msgs+FU → Call',pctMsgCall,e.hex)
+          +statRow('Call → Vente',pctCallVente,'#34d399')
+          +'</div>'
+          +'</div>';
+      }).join('')}
+    </div>
+
+    <!-- DAILY TASKS -->
+    <div class="tasks-wrap">
+      <div class="tasks-bg-grid"></div>
+      <div class="tasks-head">
+        <div>
+          <div class="tasks-sub">// PROTOCOLE JOURNALIER</div>
+          <div class="tasks-title">DAILY <span>TASKS</span></div>
+        </div>
+        <div style="position:relative;">
+          <canvas id="jourRing" width="70" height="70"></canvas>
+          <div class="ring-text-overlay">
+            <div class="ring-pct" id="jourRingPct" style="color:${tPct>=1?'#00ff88':'#00d4ff'}">${Math.round(tPct*100)}%</div>
+            <div class="ring-cnt" id="jourRingCnt">${tDone}/${TASKS.length}</div>
+          </div>
+        </div>
+      </div>
+      <div class="tasks-list">${taskItems}</div>
+      <div class="tasks-footer">
+        <span class="tasks-reset">RESET 00:00 ↺</span>
+        <span class="tasks-status" id="taskStatusEl">${tDone===TASKS.length?'COMPLÉTÉ ✓':'EN COURS...'}</span>
+      </div>
+      <div class="scan-line" id="scanLine"></div>
+    </div>
+  </div>`;
+
+  startRingAnim('jourRing',()=>TASKS.filter(t=>t.done).length/TASKS.length,70);
+  animateScan();
+}
+
+function animateScan(){
+  const s=document.getElementById('scanLine');if(!s)return;
+  const wrap=s.parentElement;if(!wrap)return;
+  let pos=0;clearInterval(window._scanInt);
+  window._scanInt=setInterval(()=>{pos+=1;if(pos>wrap.offsetHeight||0)pos=0;s.style.top=pos+'px';},16);
+}
+
+function toggleTask(id){
+  const t=TASKS.find(x=>x.id===id);if(!t)return;
+  t.done=!t.done;
+  const el=document.querySelector(`[onclick="toggleTask('${id}')"]`);
+  if(el){
+    el.classList.toggle('done',t.done);
+    const cb=el.querySelector('.task-cb');
+    if(cb){cb.classList.toggle('checked',t.done);cb.innerHTML=t.done?`<svg width="8" height="8" viewBox="0 0 12 12"><path d="M2 6 L5 9 L10 3" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`:'';}
+    const lbl=el.querySelector('.task-lbl');if(lbl)lbl.style.color=t.done?'#1a3a44':'#c8e8f0';
+    const badge=el.querySelector('.task-badge');if(badge)badge.style.opacity=t.done?'0.2':'1';
+  }
+  const tDone=TASKS.filter(x=>x.done).length;
+  const tPct=tDone/TASKS.length;
+  ['jourRingPct','dashRingPct'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent=Math.round(tPct*100)+'%';el.style.color=tPct>=1?'#00ff88':'#00d4ff';}});
+  ['jourRingCnt','dashRingCnt'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=`${tDone}/${TASKS.length}`;});
+  const st=document.getElementById('taskStatusEl');if(st)st.textContent=tDone===TASKS.length?'COMPLÉTÉ ✓':'EN COURS...';
+}
+window.toggleTask=toggleTask;
+
+// ===== LEADS =====
+window.leadsFilter='all';
+window.leadsSearch='';
+
+async function renderLeads(){
+  if(rafId){cancelAnimationFrame(rafId);rafId=null;}
+  const div=document.getElementById('page_leads');
+  const leads=await loadLeads(cY,cM);
+  const revenus=await loadRevenus(cY,cM);
+
+  // Totals for ALL leads
+  let sums={};ENTS.forEach(e=>{sums[e.key]={cash:0,comm:0,count:0};});
+  Object.entries(leads).forEach(([id,l])=>{
+    const e=ENTS.find(x=>x.key===l.entKey)||ENTS[0];
+    const cash=parseFloat(l.cashReceived)||0;
+    const comm=cash*(e.rate/100);
+    if(sums[e.key]){sums[e.key].cash+=cash;sums[e.key].comm+=comm;sums[e.key].count++;}
+  });
+  const totCash=Object.values(sums).reduce((a,b)=>a+b.cash,0);
+  const totComm=Object.values(sums).reduce((a,b)=>a+b.comm,0);
+
+  // Apply filters
+  const lf=window.leadsFilter||'all';
+  const ls=(window.leadsSearch||'').toLowerCase().trim();
+  const filtered=Object.entries(leads).filter(([id,l])=>{
+    const matchEnt=lf==='all'||l.entKey===lf;
+    const matchSearch=!ls||(l.name||'').toLowerCase().includes(ls);
+    return matchEnt&&matchSearch;
+  });
+
+  // Build rows
+  let rows='';
+  filtered.forEach(([id,l])=>{
+    const e=ENTS.find(x=>x.key===l.entKey)||ENTS[0];
+    const cash=parseFloat(l.cashReceived)||0;
+    const comm=cash*(e.rate/100);
+    const tagsHtml=(l.tags||[]).map(t=>`<span class="ltag">${t}<span class="ltag-x" onclick="removeTag(${cY},${cM},'${id}',${JSON.stringify(l.tags||[])},${JSON.stringify(t)})">×</span></span>`).join('');
+    rows+=`<tr>
+      <td><input class="linput" value="${l.name||''}" onblur="upLead(${cY},${cM},'${id}','name',this.value)" placeholder="Nom"></td>
+      <td><select style="background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:5px 8px;font-size:12px;outline:none;" onchange="upLead(${cY},${cM},'${id}','entKey',this.value)">${ENTS.map(x=>`<option value="${x.key}" ${l.entKey===x.key?'selected':''}>${x.name}</option>`).join('')}</select></td>
+      <td><input class="lcash" type="number" value="${l.cashCollected||0}" onblur="upLead(${cY},${cM},'${id}','cashCollected',parseFloat(this.value)||0)">€</td>
+      <td><input class="lcash" type="number" value="${l.cashReceived||0}" onblur="upLead(${cY},${cM},'${id}','cashReceived',parseFloat(this.value)||0)">€</td>
+      <td><span class="lcomm">${comm.toFixed(0)}€</span></td>
+      <td><div style="display:flex;flex-wrap:wrap;gap:2px;align-items:center">${tagsHtml}
+        <select style="background:var(--surface2);border:1px solid var(--border2);color:var(--muted2);border-radius:20px;padding:2px 6px;font-size:11px;outline:none;" onchange="if(this.value){addTag(${cY},${cM},'${id}',${JSON.stringify(l.tags||[])},this.value);this.value=''}">
+          <option value="">+ tag</option>${PRESET_TAGS.map(t=>`<option value="${t}">${t}</option>`).join('')}
+        </select>
+      </div></td>
+      <td><input class="linput" value="${l.note||''}" onblur="upLead(${cY},${cM},'${id}','note',this.value)" placeholder="Note..."></td>
+      <td style="font-size:10px;color:var(--muted2)">${l.date||''}</td>
+      <td><button class="ldel" onclick="delLead(${cY},${cM},'${id}')">✕</button></td>
+    </tr>`;
+  });
+  if(!rows)rows=`<tr><td colspan="9" style="text-align:center;color:var(--muted2);padding:24px;font-size:12px">Aucun lead correspondant.</td></tr>`;
+
+  // Summary cards
+  const sumCards=ENTS.map(e=>{
+    const s=sums[e.key];
+    const active=lf===e.key;
+    const outlineStyle=active?'2px solid '+e.hex:'2px solid transparent';
+    return `<div class="lsum-card" style="--c:${e.hex};cursor:pointer;outline:${outlineStyle};outline-offset:2px;transition:all 0.2s" onclick="window.setLeadsFilter(window.leadsFilter==='${e.key}'?'all':'${e.key}')">
+      <div class="lsum-name">${e.name} · ${e.rate}%</div>
+      <div class="lsum-val" style="color:var(--cyan)">${s.comm.toFixed(0)}€</div>
+      <div class="lsum-comm" style="color:var(--muted2)">Généré : ${s.cash.toFixed(0)}€ · ${s.count} lead${s.count>1?'s':''}</div>
+    </div>`;
+  }).join('');
+
+  // Filter buttons — dynamiques selon ENTS
+  const filterBtns=[
+    `<button onclick="window.setLeadsFilter('all')" style="background:${lf==='all'?'var(--cyan)':'transparent'};color:${lf==='all'?'#000':'var(--muted2)'};border:1px solid ${lf==='all'?'var(--cyan)':'var(--border2)'};border-radius:20px;padding:7px 16px;cursor:pointer;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;transition:all 0.2s">Tous</button>`,
+    ...ENTS.map(e=>{
+      const active=lf===e.key;
+      return `<button onclick="window.setLeadsFilter('${e.key}')" style="background:${active?e.hex:'transparent'};color:${active?'#000':e.hex};border:1px solid ${e.hex};border-radius:20px;padding:7px 16px;cursor:pointer;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;transition:all 0.2s;${active?'box-shadow:0 0 8px '+e.hex+'44':''}">${e.name}</button>`;
+    })
+  ].join('');
+
+  const addBtns=ENTS.map(e=>`<button class="ladd-btn" style="background:${e.hex}" onclick="addLead(${cY},${cM},'${e.key}')">+ ${e.name}</button>`).join('');
+
+  div.innerHTML=`
+  <div class="leads-page">
+    <!-- LIGNE RECHERCHE + FILTRES + AJOUTER -->
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <div style="position:relative;">
+          <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted2);pointer-events:none">🔍</span>
+          <input type="text" placeholder="Rechercher un lead..." value="${window.leadsSearch||''}"
+            oninput="window.setLeadsSearch(this.value)"
+            style="background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:7px 14px 7px 32px;color:var(--text);font-family:'Space Mono',monospace;font-size:11px;outline:none;width:200px;transition:border-color 0.2s"
+            onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border2)'">
+        </div>
+        ${filterBtns}
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${addBtns}</div>
+    </div>
+    <div style="font-size:11px;color:var(--muted2);margin-bottom:12px">
+      <span style="color:var(--cyan)">${totCash.toFixed(0)}€ générés</span>
+      <span style="margin:0 8px;opacity:0.3">·</span>
+      <span style="color:var(--cyan)">${totComm.toFixed(0)}€ commission</span>
+      <span style="margin:0 8px;opacity:0.3">·</span>
+      <span>${filtered.length} lead${filtered.length>1?'s':''} affichés</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="leads-table">
+        <thead><tr><th>Nom</th><th>Entrepreneur</th><th>Collecté</th><th>Encaissé</th><th>Commission</th><th>Tags</th><th>Note</th><th>Date</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div class="leads-sum" style="margin-top:16px">${sumCards}</div>
+
+    <!-- REVENUS MANUELS -->
+    <div style="margin-top:20px;position:relative;background:linear-gradient(135deg,#060e16,#08121c);border:1px solid rgba(52,211,153,0.15);border-radius:12px;padding:16px;overflow:hidden;">
+      <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#34d399,transparent)"></div>
+      <div style="font-size:8px;color:rgba(52,211,153,0.5);letter-spacing:2px;margin-bottom:14px">REVENUS MANUELS — montants réellement encaissés ce mois</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;" id="revManuelsGrid">
+      </div>
+    </div>
+  </div>`;
+
+  // Build revenus manuels cards separately (avoid escaping hell)
+  const revGrid = document.getElementById('revManuelsGrid');
+  if(revGrid){
+    ENTS.forEach(e=>{
+      const r=revenus[e.key]||{};
+      const rgb=hex2rgb(e.hex);
+      const card=document.createElement('div');
+      card.style.cssText='background:var(--surface);border:1px solid rgba('+rgb+',0.12);border-radius:10px;padding:14px;border-top:2px solid '+e.hex;
+      card.innerHTML='<div style="font-family:Bebas Neue,sans-serif;color:'+e.hex+';font-size:0.9rem;letter-spacing:2px;margin-bottom:10px">'+e.name+'</div>'
+        +'<div style="font-size:8px;color:rgba('+rgb+',0.5);letter-spacing:1px;margin-bottom:6px">MONTANT ENCAISSÉ</div>'
+        +'<div style="display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid rgba('+rgb+',0.15);border-radius:8px;padding:8px 12px;margin-bottom:10px">'
+        +'<input type="number" placeholder="0" value="'+(r.montant||'')+'" data-ek="'+e.key+'" class="rev-manual-input" style="flex:1;background:transparent;border:none;color:var(--text);font-family:Space Mono,monospace;font-size:14px;outline:none;width:100%">'
+        +'<span style="color:rgba('+rgb+',0.6);font-size:13px">€</span></div>'
+        +'<div style="font-size:8px;color:rgba('+rgb+',0.4);letter-spacing:1px;margin-bottom:6px">NOTE DU MOIS</div>'
+        +'<textarea placeholder="Observations..." data-ek="'+e.key+'" class="rev-manual-note" style="width:100%;background:var(--surface2);border:1px solid rgba('+rgb+',0.12);border-radius:8px;padding:8px 10px;color:var(--text);font-family:Space Mono,monospace;font-size:11px;outline:none;resize:none;height:56px">'+(r.note||'')+'</textarea>';
+      revGrid.appendChild(card);
+    });
+    // Attach blur handlers via event delegation
+    revGrid.addEventListener('blur', async function(ev){
+      const el=ev.target;
+      const ek=el.dataset.ek;
+      if(!ek)return;
+      if(el.classList.contains('rev-manual-input')) await window.saveRevenu(cY,cM,ek,'montant',parseFloat(el.value)||0);
+      if(el.classList.contains('rev-manual-note')) await window.saveRevenu(cY,cM,ek,'note',el.value);
+    }, true);
+  }
+}
+
+async function addLead(y,mo,ek){const lead={name:'Nouveau lead',entKey:ek,cashCollected:0,cashReceived:0,tags:[],note:'',date:new Date().toLocaleDateString('fr-BE')};try{await push(ref(db,`leads/${y}/${mo}`),lead);delete lCache[`${y}_${mo}`];renderLeads();}catch(e){}}
+window.addLead=addLead;
+async function upLead(y,mo,id,field,val){try{await set(ref(db,`leads/${y}/${mo}/${id}/${field}`),val);delete lCache[`${y}_${mo}`];}catch(e){}}
+window.upLead=upLead;
+async function addTag(y,mo,id,tags,tag){if(tags.includes(tag))return;await upLead(y,mo,id,'tags',[...tags,tag]);setTimeout(()=>renderLeads(),200);}
+window.addTag=addTag;
+async function removeTag(y,mo,id,tags,tag){await upLead(y,mo,id,'tags',tags.filter(t=>t!==tag));setTimeout(()=>renderLeads(),200);}
+window.removeTag=removeTag;
+async function delLead(y,mo,id){if(!confirm('Supprimer ce lead ?'))return;try{await remove(ref(db,`leads/${y}/${mo}/${id}`));delete lCache[`${y}_${mo}`];renderLeads();}catch(e){}}
+window.delLead=delLead;
+
+// ===== PARAMS =====
+function renderParams(){
+  if(rafId){cancelAnimationFrame(rafId);rafId=null;}
+  const div=document.getElementById('page_params');
+
+  // ENT CARDS
+  const entCards=ENTS.map(e=>`
+    <div class="params-card" style="--c:${e.hex}">
+      <div class="pfield"><div class="plabel">Nom</div><input class="pinput" id="pn_${e.key}" value="${e.name}" style="border-color:rgba(${hex2rgb(e.hex)},0.2)"></div>
+      <div class="pfield"><div class="plabel">Commission (%)</div><input class="pinput" type="number" id="pr_${e.key}" value="${e.rate}" style="border-color:rgba(${hex2rgb(e.hex)},0.2)"></div>
+      <div class="pfield"><div class="plabel">Couleur</div><input type="color" value="${e.hex}" id="pc_${e.key}" style="width:100%;height:38px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;"></div>
+      <button class="psave" style="background:${e.hex}" onclick="saveEnt('${e.key}')">💾 Sauvegarder</button>
+      <button class="pdel" onclick="delEnt('${e.key}')">🗑 Supprimer</button>
+    </div>`).join('');
+
+  // METRICS EDITOR par entrepreneur
+  const metricEditors=ENTS.map(e=>{
+    const metrics=getMetricsOrdered(e.key);
+    const rows=metrics.map((m,i)=>`
+      <div style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px;">
+        <!-- Réordonner -->
+        <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">
+          <button onclick="window.metricMoveUp('${e.key}',${i})" style="background:none;border:none;cursor:pointer;color:${i===0?'rgba(255,255,255,0.08)':'rgba(0,212,255,0.5)'};font-size:11px;padding:0;line-height:1;transition:color 0.15s" ${i===0?'disabled':''}>▲</button>
+          <button onclick="window.metricMoveDown('${e.key}',${i})" style="background:none;border:none;cursor:pointer;color:${i===metrics.length-1?'rgba(255,255,255,0.08)':'rgba(0,212,255,0.5)'};font-size:11px;padding:0;line-height:1;transition:color 0.15s" ${i===metrics.length-1?'disabled':''}>▼</button>
+        </div>
+        <!-- Couleur accent -->
+        <div style="width:3px;height:32px;border-radius:2px;background:${e.hex};opacity:0.6;flex-shrink:0"></div>
+        <!-- Label éditable -->
+        <input value="${m.l}" style="flex:1;background:transparent;border:none;color:var(--text);font-family:'Space Mono',monospace;font-size:13px;outline:none;min-width:0"
+          onblur="window.metricRename('${e.key}','${m.k}',this.value)"
+          onfocus="this.style.background='var(--surface)';this.style.borderRadius='4px';this.style.padding='2px 6px'"
+          onblur2="this.style.background='transparent';this.style.padding='0'">
+        <!-- Key (non éditable, info) -->
+        <span style="font-size:9px;color:var(--muted);padding:2px 8px;background:var(--border);border-radius:4px;flex-shrink:0">${m.k}</span>
+        <!-- Supprimer -->
+        <button onclick="window.metricDel('${e.key}','${m.k}')" style="background:transparent;border:1px solid rgba(244,63,94,0.25);color:#f43f5e;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;flex-shrink:0;transition:all 0.2s" title="Supprimer">✕</button>
+      </div>`).join('');
+
+    return `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;border-top:3px solid ${e.hex};">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div style="font-family:'Bebas Neue',sans-serif;color:${e.hex};font-size:1rem;letter-spacing:2px">${e.name}</div>
+          <span style="font-size:9px;color:var(--muted2)">${metrics.length} action${metrics.length>1?'s':''}</span>
+        </div>
+        ${rows}
+        <!-- Ajouter nouvelle métrique -->
+        <div style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+          <input id="newmet_lbl_${e.key}" placeholder="Nom de l'action..." style="flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'Space Mono',monospace;font-size:12px;outline:none" onfocus="this.style.borderColor='${e.hex}'" onblur="this.style.borderColor='var(--border2)'">
+          <input id="newmet_key_${e.key}" placeholder="clé (ex: rdv)" style="width:100px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'Space Mono',monospace;font-size:12px;outline:none" onfocus="this.style.borderColor='${e.hex}'" onblur="this.style.borderColor='var(--border2)'">
+          <button onclick="window.metricAdd('${e.key}')" style="background:${e.hex};color:#000;border:none;border-radius:8px;padding:8px 14px;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity 0.2s" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">+ Ajouter</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  // TASK CONFIG
+  const taskItems=TASKS.map((t,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:6px;">
+      <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">
+        <button onclick="window.taskMove('${t.id}',-1)" style="background:none;border:none;cursor:pointer;color:${i===0?'rgba(255,255,255,0.08)':'rgba(0,212,255,0.5)'};font-size:11px;padding:0;line-height:1" ${i===0?'disabled':''}>▲</button>
+        <button onclick="window.taskMove('${t.id}',1)" style="background:none;border:none;cursor:pointer;color:${i===TASKS.length-1?'rgba(255,255,255,0.08)':'rgba(0,212,255,0.5)'};font-size:11px;padding:0;line-height:1" ${i===TASKS.length-1?'disabled':''}>▼</button>
+      </div>
+      <div style="width:3px;height:32px;border-radius:2px;background:${t.color};flex-shrink:0"></div>
+      <span style="flex:1;font-size:13px">${t.label}</span>
+      <span style="font-size:10px;color:var(--muted2);background:var(--border);padding:2px 8px;border-radius:4px">${t.badge}</span>
+      <button onclick="window.delTask('${t.id}')" style="background:transparent;border:1px solid rgba(244,63,94,0.25);color:#f43f5e;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;transition:all 0.2s">✕</button>
+    </div>`).join('');
+
+  div.innerHTML=`
+  <div class="params-page">
+    <div class="stitle" style="margin-bottom:16px">Paramètres entrepreneurs</div>
+    <div class="params-grid">
+      ${entCards}
+      <div class="padd" onclick="addEnt()"><div style="font-size:2rem;margin-bottom:8px">+</div><div>Ajouter un entrepreneur</div></div>
+    </div>
+
+    <div class="stitle" style="margin-bottom:12px;margin-top:8px">Actions journalières — par entrepreneur</div>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">${metricEditors}</div>
+
+    <div class="task-config">
+      <div class="task-config-title">Configuration Daily Tasks</div>
+      <div>${taskItems}</div>
+      <div class="task-add-row" style="margin-top:10px">
+        <input class="task-add-input" id="newTaskLbl" placeholder="Nouvelle tâche...">
+        <input class="task-add-input" id="newTaskBadge" placeholder="Badge" style="max-width:110px">
+        <button class="task-add-btn" onclick="addTask()">+ Ajouter</button>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;">
+      <div style="font-size:10px;color:var(--muted2);letter-spacing:1px;margin-bottom:6px">⚠️ INFO</div>
+      <div style="font-size:12px;color:var(--muted2);line-height:1.7">Modifier le nom ou la couleur ne supprime pas les données existantes.<br>Supprimer un entrepreneur est irréversible.</div>
+    </div>
+  </div>`;
+}
+
+// ===== METRIC MANAGEMENT =====
+window.metricAdd=async function(ek){
+  const lblEl=document.getElementById('newmet_lbl_'+ek);
+  const keyEl=document.getElementById('newmet_key_'+ek);
+  if(!lblEl||!keyEl)return;
+  const lbl=lblEl.value.trim();
+  let key=keyEl.value.trim().toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(!lbl){alert('Donne un nom à cette action.');return;}
+  if(!key)key=lbl.toLowerCase().replace(/[^a-z0-9]/g,'').substring(0,12)||('m'+Date.now());
+  const metrics=getMet(ek);
+  if(metrics.find(m=>m.k===key)){alert('Cette clé existe déjà, choisis une autre clé.');return;}
+  const newMetrics=[...metrics,{k:key,l:lbl}];
+  METRICS[ek]=newMetrics;
+  METRIC_ORDER[ek]=newMetrics.map(m=>m.k);
+  try{
+    await set(ref(db,'config/metrics/'+ek),newMetrics);
+    await set(ref(db,'config/metricOrder/'+ek),METRIC_ORDER[ek]);
+    lblEl.value='';keyEl.value='';
+  }catch(e){alert('Erreur sauvegarde: '+e.message);}
+  window.renderParams();
+};
+
+window.metricDel=async function(ek,mk){
+  if(!confirm('Supprimer cette action ? Les données existantes sont conservées mais elle ne sera plus affichée.'))return;
+  const metrics=getMet(ek).filter(m=>m.k!==mk);
+  if(metrics.length===0){alert('Impossible de supprimer la dernière action.');return;}
+  METRICS[ek]=metrics;
+  METRIC_ORDER[ek]=metrics.map(m=>m.k);
+  try{
+    await set(ref(db,'config/metrics/'+ek),metrics);
+    await set(ref(db,'config/metricOrder/'+ek),METRIC_ORDER[ek]);
+  }catch(e){alert('Erreur: '+e.message);}
+  window.renderParams();
+};
+
+window.metricRename=async function(ek,mk,newLabel){
+  if(!newLabel.trim())return;
+  const metrics=getMet(ek).map(m=>m.k===mk?{k:m.k,l:newLabel.trim()}:m);
+  METRICS[ek]=metrics;
+  try{await set(ref(db,'config/metrics/'+ek),metrics);}catch(e){}
+};
+
+window.metricMoveUp=async function(ek,idx){
+  const order=getMetricsOrdered(ek).map(m=>m.k);
+  if(idx===0)return;
+  [order[idx-1],order[idx]]=[order[idx],order[idx-1]];
+  await saveMetricOrder(ek,order);
+  window.renderParams();
+};
+window.metricMoveDown=async function(ek,idx){
+  const order=getMetricsOrdered(ek).map(m=>m.k);
+  if(idx>=order.length-1)return;
+  [order[idx],order[idx+1]]=[order[idx+1],order[idx]];
+  await saveMetricOrder(ek,order);
+  window.renderParams();
+};
+
+window.taskMove=async function(id,dir){
+  const idx=TASKS.findIndex(t=>t.id===id);
+  if(idx<0)return;
+  const newIdx=idx+dir;
+  if(newIdx<0||newIdx>=TASKS.length)return;
+  [TASKS[idx],TASKS[newIdx]]=[TASKS[newIdx],TASKS[idx]];
+  await saveTasksConfig();
+  window.renderParams();
+};
+
+async function saveEnt(key){
+  const name=document.getElementById(`pn_${key}`)?.value||'';
+  const rate=parseFloat(document.getElementById(`pr_${key}`)?.value)||5;
+  const hex=document.getElementById(`pc_${key}`)?.value||'#00d4ff';
+  try{await set(ref(db,`config/entrepreneurs/${key}`),{key,name,hex,rate});await loadEntrepreneurs();renderParams();}catch(e){}
+}
+window.saveEnt=saveEnt;
+async function delEnt(key){
+  if(!confirm(`Supprimer ${key} ?`))return;
+  try{await remove(ref(db,`config/entrepreneurs/${key}`));await loadEntrepreneurs();renderParams();}catch(e){}
+}
+window.delEnt=delEnt;
+async function addEnt(){
+  const name=prompt('Nom du nouvel entrepreneur :');if(!name)return;
+  const rate=parseFloat(prompt('Commission (%) :')||'5');
+  const key=name.substring(0,2).toUpperCase()+Date.now().toString().slice(-3);
+  const colors=['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff6bff'];
+  const hex=colors[Math.floor(Math.random()*colors.length)];
+  try{await set(ref(db,`config/entrepreneurs/${key}`),{key,name,hex,rate});await loadEntrepreneurs();renderParams();}catch(e){}
+}
+window.addEnt=addEnt;
+
+async function delTask(id){
+  TASKS=TASKS.filter(t=>t.id!==id);
+  await saveTasksConfig();
+  renderParams();
+}
+window.delTask=delTask;
+
+async function addTask(){
+  const label=document.getElementById('newTaskLbl')?.value?.trim();
+  const badge=document.getElementById('newTaskBadge')?.value?.trim()||'All';
+  if(!label)return;
+  const id='t'+Date.now();
+  TASKS.push({id,label,color:'rgba(0,212,255,0.35)',badge,done:false});
+  await saveTasksConfig();
+  renderParams();
+}
+window.addTask=addTask;
+
+// Init icon
+setTabIconActive('dash',true);
+
+// Start
+async function loadMetrics(){
+  try{
+    const s=await get(ref(db,'config/metrics'));
+    if(s.exists()){
+      const data=s.val();
+      Object.keys(data).forEach(ek=>{
+        let arr=data[ek];
+        // Firebase stores arrays as objects {0:{...},1:{...}} - convert back
+        if(arr&&typeof arr==='object'&&!Array.isArray(arr)){
+          arr=Object.values(arr);
+        }
+        if(Array.isArray(arr)&&arr.length>0){
+          const valid=arr.filter(m=>m&&typeof m.k==='string'&&m.k&&typeof m.l==='string'&&m.l&&m.l!=='undefined');
+          if(valid.length>0)METRICS[ek]=valid;
+        }
+      });
+    }
+  }catch(e){}
+}
+async function repairAndInit(){
+  await loadEntrepreneurs();
+  await loadMetricOrders();// Only load ordering preference
+  await loadTasksConfig();
+  await loadMonth(cY,cM);
+  render();
+}
+repairAndInit();
+</script>
+</body>
+
+</html>
