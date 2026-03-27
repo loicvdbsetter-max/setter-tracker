@@ -76,7 +76,8 @@ body{
 .graph-title{font-size:8px;color:rgba(0,170,255,0.4);letter-spacing:2px;}
 .graph-legend{display:flex;gap:10px;}
 .graph-legend span{font-size:8px;}
-.graph-canvas-wrap{flex:1;position:relative;min-height:120px;}
+.graph-canvas-wrap{flex:1;position:relative;min-height:120px;display:flex;flex-direction:column;}
+.graph-canvas-wrap canvas{flex:1;display:block;width:100%;}
 .funnel-card{background:linear-gradient(135deg,#060e16,#08121c);border:1px solid rgba(0,170,255,0.1);border-radius:10px;padding:14px;position:relative;overflow:hidden;}
 .funnel-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);}
 .funnel-title{font-size:8px;color:rgba(0,170,255,0.4);letter-spacing:2px;margin-bottom:12px;}
@@ -319,24 +320,33 @@ body{
     grid-template-columns: 1fr;
     gap: 8px;
   }
+  /* === Graph card : hauteur auto, pas de flex override nécessaire === */
   .graph-card {
-    height: auto !important;
+    height: auto;
     min-height: unset;
-    flex-direction: column !important;
   }
   .graph-canvas-wrap {
-    height: 200px !important;
-    min-height: unset !important;
-    position: relative !important;
-    flex: none !important;
+    height: 200px;
+    flex: none;
   }
   #convChart {
-    position: relative !important;
     display: block !important;
     width: 100% !important;
     height: 200px !important;
-    top: auto !important;
-    left: auto !important;
+  }
+
+  /* === Funnel card : hauteur auto selon contenu === */
+  .funnel-card {
+    height: auto !important;
+    overflow: visible;
+  }
+
+  /* === Mid-row enfants : flux normal, pas d'overlap === */
+  .mid-row > * {
+    display: block;
+    width: 100%;
+    position: relative;
+    box-sizing: border-box;
   }
 
   /* === Ent cards Dashboard : 1 colonne === */
@@ -1317,7 +1327,7 @@ async function renderDash(){
           </div>
         </div>
         <div class="graph-canvas-wrap">
-          <canvas id="convChart" style="width:100%;height:100%;display:block;position:absolute;top:0;left:0"></canvas>
+          <canvas id="convChart" style="width:100%;height:100%;display:block;position:relative"></canvas>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--muted);margin-top:4px;position:relative;z-index:2">
           <span>1</span><span>${Math.round(dim/4)}</span><span>${Math.round(dim/2)}</span><span>${Math.round(dim*3/4)}</span><span>${dim}</span>
