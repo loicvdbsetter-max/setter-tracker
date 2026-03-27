@@ -315,38 +315,54 @@ body{
   .kpi-val { font-size: 1.4rem; }
   .kpi-label { font-size: 8px; }
 
-  /* === Mid row : 1 colonne === */
+  /* === Mid row : 1 colonne empilée === */
   .mid-row {
-    grid-template-columns: 1fr;
+    display: flex !important;
+    flex-direction: column !important;
     gap: 8px;
+    width: 100%;
   }
-  /* === Graph card : hauteur auto, pas de flex override nécessaire === */
+  .mid-row > * {
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  /* === Graph card === */
   .graph-card {
-    height: auto;
+    height: auto !important;
     min-height: unset;
+    display: flex;
+    flex-direction: column;
   }
+  /* Header du graph : empiler titre et légende verticalement */
+  .graph-head {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px;
+  }
+  .graph-legend {
+    flex-wrap: wrap !important;
+  }
+  /* Canvas wrapper : hauteur fixe explicite */
   .graph-canvas-wrap {
-    height: 200px;
-    flex: none;
+    height: 200px !important;
+    min-height: 200px !important;
+    flex: none !important;
+    width: 100% !important;
+    display: block !important;
+    position: relative !important;
   }
   #convChart {
     display: block !important;
     width: 100% !important;
     height: 200px !important;
+    position: relative !important;
   }
 
   /* === Funnel card : hauteur auto selon contenu === */
   .funnel-card {
     height: auto !important;
-    overflow: visible;
-  }
-
-  /* === Mid-row enfants : flux normal, pas d'overlap === */
-  .mid-row > * {
-    display: block;
-    width: 100%;
-    position: relative;
-    box-sizing: border-box;
+    overflow: visible !important;
   }
 
   /* === Ent cards Dashboard : 1 colonne === */
