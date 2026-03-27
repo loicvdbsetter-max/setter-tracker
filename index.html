@@ -318,6 +318,10 @@ body{
     grid-template-columns: 1fr;
     gap: 8px;
   }
+  .graph-card {
+    height: 220px;     /* hauteur fixe explicite — le canvas height:100% peut se résoudre */
+    min-height: unset; /* neutralise le min-height desktop */
+  }
 
   /* === Ent cards Dashboard : 1 colonne === */
   .ents-row {
