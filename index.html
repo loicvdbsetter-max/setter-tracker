@@ -269,6 +269,13 @@ body{
 
 .stitle{font-size:10px;color:var(--muted2);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;}
 
+/* ===== FUNNEL FILTERS ===== */
+.funnel-filters{display:flex;gap:5px;margin-bottom:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;}
+.funnel-filters::-webkit-scrollbar{display:none;}
+.funnel-filter-btn{background:transparent;border:1px solid var(--border2);color:var(--muted2);border-radius:6px;padding:3px 9px;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:0.5px;cursor:pointer;white-space:nowrap;transition:all 0.15s;flex-shrink:0;}
+.funnel-filter-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.funnel-filter-btn.active{font-weight:700;}
+
 /* ===== ACCORDÉONS PARAMS ===== */
 .acc-wrap{margin-bottom:8px;}
 .acc-header{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;padding:14px 16px;border-radius:10px;background:var(--surface);border:1px solid var(--border);transition:border-color 0.2s;}
@@ -1162,8 +1169,9 @@ async function renderDash(){
   });
 
   // Funnel
+  const funnelEnts=(window.dashFunnelFilter&&window.dashFunnelFilter!=='all')?ENTS.filter(e=>e.key===window.dashFunnelFilter):ENTS;
   let tfm=0,trep=0,tfu=0,trfu=0,tln=0,tc=0;
-  for(let d=1;d<=dim;d++)ENTS.forEach(e=>{
+  for(let d=1;d<=dim;d++)funnelEnts.forEach(e=>{
     tfm+=gv(md,d,e.key,'firstmsg');trep+=gv(md,d,e.key,'replies');
     tfu+=gv(md,d,e.key,'followup');trfu+=gv(md,d,e.key,'repliesfu');
     tln+=gv(md,d,e.key,'lien');tc+=getTotalCalls(e.key,md[d]);
@@ -1221,6 +1229,9 @@ async function renderDash(){
   // Tasks
   const tDone=TASKS.filter(t=>t.done).length;
   const tPct=tDone/TASKS.length;
+
+  // Funnel filter state
+  const ff=window.dashFunnelFilter||'all';
 
   div.innerHTML=`
   <div class="dash-page">
@@ -1292,6 +1303,10 @@ async function renderDash(){
       </div>
       <div class="funnel-card">
         <div class="funnel-title">FUNNEL CONVERSION</div>
+        <div class="funnel-filters">
+          <button class="funnel-filter-btn${ff==='all'?' active':''}" onclick="window.setDashFunnelFilter('all')" style="${ff==='all'?'background:var(--cyan);color:#000;border-color:var(--cyan)':''}">Tous</button>
+          ${ENTS.map(e=>{const active=ff===e.key;return `<button class="funnel-filter-btn${active?' active':''}" onclick="window.setDashFunnelFilter('${e.key}')" style="${active?`background:${e.hex};color:#000;border-color:${e.hex}`:`color:${e.hex};border-color:${e.hex}44`}">${e.name}</button>`;}).join('')}
+        </div>
         ${[
           {l:'Msgs → Réponses',v:pct(trep,tfm),c:'#00d4ff'},
           {l:'Msgs → Follow ups',v:pct(tfu,tfm),c:'#a78bfa'},
@@ -1302,9 +1317,9 @@ async function renderDash(){
           <div class="funnel-row-head"><span class="funnel-row-lbl">${f.l}</span><span class="funnel-row-pct" style="color:${f.c}">${f.v}%</span></div>
           <div class="funnel-bar"><div class="funnel-bar-fill" style="width:${f.v}%;background:${f.c}"></div></div>
         </div>`).join('')}
-        <div class="funnel-ents">
+        ${ff==='all'?`<div class="funnel-ents">
           ${entData.map(d=>`<div class="funnel-ent-row"><span style="color:${d.e.hex}77">${d.e.name}</span><span style="color:${d.e.hex}">${d.conv}%</span></div>`).join('')}
-        </div>
+        </div>`:''}
       </div>
     </div>
 
@@ -1795,6 +1810,10 @@ function toggleTask(id){
   set(ref(db,'tasks_done/'+todayKey()+'/'+id),t.done).catch(()=>{});
 }
 window.toggleTask=toggleTask;
+
+// ===== DASH FUNNEL FILTER =====
+window.dashFunnelFilter='all';
+window.setDashFunnelFilter=function(k){window.dashFunnelFilter=k;renderDash();};
 
 // ===== LEADS =====
 window.leadsFilter='all';
