@@ -269,6 +269,152 @@ body{
 
 .stitle{font-size:10px;color:var(--muted2);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;}
 
+/* ===== RESPONSIVE MOBILE ===== */
+@media (max-width: 768px) {
+
+  /* --- Tab bar --- */
+  .tab { padding: 10px 0; gap: 3px; }
+  .tab .ticon { width: 20px; height: 20px; }
+  .tab .tlbl { font-size: 8px; letter-spacing: 1px; }
+  .live-lbl { display: none; }
+  #authChip { display: none !important; }
+
+  /* --- Pages padding --- */
+  .dash-page, .jour-page, .leads-page, .params-page { padding: 12px; }
+
+  /* --- Dashboard header --- */
+  .dash-header { margin-bottom: 14px; }
+  .dash-title { font-size: 1.2rem; }
+  .dash-sub { display: none; }
+  .dash-clock { display: none; }
+
+  /* === KPI row : 2 colonnes === */
+  .kpi-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .kpi-val { font-size: 1.4rem; }
+  .kpi-label { font-size: 8px; }
+
+  /* === Mid row : 1 colonne === */
+  .mid-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  /* === Ent cards Dashboard : 1 colonne === */
+  .ents-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  /* === Bottom row : 1 colonne === */
+  .bottom-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  /* --- Revenue inline grids (override) --- */
+  .rev-card-dash [style*="grid-template-columns:repeat(4"],
+  .rev-card-dash [style*="grid-template-columns: repeat(4"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* --- JOUR header --- */
+  .jh { flex-direction: column; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
+  .jh-title { font-size: 1.4rem; }
+  .jh-right { width: 100%; justify-content: space-between; }
+
+  /* === Calendar : réduire cellules === */
+  .cal-wrap { padding: 12px; }
+  .cal-cell { min-height: 36px; padding: 4px 2px; }
+  .cal-cell-num { font-size: 11px; }
+  .cal-cell-total { display: none; }
+  .cal-dh { font-size: 10px; }
+
+  /* === Ent metric cards : 1 colonne === */
+  .ent-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  /* Boutons +/- : zone tactile confortable au pouce */
+  .mminus, .mplus { width: 44px; height: 44px; font-size: 22px; }
+  .mval-input { width: 52px; font-size: 16px; }
+  .mlbl { font-size: 12px; }
+  .mrow { height: 52px; }
+
+  /* === Tasks list : 1 colonne === */
+  .tasks-list { grid-template-columns: 1fr; }
+  .tasks-wrap { padding: 14px; }
+  .task-lbl { font-size: 12px; }
+
+  /* === LEADS === */
+  .leads-table { font-size: 12px; }
+  .leads-table th { font-size: 9px; padding: 8px 6px; }
+  .leads-table td { padding: 8px 6px; }
+
+  /* Summary leads + revenus manuels : 2 colonnes */
+  .leads-sum {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  #revManuelsGrid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* === PARAMS : 1 colonne === */
+  .params-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+
+  /* Tab bar encore plus compact */
+  .tab { padding: 8px 0; gap: 2px; }
+  .tab .ticon { width: 18px; height: 18px; }
+  .tab .tlbl { font-size: 7px; }
+
+  /* Pages */
+  .dash-page, .jour-page, .leads-page, .params-page { padding: 8px; }
+
+  /* KPI cards */
+  .kpi-card { padding: 10px; }
+  .kpi-val { font-size: 1.2rem; }
+  .kpi-spark { display: none; }
+
+  /* Ent cards Dash : toujours 1 colonne */
+  .ents-row { grid-template-columns: 1fr; }
+
+  /* Funnel masqué sur très petit écran */
+  .funnel-card { display: none; }
+
+  /* Calendar encore plus compact */
+  .cal-cell { min-height: 30px; padding: 3px 1px; }
+  .cal-cell-num { font-size: 10px; }
+  .cal-dot { width: 4px; height: 4px; }
+  .cal-dh { font-size: 9px; padding: 4px 0; }
+
+  /* Boutons +/- : taille pouce optimale Apple (44pt) */
+  .mminus, .mplus { width: 48px; height: 48px; }
+
+  /* Tasks */
+  .task-lbl { font-size: 11px; }
+  .task-badge { font-size: 9px; padding: 2px 5px; }
+
+  /* Leads */
+  .leads-table { font-size: 11px; }
+  .leads-sum { grid-template-columns: 1fr; }
+  #revManuelsGrid { grid-template-columns: 1fr !important; }
+
+  /* Auth card */
+  .auth-card { padding: 32px 20px; }
+  .auth-logo { font-size: 1.5rem; }
+  .auth-btn { font-size: 11px; padding: 12px 18px; }
+}
+
 /* ===== AUTH ===== */
 #authScreen{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;}
 #authScreen.hidden{display:none;}
