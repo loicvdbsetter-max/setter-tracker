@@ -269,6 +269,16 @@ body{
 
 .stitle{font-size:10px;color:var(--muted2);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;}
 
+/* ===== ACCORDÉONS PARAMS ===== */
+.acc-wrap{margin-bottom:8px;}
+.acc-header{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;padding:14px 16px;border-radius:10px;background:var(--surface);border:1px solid var(--border);transition:border-color 0.2s;}
+.acc-header:hover{border-color:var(--border2);}
+.acc-header.open{border-color:rgba(0,212,255,0.2);border-radius:10px 10px 0 0;}
+.acc-chevron{font-size:10px;color:var(--muted2);transition:transform 0.25s;flex-shrink:0;}
+.acc-header.open .acc-chevron{transform:rotate(180deg);}
+.acc-body{background:var(--surface);border:1px solid rgba(0,212,255,0.12);border-top:none;border-radius:0 0 10px 10px;padding:16px;display:none;}
+.acc-body.open{display:block;}
+
 /* ===== RESPONSIVE MOBILE ===== */
 @media (max-width: 768px) {
 
@@ -569,6 +579,7 @@ let TASKS=[
 const now=new Date();
 let cY=now.getFullYear(),cM=now.getMonth(),selDay=now.getDate();
 function todayKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+const _paramsOpen={ents:{},metrics:{},tasks:false};
 
 let curTab='dash';
 let mCache={},lCache={},oCache={},rCache={};
@@ -1947,51 +1958,65 @@ function renderParams(){
   if(rafId){cancelAnimationFrame(rafId);rafId=null;}
   const div=document.getElementById('page_params');
 
-  // ENT CARDS
-  const entCards=ENTS.map(e=>`
-    <div class="params-card" style="--c:${e.hex}">
-      <div class="pfield"><div class="plabel">Nom</div><input class="pinput" id="pn_${e.key}" value="${e.name}" style="border-color:rgba(${hex2rgb(e.hex)},0.2)"></div>
-      <div class="pfield"><div class="plabel">Commission (%)</div><input class="pinput" type="number" id="pr_${e.key}" value="${e.rate}" style="border-color:rgba(${hex2rgb(e.hex)},0.2)"></div>
-      <div class="pfield"><div class="plabel">Couleur</div><input type="color" value="${e.hex}" id="pc_${e.key}" style="width:100%;height:38px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;"></div>
-      <button class="psave" style="background:${e.hex}" onclick="saveEnt('${e.key}')">💾 Sauvegarder</button>
-      <button class="pdel" onclick="delEnt('${e.key}')">🗑 Supprimer</button>
-    </div>`).join('');
+  // ENT CARDS — accordéons
+  const entCards=ENTS.map(e=>{
+    const isOpen=_paramsOpen.ents[e.key];
+    return `
+    <div class="acc-wrap">
+      <div class="acc-header${isOpen?' open':''}" onclick="window.toggleParamsEnt('${e.key}')" style="border-left:3px solid ${e.hex};">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:10px;height:10px;border-radius:50%;background:${e.hex};flex-shrink:0"></div>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:${e.hex}">${e.name}</span>
+          <span style="font-size:10px;color:var(--muted2);">${e.rate}% comm.</span>
+        </div>
+        <span class="acc-chevron">▼</span>
+      </div>
+      <div class="acc-body${isOpen?' open':''}">
+        <div class="pfield"><div class="plabel">Nom</div><input class="pinput" id="pn_${e.key}" value="${e.name}" style="border-color:rgba(${hex2rgb(e.hex)},0.2)"></div>
+        <div class="pfield"><div class="plabel">Commission (%)</div><input class="pinput" type="number" id="pr_${e.key}" value="${e.rate}" style="border-color:rgba(${hex2rgb(e.hex)},0.2)"></div>
+        <div class="pfield"><div class="plabel">Couleur</div><input type="color" value="${e.hex}" id="pc_${e.key}" style="width:100%;height:38px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;"></div>
+        <button class="psave" style="background:${e.hex}" onclick="saveEnt('${e.key}')">💾 Sauvegarder</button>
+        <button class="pdel" onclick="delEnt('${e.key}')">🗑 Supprimer</button>
+      </div>
+    </div>`;
+  }).join('');
 
-  // METRICS EDITOR par entrepreneur
+  // METRICS EDITOR par entrepreneur — accordéons
   const metricEditors=ENTS.map(e=>{
     const metrics=getMetricsOrdered(e.key);
+    const isOpen=_paramsOpen.metrics[e.key];
     const rows=metrics.map((m,i)=>`
       <div style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px;">
-        <!-- Réordonner -->
         <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">
           <button onclick="window.metricMoveUp('${e.key}',${i})" style="background:none;border:none;cursor:pointer;color:${i===0?'rgba(255,255,255,0.08)':'rgba(0,212,255,0.5)'};font-size:11px;padding:0;line-height:1;transition:color 0.15s" ${i===0?'disabled':''}>▲</button>
           <button onclick="window.metricMoveDown('${e.key}',${i})" style="background:none;border:none;cursor:pointer;color:${i===metrics.length-1?'rgba(255,255,255,0.08)':'rgba(0,212,255,0.5)'};font-size:11px;padding:0;line-height:1;transition:color 0.15s" ${i===metrics.length-1?'disabled':''}>▼</button>
         </div>
-        <!-- Couleur accent -->
         <div style="width:3px;height:32px;border-radius:2px;background:${e.hex};opacity:0.6;flex-shrink:0"></div>
-        <!-- Label éditable -->
         <input value="${m.l}" style="flex:1;background:transparent;border:none;color:var(--text);font-family:'Space Mono',monospace;font-size:13px;outline:none;min-width:0"
           onblur="window.metricRename('${e.key}','${m.k}',this.value)"
           onfocus="this.style.background='var(--surface)';this.style.borderRadius='4px';this.style.padding='2px 6px'"
           onblur2="this.style.background='transparent';this.style.padding='0'">
-        <!-- Key (non éditable, info) -->
         <span style="font-size:9px;color:var(--muted);padding:2px 8px;background:var(--border);border-radius:4px;flex-shrink:0">${m.k}</span>
-        <!-- Supprimer -->
         <button onclick="window.metricDel('${e.key}','${m.k}')" style="background:transparent;border:1px solid rgba(244,63,94,0.25);color:#f43f5e;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;flex-shrink:0;transition:all 0.2s" title="Supprimer">✕</button>
       </div>`).join('');
 
     return `
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;border-top:3px solid ${e.hex};">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <div style="font-family:'Bebas Neue',sans-serif;color:${e.hex};font-size:1rem;letter-spacing:2px">${e.name}</div>
-          <span style="font-size:9px;color:var(--muted2)">${metrics.length} action${metrics.length>1?'s':''}</span>
+      <div class="acc-wrap">
+        <div class="acc-header${isOpen?' open':''}" onclick="window.toggleParamsMetrics('${e.key}')" style="border-left:3px solid ${e.hex};">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:10px;height:10px;border-radius:50%;background:${e.hex};flex-shrink:0"></div>
+            <span style="font-family:'Bebas Neue',sans-serif;color:${e.hex};font-size:1rem;letter-spacing:2px">${e.name}</span>
+            <span style="font-size:10px;color:var(--muted2);">${metrics.length} action${metrics.length>1?'s':''}</span>
+          </div>
+          <span class="acc-chevron">▼</span>
         </div>
-        ${rows}
-        <!-- Ajouter nouvelle métrique -->
-        <div style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
-          <input id="newmet_lbl_${e.key}" placeholder="Nom de l'action..." style="flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'Space Mono',monospace;font-size:12px;outline:none" onfocus="this.style.borderColor='${e.hex}'" onblur="this.style.borderColor='var(--border2)'">
-          <input id="newmet_key_${e.key}" placeholder="clé (ex: rdv)" style="width:100px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'Space Mono',monospace;font-size:12px;outline:none" onfocus="this.style.borderColor='${e.hex}'" onblur="this.style.borderColor='var(--border2)'">
-          <button onclick="window.metricAdd('${e.key}')" style="background:${e.hex};color:#000;border:none;border-radius:8px;padding:8px 14px;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity 0.2s" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">+ Ajouter</button>
+        <div class="acc-body${isOpen?' open':''}">
+          ${rows}
+          <div style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+            <input id="newmet_lbl_${e.key}" placeholder="Nom de l'action..." style="flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'Space Mono',monospace;font-size:12px;outline:none" onfocus="this.style.borderColor='${e.hex}'" onblur="this.style.borderColor='var(--border2)'">
+            <input id="newmet_key_${e.key}" placeholder="clé (ex: rdv)" style="width:100px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'Space Mono',monospace;font-size:12px;outline:none" onfocus="this.style.borderColor='${e.hex}'" onblur="this.style.borderColor='var(--border2)'">
+            <button onclick="window.metricAdd('${e.key}')" style="background:${e.hex};color:#000;border:none;border-radius:8px;padding:8px 14px;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity 0.2s" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">+ Ajouter</button>
+          </div>
         </div>
       </div>`;
   }).join('');
@@ -2011,22 +2036,31 @@ function renderParams(){
 
   div.innerHTML=`
   <div class="params-page">
-    <div class="stitle" style="margin-bottom:16px">Paramètres entrepreneurs</div>
-    <div class="params-grid">
+    <div class="stitle" style="margin-bottom:12px">Paramètres entrepreneurs</div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">
       ${entCards}
       <div class="padd" onclick="addEnt()"><div style="font-size:2rem;margin-bottom:8px">+</div><div>Ajouter un entrepreneur</div></div>
     </div>
 
-    <div class="stitle" style="margin-bottom:12px;margin-top:8px">Actions journalières — par entrepreneur</div>
-    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">${metricEditors}</div>
+    <div class="stitle" style="margin-bottom:8px;margin-top:8px">Actions journalières — par entrepreneur</div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">${metricEditors}</div>
 
-    <div class="task-config">
-      <div class="task-config-title">Configuration Daily Tasks</div>
-      <div>${taskItems}</div>
-      <div class="task-add-row" style="margin-top:10px">
-        <input class="task-add-input" id="newTaskLbl" placeholder="Nouvelle tâche...">
-        <input class="task-add-input" id="newTaskBadge" placeholder="Badge" style="max-width:110px">
-        <button class="task-add-btn" onclick="addTask()">+ Ajouter</button>
+    <div class="stitle" style="margin-bottom:8px">Daily Tasks</div>
+    <div class="acc-wrap">
+      <div class="acc-header${_paramsOpen.tasks?' open':''}" onclick="window.toggleParamsTasks()">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:10px;color:var(--muted2);letter-spacing:2px">CONFIGURATION</span>
+          <span style="font-size:10px;color:var(--muted2);">${TASKS.length} tâche${TASKS.length>1?'s':''}</span>
+        </div>
+        <span class="acc-chevron">▼</span>
+      </div>
+      <div class="acc-body${_paramsOpen.tasks?' open':''}">
+        <div>${taskItems}</div>
+        <div class="task-add-row" style="margin-top:10px">
+          <input class="task-add-input" id="newTaskLbl" placeholder="Nouvelle tâche...">
+          <input class="task-add-input" id="newTaskBadge" placeholder="Badge" style="max-width:110px">
+          <button class="task-add-btn" onclick="addTask()">+ Ajouter</button>
+        </div>
       </div>
     </div>
 
@@ -2036,6 +2070,11 @@ function renderParams(){
     </div>
   </div>`;
 }
+
+// ===== PARAMS ACCORDION TOGGLES =====
+window.toggleParamsEnt=function(key){_paramsOpen.ents[key]=!_paramsOpen.ents[key];renderParams();};
+window.toggleParamsMetrics=function(key){_paramsOpen.metrics[key]=!_paramsOpen.metrics[key];renderParams();};
+window.toggleParamsTasks=function(){_paramsOpen.tasks=!_paramsOpen.tasks;renderParams();};
 
 // ===== METRIC MANAGEMENT =====
 window.metricAdd=async function(ek){
