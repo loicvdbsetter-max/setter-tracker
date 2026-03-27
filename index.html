@@ -307,10 +307,13 @@ body{
   .dash-sub { display: none; }
   .dash-clock { display: none; }
 
-  /* === KPI row : 2 colonnes === */
+  /* === KPI row : 2 colonnes, ring card pleine largeur === */
   .kpi-row {
     grid-template-columns: repeat(2, 1fr);
     gap: 8px;
+  }
+  .kpi-tasks-card {
+    grid-column: 1 / -1;
   }
   .kpi-val { font-size: 1.4rem; }
   .kpi-label { font-size: 8px; }
@@ -1439,6 +1442,9 @@ async function renderDash(){
 
   const svg=document.getElementById('chameoSvg');if(svg)drawChameo(svg);
   updateClock();
+  // Force canvas dimensions immediately after DOM injection — don't rely on CSS % resolution
+  const _cv=document.getElementById('convChart');
+  if(_cv){const _pw=_cv.parentElement;const _fw=(_pw&&_pw.offsetWidth)||(_pw&&_pw.parentElement&&_pw.parentElement.offsetWidth)||(window.innerWidth-28);_cv.style.width=_fw+'px';_cv.style.height='200px';}
 
   // Draw conversion chart on canvas
   // Sparklines once
