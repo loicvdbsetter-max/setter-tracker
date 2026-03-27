@@ -422,6 +422,8 @@ let TASKS=[
 
 const now=new Date();
 let cY=now.getFullYear(),cM=now.getMonth(),selDay=now.getDate();
+function todayKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+
 let curTab='dash';
 let mCache={},lCache={},oCache={},rCache={};
 let rafId=null;
@@ -563,16 +565,44 @@ async function loadTasksConfig(){
     const s=await get(ref(db,'config/tasks'));
     if(s.exists()){
       const data=Object.values(s.val());
-      const doneMap={};TASKS.forEach(t=>doneMap[t.id]=t.done);
-      TASKS=data.map(t=>({...t,done:doneMap[t.id]||false}));
+      TASKS=data.map(t=>({...t,done:false}));
     }
   }catch(e){}
+  startTaskDoneListener();
 }
 async function saveTasksConfig(){
   try{
     const obj={};TASKS.forEach(t=>obj[t.id]={id:t.id,label:t.label,color:t.color,badge:t.badge});
     await set(ref(db,'config/tasks'),obj);
   }catch(e){}
+}
+
+let _taskDoneUnsub=null;
+function startTaskDoneListener(){
+  if(_taskDoneUnsub){_taskDoneUnsub();_taskDoneUnsub=null;}
+  const key=todayKey();
+  _taskDoneUnsub=onValue(ref(db,'tasks_done/'+key),snap=>{
+    const doneMap=snap.exists()?snap.val():{};
+    TASKS.forEach(t=>t.done=doneMap[t.id]===true);
+    applyTaskDoneUI();
+  });
+}
+
+function applyTaskDoneUI(){
+  const tDone=TASKS.filter(t=>t.done).length;
+  const tPct=TASKS.length?tDone/TASKS.length:0;
+  TASKS.forEach(t=>{
+    const el=document.querySelector(`[onclick="toggleTask('${t.id}')"]`);
+    if(!el)return;
+    el.classList.toggle('done',t.done);
+    const cb=el.querySelector('.task-cb');
+    if(cb){cb.classList.toggle('checked',t.done);cb.innerHTML=t.done?`<svg width="8" height="8" viewBox="0 0 12 12"><path d="M2 6 L5 9 L10 3" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`:'';}
+    const lbl=el.querySelector('.task-lbl');if(lbl)lbl.style.color=t.done?'#1a3a44':'#c8e8f0';
+    const badge=el.querySelector('.task-badge');if(badge)badge.style.opacity=t.done?'0.2':'1';
+  });
+  ['jourRingPct','dashRingPct'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent=Math.round(tPct*100)+'%';el.style.color=tPct>=1?'#00ff88':'#00d4ff';}});
+  ['jourRingCnt','dashRingCnt'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=`${tDone}/${TASKS.length}`;});
+  const st=document.getElementById('taskStatusEl');if(st)st.textContent=tDone===TASKS.length?'COMPLÉTÉ ✓':'EN COURS...';
 }
 
 async function sv(y,mo,day,ek,mk,val){
@@ -1604,19 +1634,8 @@ function animateScan(){
 function toggleTask(id){
   const t=TASKS.find(x=>x.id===id);if(!t)return;
   t.done=!t.done;
-  const el=document.querySelector(`[onclick="toggleTask('${id}')"]`);
-  if(el){
-    el.classList.toggle('done',t.done);
-    const cb=el.querySelector('.task-cb');
-    if(cb){cb.classList.toggle('checked',t.done);cb.innerHTML=t.done?`<svg width="8" height="8" viewBox="0 0 12 12"><path d="M2 6 L5 9 L10 3" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`:'';}
-    const lbl=el.querySelector('.task-lbl');if(lbl)lbl.style.color=t.done?'#1a3a44':'#c8e8f0';
-    const badge=el.querySelector('.task-badge');if(badge)badge.style.opacity=t.done?'0.2':'1';
-  }
-  const tDone=TASKS.filter(x=>x.done).length;
-  const tPct=tDone/TASKS.length;
-  ['jourRingPct','dashRingPct'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent=Math.round(tPct*100)+'%';el.style.color=tPct>=1?'#00ff88':'#00d4ff';}});
-  ['jourRingCnt','dashRingCnt'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=`${tDone}/${TASKS.length}`;});
-  const st=document.getElementById('taskStatusEl');if(st)st.textContent=tDone===TASKS.length?'COMPLÉTÉ ✓':'EN COURS...';
+  applyTaskDoneUI();
+  set(ref(db,'tasks_done/'+todayKey()+'/'+id),t.done).catch(()=>{});
 }
 window.toggleTask=toggleTask;
 
