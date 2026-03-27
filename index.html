@@ -320,8 +320,23 @@ body{
     gap: 8px;
   }
   .graph-card {
-    height: 260px;
+    height: auto !important;
     min-height: unset;
+    flex-direction: column !important;
+  }
+  .graph-canvas-wrap {
+    height: 200px !important;
+    min-height: unset !important;
+    position: relative !important;
+    flex: none !important;
+  }
+  #convChart {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    height: 200px !important;
+    top: auto !important;
+    left: auto !important;
   }
 
   /* === Ent cards Dashboard : 1 colonne === */
@@ -1419,7 +1434,7 @@ async function renderDash(){
     drawHexDash(entData);
     if(window._convData&&window._convDim)drawConvChart(window._convData,window._convDim);
     startUnifiedLoop();
-  },80);
+  },250);
 }
 
 // ===== IRON MAN CHARTS =====
@@ -1471,8 +1486,13 @@ function drawConvChart(convData,dim){
   if(!canvas)return;
   const rect=canvas.getBoundingClientRect();
   const W=rect.width;
-  const H=rect.height||canvas.parentElement.getBoundingClientRect().height||160;
+  const H=rect.height||canvas.offsetHeight||canvas.parentElement.getBoundingClientRect().height||canvas.parentElement.offsetHeight||200;
   if(W<10||H<10)return;
+  // Reset particle cache if canvas size changed significantly (ex: rotation, resize mobile)
+  if(drawConvChart._lastW&&(Math.abs(drawConvChart._lastW-W)>20||Math.abs(drawConvChart._lastH-H)>20)){
+    drawConvChart._p=null;drawConvChart._r=null;drawConvChart._s=undefined;
+  }
+  drawConvChart._lastW=W;drawConvChart._lastH=H;
   const dpr=window.devicePixelRatio||1;
   canvas.width=Math.round(W*dpr);
   canvas.height=H*dpr;
