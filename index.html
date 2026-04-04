@@ -18,17 +18,11 @@
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 body{
-  background:radial-gradient(ellipse at center,#0a111e 0%,#05070a 100%);
+  background:radial-gradient(ellipse at center,#0d1525 0%,#05070a 100%);
   background-attachment:fixed;
   color:var(--text);
   font-family:'Space Mono',monospace;min-height:100vh;
   position:relative;margin:0;
-}
-body::before{
-  content:'';position:fixed;top:0;left:0;width:100%;height:100%;
-  background-image:linear-gradient(rgba(0,242,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,242,255,0.03) 1px,transparent 1px);
-  background-size:40px 40px;
-  pointer-events:none;z-index:0;
 }
 /* ===== HUD ANIMATIONS ===== */
 @keyframes chameo-pulse{
@@ -37,7 +31,6 @@ body::before{
 }
 #chameoSvg{animation:chameo-pulse 4s ease-in-out infinite;position:relative;z-index:1;}
 @keyframes ring-spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
-@keyframes scanline-move{0%{top:-2px;}100%{top:100vh;}}
 .chameo-ring{position:relative;display:inline-flex;align-items:center;justify-content:center;width:72px;height:44px;}
 .chameo-ring::before{
   content:'';position:absolute;inset:-10px;border-radius:50%;
@@ -48,12 +41,6 @@ body::before{
   content:'';position:absolute;inset:-18px;border-radius:50%;
   border:1px dashed rgba(0,212,255,0.14);pointer-events:none;
   animation:ring-spin 14s linear infinite;
-}
-.hud-scanline{
-  position:fixed;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,transparent 0%,rgba(0,212,255,0.08) 20%,rgba(0,212,255,0.18) 50%,rgba(0,212,255,0.08) 80%,transparent 100%);
-  pointer-events:none;z-index:9000;top:-2px;
-  animation:scanline-move 10s linear infinite;
 }
 
 /* TABS */
@@ -989,12 +976,43 @@ button:not(.mplus):not(.auth-btn):not(.psave):not(.ladd-btn):hover {
   box-shadow:0 20px 60px rgba(0,0,0,0.7),0 0 0 1px rgba(0,242,255,0.08);
 }
 
-/* --- z-index : content au dessus du body::before grid --- */
-.tabs,.page,.hud-scanline{position:relative;z-index:1;}
+/* --- Token icons (pièces dorées) --- */
+.token-icon{
+  display:inline-block;
+  width:14px;height:14px;
+  background:linear-gradient(135deg,#ffcc00,#ff8c00);
+  border-radius:50%;
+  margin-right:6px;
+  box-shadow:0 0 8px rgba(255,140,0,0.55),0 0 2px rgba(255,204,0,0.4);
+  border:1px solid rgba(255,255,255,0.22);
+  vertical-align:middle;
+  flex-shrink:0;
+}
+
+/* Token auto sur les valeurs leads summary */
+.lsum-val::before{
+  content:'';
+  display:inline-block;
+  width:13px;height:13px;
+  background:linear-gradient(135deg,#ffcc00,#ff8c00);
+  border-radius:50%;
+  margin-right:7px;
+  box-shadow:0 0 8px rgba(255,140,0,0.55);
+  border:1px solid rgba(255,255,255,0.22);
+  vertical-align:middle;
+  position:relative;top:-1px;
+}
+
+/* Typographie revenus renforcée */
+.lsum-val{font-size:1.6rem !important;font-weight:700;letter-spacing:0.5px;}
+.lsum-comm{font-size:11px !important;color:var(--cyan);margin-top:4px;font-weight:700;}
+.lsum-name{font-size:11px !important;letter-spacing:1.5px;}
+
+/* z-index : tabs + pages au dessus */
+.tabs,.page{position:relative;z-index:1;}
 </style>
 </head>
 <body>
-<div class="hud-scanline"></div>
 
 <!-- AUTH SCREEN -->
 <div id="authScreen">
@@ -1917,8 +1935,8 @@ async function renderDash(){
           ${entData.map(d=>`
             <div style="border-left:2px solid ${d.e.hex}44;padding-left:10px;">
               <div style="font-size:9px;color:${d.e.hex}88;letter-spacing:1px;margin-bottom:4px">${d.e.name} · ${d.e.rate}%</div>
-              <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--cyan)">${d.comm.toFixed(0)}€</div>
-              <div style="font-size:9px;color:var(--muted2);margin-top:2px">Généré : ${d.totR.toFixed(0)}€</div>
+              <div style="display:flex;align-items:center;font-family:'Space Mono',monospace;font-size:0.95rem;font-weight:700;color:var(--cyan)"><span class="token-icon"></span>${d.comm.toFixed(0)}€</div>
+              <div style="font-size:9px;color:var(--muted2);margin-top:3px">Généré : ${d.totR.toFixed(0)}€</div>
               <div style="height:2px;background:var(--border);border-radius:1px;margin-top:6px;overflow:hidden">
                 <div style="height:100%;width:${totalRev>0?Math.round(d.totR/totalRev*100):0}%;background:${d.e.hex};border-radius:1px"></div>
               </div>
