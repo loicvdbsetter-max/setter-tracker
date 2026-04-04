@@ -7,20 +7,28 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#040810;--surface:rgba(8,15,26,0.88);--surface2:rgba(4,10,18,0.92);
+  --bg:#05070a;--surface:rgba(15,23,42,0.62);--surface2:rgba(4,10,18,0.9);
   --border:#0d1a24;--border2:#1a2a35;
-  --text:#ffffff;--muted:#2a4a5a;--muted2:#8aa8c0;
-  --cyan:#00d4ff;--cyan2:#00aaff;--cyan-glow:rgba(0,212,255,0.2);
-  --glow:0 0 14px rgba(0,212,255,0.28),0 0 50px rgba(0,212,255,0.12);
-  --glow-strong:0 0 24px rgba(0,212,255,0.65),0 0 80px rgba(0,212,255,0.28);
-  --metal-border:linear-gradient(135deg,rgba(0,212,255,0.65) 0%,rgba(40,130,220,0.2) 35%,rgba(0,50,120,0.08) 65%,rgba(0,212,255,0.55) 100%);
+  --text:#e2e8f0;--muted:#2a4a5a;--muted2:#8aa8c0;
+  --cyan:#00f2ff;--cyan2:#00d4ff;--cyan-glow:rgba(0,242,255,0.2);
+  --glow:0 10px 30px rgba(0,0,0,0.55),0 0 0 1px rgba(0,242,255,0.15);
+  --glow-strong:0 10px 40px rgba(0,0,0,0.7),0 0 0 1px rgba(0,242,255,0.3),0 0 30px rgba(0,242,255,0.18);
+  --metal-border:linear-gradient(135deg,rgba(0,242,255,0.6) 0%,rgba(40,130,220,0.18) 35%,rgba(0,50,120,0.06) 65%,rgba(0,242,255,0.5) 100%);
+  --laser:linear-gradient(90deg,transparent,#00f2ff,transparent);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 body{
-  background:var(--bg);color:var(--text);
+  background:radial-gradient(ellipse at center,#0a111e 0%,#05070a 100%);
+  background-attachment:fixed;
+  color:var(--text);
   font-family:'Space Mono',monospace;min-height:100vh;
-  background-image:linear-gradient(rgba(0,255,255,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,255,0.05) 1px,transparent 1px);
-  background-size:30px 30px;
+  position:relative;margin:0;
+}
+body::before{
+  content:'';position:fixed;top:0;left:0;width:100%;height:100%;
+  background-image:linear-gradient(rgba(0,242,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,242,255,0.03) 1px,transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;z-index:0;
 }
 /* ===== HUD ANIMATIONS ===== */
 @keyframes chameo-pulse{
@@ -857,8 +865,132 @@ body{
 .auth-denied{margin-top:18px;font-size:11px;color:#f43f5e;letter-spacing:1px;display:none;}
 #authChip{display:none;align-items:center;gap:8px;padding:0 12px;border-left:1px solid var(--border2);font-size:9px;color:var(--muted2);letter-spacing:1px;white-space:nowrap;}
 #authChip.visible{display:flex;}
-#logoutBtn{background:transparent;border:1px solid rgba(0,170,255,0.2);color:var(--muted2);border-radius:5px;padding:3px 8px;font-family:'Space Mono',monospace;font-size:8px;cursor:pointer;transition:all 0.2s;letter-spacing:1px;}
+#logoutBtn{background:transparent;border:1px solid rgba(0,242,255,0.2);color:var(--muted2);border-radius:5px;padding:3px 8px;font-family:'Space Mono',monospace;font-size:8px;cursor:pointer;transition:all 0.2s;letter-spacing:1px;}
 #logoutBtn:hover{border-color:var(--cyan);color:var(--cyan);}
+
+/* ========================================================
+   VIVID GLASS OVERRIDE
+   ======================================================== */
+
+/* --- Cards : verre dépoli + bordure laser --- */
+.kpi-card,.kpi-ring-card,.graph-card,.funnel-card,
+.dash-ent-card,.rev-card-dash,.obj-card-dash,
+.cal-wrap,.kpi-tasks-card,.tasks-wrap,
+.lsum-card,.params-card,.padd,.acc-header {
+  background:rgba(15,23,42,0.62);
+  backdrop-filter:blur(15px);
+  -webkit-backdrop-filter:blur(15px);
+  border:1px solid rgba(0,242,255,0.15);
+  border-radius:16px;
+  box-shadow:0 12px 32px rgba(0,0,0,0.6);
+}
+/* hover : lueur laser sur la bordure */
+.kpi-card:hover,.graph-card:hover,.funnel-card:hover,
+.dash-ent-card:hover,.rev-card-dash:hover,.lsum-card:hover,
+.params-card:hover,.kpi-tasks-card:hover,.tasks-wrap:hover {
+  border-color:rgba(0,242,255,0.35);
+  box-shadow:0 12px 40px rgba(0,0,0,0.65),0 0 22px rgba(0,242,255,0.14);
+}
+/* Ent cards JOUR : conserver la bordure top colorée */
+.ent-card{
+  background:rgba(15,23,42,0.62);
+  backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);
+  border:1px solid rgba(0,242,255,0.12);
+  border-top:2px solid var(--c);
+  border-radius:16px;
+  box-shadow:0 12px 32px rgba(0,0,0,0.6);
+}
+/* Params cards : conserver la border-top colorée */
+.params-card{border-top:2px solid var(--c,var(--cyan));}
+/* Acc body verre */
+.acc-body{
+  background:rgba(10,18,34,0.7);
+  backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);
+  border:1px solid rgba(0,242,255,0.1);border-top:none;
+  border-radius:0 0 16px 16px;
+}
+
+/* --- Laser line au sommet de chaque carte (remplace ::before métal) --- */
+.kpi-card::before,.kpi-ring-card::before,.graph-card::before,
+.funnel-card::before,.dash-ent-card::before,.rev-card-dash::before,
+.obj-card-dash::before,.cal-wrap::before,.kpi-tasks-card::before,
+.tasks-wrap::before,.lsum-card::before {
+  content:'';
+  position:absolute;
+  inset:unset;
+  top:0;left:10%;right:10%;
+  height:1px;
+  padding:0;
+  background:var(--laser);
+  -webkit-mask:none;mask:none;
+  border-radius:0;
+  z-index:1;pointer-events:none;
+}
+/* Dash ent card : laser au lieu de la barre gauche */
+.dash-ent-card::before{left:5%;right:5%;}
+/* padd : laser via ::before déjà présent */
+.padd::before{background:var(--laser);-webkit-mask:none;mask:none;padding:0;inset:unset;top:0;left:10%;right:10%;height:1px;border-radius:0;}
+
+/* --- Boutons globaux (hors mplus coloré entrepreneur) --- */
+button:not(.mplus):not(.auth-btn):not(.psave):not(.ladd-btn) {
+  background:rgba(0,242,255,0.05);
+  border:1px solid rgba(0,242,255,0.28);
+  color:#00f2ff;
+  font-family:'Space Mono',monospace;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  transition:all 0.25s ease;
+  cursor:pointer;
+  border-radius:8px;
+}
+button:not(.mplus):not(.auth-btn):not(.psave):not(.ladd-btn):hover {
+  background:#00f2ff;
+  color:#000;
+  box-shadow:0 0 20px rgba(0,242,255,0.55);
+}
+
+/* --- Titres néon --- */
+.dash-title .t,.jh-title,.auth-logo .t {
+  color:#00f2ff;
+  text-shadow:0 0 18px rgba(0,242,255,0.55);
+}
+.kpi-label,.graph-title,.funnel-title,.obj-title,.rev-title,
+.tasks-sub,.stitle,.kpi-tasks-lbl {
+  color:rgba(0,242,255,0.55);
+  letter-spacing:2px;
+}
+
+/* --- Inputs verre --- */
+.pinput,.linput,.lcash,.task-add-input,.mval-input {
+  background:rgba(0,242,255,0.03);
+  border:1px solid rgba(0,242,255,0.18);
+  color:var(--text);
+  border-radius:8px;
+}
+.pinput:focus,.task-add-input:focus {
+  border-color:rgba(0,242,255,0.5);
+  box-shadow:0 0 12px rgba(0,242,255,0.18);
+  outline:none;
+}
+
+/* --- Tab bar glass --- */
+.tabs {
+  background:rgba(5,7,10,0.8);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(0,242,255,0.12);
+}
+
+/* --- Auth card glass --- */
+.auth-card {
+  background:rgba(10,17,30,0.82);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:1px solid rgba(0,242,255,0.2);
+  border-radius:20px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.7),0 0 0 1px rgba(0,242,255,0.08);
+}
+
+/* --- z-index : content au dessus du body::before grid --- */
+.tabs,.page,.hud-scanline{position:relative;z-index:1;}
 </style>
 </head>
 <body>
