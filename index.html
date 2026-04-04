@@ -976,31 +976,10 @@ button:not(.mplus):not(.auth-btn):not(.psave):not(.ladd-btn):hover {
   box-shadow:0 20px 60px rgba(0,0,0,0.7),0 0 0 1px rgba(0,242,255,0.08);
 }
 
-/* --- Token icons (pièces dorées) --- */
-.token-icon{
-  display:inline-block;
-  width:14px;height:14px;
-  background:linear-gradient(135deg,#ffcc00,#ff8c00);
-  border-radius:50%;
-  margin-right:6px;
-  box-shadow:0 0 8px rgba(255,140,0,0.55),0 0 2px rgba(255,204,0,0.4);
-  border:1px solid rgba(255,255,255,0.22);
-  vertical-align:middle;
-  flex-shrink:0;
-}
-
-/* Token auto sur les valeurs leads summary */
-.lsum-val::before{
-  content:'';
-  display:inline-block;
-  width:13px;height:13px;
-  background:linear-gradient(135deg,#ffcc00,#ff8c00);
-  border-radius:50%;
-  margin-right:7px;
-  box-shadow:0 0 8px rgba(255,140,0,0.55);
-  border:1px solid rgba(255,255,255,0.22);
-  vertical-align:middle;
-  position:relative;top:-1px;
+/* --- Token tech (icônes filaires HUD) --- */
+.token-tech{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:18px;height:20px;margin-right:5px;flex-shrink:0;vertical-align:middle;
 }
 
 /* Typographie revenus renforcée */
@@ -1910,23 +1889,55 @@ async function renderDash(){
       <div class="rev-card-dash">
         <div class="rev-title">REVENUS CE MOIS — par entrepreneur</div>
 
-        <!-- Totaux en haut : 4 colonnes bien remplies -->
+        <!-- Totaux en haut : 4 colonnes avec icônes filaires -->
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border2);">
-          <div style="background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:8px;padding:10px 12px;">
-            <div style="font-size:7px;color:rgba(0,212,255,0.45);letter-spacing:2px;margin-bottom:4px">MA PART</div>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:#00d4ff;text-shadow:0 0 12px rgba(0,212,255,0.5)">${myPart.toFixed(0)}€</div>
+          <div style="background:rgba(0,242,255,0.05);border:1px solid rgba(0,242,255,0.15);border-radius:10px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <div>
+              <div style="font-size:7px;color:rgba(0,242,255,0.5);letter-spacing:2px;margin-bottom:5px">MA PART</div>
+              <div style="font-family:'Space Mono',monospace;font-size:1.35rem;font-weight:700;color:#00f2ff">${myPart.toFixed(0)}€</div>
+            </div>
+            <svg width="44" height="50" viewBox="0 0 44 50" fill="none" style="flex-shrink:0;opacity:0.72">
+              <defs><linearGradient id="hgPart" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#00f2ff"/><stop offset="100%" stop-color="#ffcc00"/></linearGradient></defs>
+              <polygon points="22,2 40,12 40,38 22,48 4,38 4,12" fill="none" stroke="url(#hgPart)" stroke-width="1.2"/>
+              <polygon points="22,9 34,16 34,34 22,41 10,34 10,16" fill="none" stroke="url(#hgPart)" stroke-width="0.5" opacity="0.28"/>
+              <text x="22" y="32" text-anchor="middle" font-family="Space Mono,monospace" font-size="15" font-weight="700" fill="url(#hgPart)">€</text>
+            </svg>
           </div>
-          <div style="background:rgba(52,211,153,0.04);border:1px solid rgba(52,211,153,0.1);border-radius:8px;padding:10px 12px;">
-            <div style="font-size:7px;color:rgba(52,211,153,0.4);letter-spacing:2px;margin-bottom:4px">TOTAL GÉNÉRÉ</div>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:#34d39988">${totalRev.toFixed(0)}€</div>
+          <div style="background:rgba(52,211,153,0.04);border:1px solid rgba(52,211,153,0.12);border-radius:10px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <div>
+              <div style="font-size:7px;color:rgba(52,211,153,0.5);letter-spacing:2px;margin-bottom:5px">TOTAL GÉNÉRÉ</div>
+              <div style="font-family:'Space Mono',monospace;font-size:1.35rem;font-weight:700;color:#34d399">${totalRev.toFixed(0)}€</div>
+            </div>
+            <svg width="44" height="50" viewBox="0 0 44 50" fill="none" style="flex-shrink:0;opacity:0.72">
+              <defs><linearGradient id="hgGen" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#34d399"/><stop offset="100%" stop-color="#00f2ff"/></linearGradient></defs>
+              <polygon points="22,2 40,12 40,38 22,48 4,38 4,12" fill="none" stroke="url(#hgGen)" stroke-width="1.2"/>
+              <polygon points="22,9 34,16 34,34 22,41 10,34 10,16" fill="none" stroke="url(#hgGen)" stroke-width="0.5" opacity="0.28"/>
+              <text x="22" y="32" text-anchor="middle" font-family="Space Mono,monospace" font-size="15" font-weight="700" fill="url(#hgGen)">€</text>
+            </svg>
           </div>
-          <div style="background:rgba(167,139,250,0.04);border:1px solid rgba(167,139,250,0.1);border-radius:8px;padding:10px 12px;">
-            <div style="font-size:7px;color:rgba(167,139,250,0.4);letter-spacing:2px;margin-bottom:4px">LEADS CLOSÉS</div>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:#a78bfa88">${Object.values(leads).length}</div>
+          <div style="background:rgba(167,139,250,0.04);border:1px solid rgba(167,139,250,0.12);border-radius:10px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <div>
+              <div style="font-size:7px;color:rgba(167,139,250,0.5);letter-spacing:2px;margin-bottom:5px">LEADS CLOSÉS</div>
+              <div style="font-family:'Space Mono',monospace;font-size:1.35rem;font-weight:700;color:#a78bfa">${Object.values(leads).length}</div>
+            </div>
+            <svg width="44" height="50" viewBox="0 0 44 50" fill="none" style="flex-shrink:0;opacity:0.72">
+              <circle cx="22" cy="17" r="9" fill="none" stroke="#a78bfa" stroke-width="1.2"/>
+              <circle cx="22" cy="17" r="4" fill="none" stroke="#a78bfa" stroke-width="0.5" opacity="0.3"/>
+              <path d="M5,49 Q5,33 22,33 Q39,33 39,49" fill="none" stroke="#a78bfa" stroke-width="1.2"/>
+              <line x1="8" y1="49" x2="36" y2="49" stroke="#a78bfa" stroke-width="0.5" opacity="0.3"/>
+            </svg>
           </div>
-          <div style="background:rgba(251,146,60,0.04);border:1px solid rgba(251,146,60,0.1);border-radius:8px;padding:10px 12px;">
-            <div style="font-size:7px;color:rgba(251,146,60,0.4);letter-spacing:2px;margin-bottom:4px">MEILLEUR MOIS</div>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:#fb923c88">${entData.reduce((a,d)=>d.comm>a?d.comm:a,0).toFixed(0)}€</div>
+          <div style="background:rgba(251,146,60,0.04);border:1px solid rgba(251,146,60,0.12);border-radius:10px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <div>
+              <div style="font-size:7px;color:rgba(251,146,60,0.5);letter-spacing:2px;margin-bottom:5px">MEILLEUR MOIS</div>
+              <div style="font-family:'Space Mono',monospace;font-size:1.35rem;font-weight:700;color:#fb923c">${entData.reduce((a,d)=>d.comm>a?d.comm:a,0).toFixed(0)}€</div>
+            </div>
+            <svg width="44" height="50" viewBox="0 0 44 50" fill="none" style="flex-shrink:0;opacity:0.72">
+              <defs><linearGradient id="hgBest" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fb923c"/><stop offset="100%" stop-color="#ffcc00"/></linearGradient></defs>
+              <polygon points="22,2 40,12 40,38 22,48 4,38 4,12" fill="none" stroke="url(#hgBest)" stroke-width="1.2"/>
+              <polygon points="22,9 34,16 34,34 22,41 10,34 10,16" fill="none" stroke="url(#hgBest)" stroke-width="0.5" opacity="0.28"/>
+              <text x="22" y="32" text-anchor="middle" font-family="Space Mono,monospace" font-size="15" font-weight="700" fill="url(#hgBest)">€</text>
+            </svg>
           </div>
         </div>
 
@@ -1935,7 +1946,13 @@ async function renderDash(){
           ${entData.map(d=>`
             <div style="border-left:2px solid ${d.e.hex}44;padding-left:10px;">
               <div style="font-size:9px;color:${d.e.hex}88;letter-spacing:1px;margin-bottom:4px">${d.e.name} · ${d.e.rate}%</div>
-              <div style="display:flex;align-items:center;font-family:'Space Mono',monospace;font-size:0.95rem;font-weight:700;color:var(--cyan)"><span class="token-icon"></span>${d.comm.toFixed(0)}€</div>
+              <div style="display:flex;align-items:center;gap:5px;font-family:'Space Mono',monospace;font-size:0.95rem;font-weight:700;color:var(--cyan)">
+                <svg width="16" height="18" viewBox="0 0 44 50" fill="none" style="flex-shrink:0;opacity:0.8">
+                  <polygon points="22,2 40,12 40,38 22,48 4,38 4,12" fill="none" stroke="${d.e.hex}" stroke-width="2.5"/>
+                  <text x="22" y="32" text-anchor="middle" font-family="Space Mono,monospace" font-size="18" font-weight="700" fill="${d.e.hex}">€</text>
+                </svg>
+                ${d.comm.toFixed(0)}€
+              </div>
               <div style="font-size:9px;color:var(--muted2);margin-top:3px">Généré : ${d.totR.toFixed(0)}€</div>
               <div style="height:2px;background:var(--border);border-radius:1px;margin-top:6px;overflow:hidden">
                 <div style="height:100%;width:${totalRev>0?Math.round(d.totR/totalRev*100):0}%;background:${d.e.hex};border-radius:1px"></div>
