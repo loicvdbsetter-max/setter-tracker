@@ -67,7 +67,7 @@ body{
 .dash-logo{display:flex;align-items:center;gap:14px;}
 .dash-title{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:4px;line-height:1;}
 .dash-title .s{background:linear-gradient(180deg,#e8f4ff,#a0b8cc,#6080a0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.dash-title .t{color:var(--cyan);text-shadow:0 0 10px rgba(0,212,255,0.5);}
+.dash-title .t{color:var(--cyan);}
 .dash-sub{font-size:7px;color:rgba(0,170,255,0.3);letter-spacing:2px;margin-top:2px;}
 .dash-clock{text-align:right;}
 .dash-time{font-size:9px;color:rgba(0,170,255,0.5);}
@@ -1600,12 +1600,23 @@ async function loadEntrepreneurs(){
     const s=await get(ref(db,'config/entrepreneurs'));
     if(s.exists()){
       const val=s.val();
-      // Firebase object to array
       ENTS=Object.values(val).filter(e=>e&&e.key&&e.name);
-      if(ENTS.length===0)ENTS=[...DEF_ENTS];
-      ENTS.forEach(e=>{if(!METRICS[e.key])METRICS[e.key]=[...UNIFIED_METRICS];});
+    } else {
+      ENTS=[];
     }
-  }catch(e){}
+    // Fallback : si Firebase vide ou nœud absent, réinjecte les 4 profils par défaut
+    if(ENTS.length===0){
+      ENTS=[...DEF_ENTS];
+      // Persist les défauts pour que l'UI et Firebase soient synchronisés
+      const batch={};
+      DEF_ENTS.forEach(e=>{batch[e.key]={key:e.key,name:e.name,hex:e.hex,rate:e.rate};});
+      await set(ref(db,'config/entrepreneurs'),batch).catch(()=>{});
+    }
+    ENTS.forEach(e=>{if(!METRICS[e.key])METRICS[e.key]=[...UNIFIED_METRICS];});
+  }catch(e){
+    // En cas d'erreur réseau, utilise les défauts en mémoire
+    if(ENTS.length===0)ENTS=[...DEF_ENTS];
+  }
 }
 
 // Metric order per ent (drag & drop)
@@ -3153,7 +3164,14 @@ async function saveEnt(key){
   const name=document.getElementById(`pn_${key}`)?.value||'';
   const rate=parseFloat(document.getElementById(`pr_${key}`)?.value)||5;
   const hex=document.getElementById(`pc_${key}`)?.value||'#00d4ff';
-  try{await set(ref(db,`config/entrepreneurs/${key}`),{key,name,hex,rate});await loadEntrepreneurs();renderParams();}catch(e){}
+  // Écrit UNIQUEMENT le profil de cet entrepreneur — jamais les autres
+  const existing=ENTS.find(e=>e.key===key)||{};
+  const updated={...existing,key,name,hex,rate};
+  try{
+    await set(ref(db,`config/entrepreneurs/${key}`),updated);
+    await loadEntrepreneurs();
+    renderParams();
+  }catch(e){}
 }
 window.saveEnt=saveEnt;
 async function delEnt(key){
