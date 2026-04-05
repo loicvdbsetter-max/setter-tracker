@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Setter Tracker</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&family=Inter:wght@500;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#05070a;--surface:rgba(15,23,42,0.62);--surface2:rgba(4,10,18,0.9);
@@ -1172,7 +1172,94 @@ body::after{
 }
 
 /* ========================================================
-   ICE-COLD TECH — override final
+   DEEP ICE FINAL — lisibilité absolue, zéro néon sur texte
+   ======================================================== */
+
+/* Grille body supprimée (plus de pollution visuelle) */
+body::before{display:none !important;}
+
+/* Fond "Deep Ice" — linear-gradient vert sombre profond */
+.kpi-card,.kpi-ring-card,.graph-card,.funnel-card,
+.rev-card-dash,.obj-card-dash,.cal-wrap,
+.kpi-tasks-card,.tasks-wrap,.lsum-card,.params-card,.padd,.acc-header{
+  background:linear-gradient(135deg,#020b0d 0%,#051a1d 100%) !important;
+  background-size:100% 100% !important;
+  border:1px solid rgba(0,255,255,0.1) !important;
+  border-radius:12px !important;
+  box-shadow:0 4px 22px rgba(0,0,0,0.52) !important;
+}
+
+/* Cartes entrepreneur Dash : bloom coloré sur la bordure, PAS à l'intérieur */
+.dash-ent-card{
+  background:linear-gradient(135deg,#020b0d 0%,#051a1d 100%) !important;
+  background-size:100% 100% !important;
+  border:1.5px solid rgba(var(--cr),0.55) !important;
+  border-radius:12px !important;
+  box-shadow:
+    0 0 24px rgba(var(--cr),0.38),
+    0 0 60px rgba(var(--cr),0.15),
+    0 4px 22px rgba(0,0,0,0.52) !important;
+}
+.dash-ent-card:hover{
+  border-color:rgba(var(--cr),0.8) !important;
+  box-shadow:
+    0 0 38px rgba(var(--cr),0.6),
+    0 0 85px rgba(var(--cr),0.26),
+    0 4px 26px rgba(0,0,0,0.55) !important;
+}
+
+/* Cartes entrepreneur Jour */
+.ent-card{
+  background:linear-gradient(135deg,#020b0d 0%,#051a1d 100%) !important;
+  background-size:100% 100% !important;
+  border:1px solid rgba(var(--cr),0.38) !important;
+  border-top:2px solid var(--c) !important;
+  border-radius:12px !important;
+  box-shadow:
+    0 0 22px rgba(var(--cr),0.35),
+    0 0 55px rgba(var(--cr),0.13),
+    0 4px 20px rgba(0,0,0,0.5) !important;
+}
+.ent-card:hover{
+  border-color:rgba(var(--cr),0.62) !important;
+  border-top-color:var(--c) !important;
+  box-shadow:
+    0 0 34px rgba(var(--cr),0.58),
+    0 0 78px rgba(var(--cr),0.24) !important;
+}
+
+/* ZÉRO néon/glow sur les textes — absolu */
+*{text-shadow:none !important;}
+
+/* Noms entrepreneur : Inter Bold, dégradé argenté net */
+.dash-ent-name{
+  font-family:'Inter',system-ui,-apple-system,sans-serif !important;
+  font-weight:700 !important;
+  font-size:0.82rem !important;
+  letter-spacing:2px !important;
+  background:linear-gradient(135deg,#d8eef5 0%,#8ab4c8 55%,#c4dce6 100%) !important;
+  -webkit-background-clip:text !important;
+  -webkit-text-fill-color:transparent !important;
+  background-clip:text !important;
+}
+.ent-card-name{
+  font-family:'Inter',system-ui,-apple-system,sans-serif !important;
+  font-weight:700 !important;
+  letter-spacing:2px !important;
+  background:linear-gradient(135deg,#d8eef5 0%,#8ab4c8 55%,#c4dce6 100%) !important;
+  -webkit-background-clip:text !important;
+  -webkit-text-fill-color:transparent !important;
+  background-clip:text !important;
+}
+
+/* 3D perspective maintenu (rotateY cockpit) */
+@media(min-width:769px){
+  .dash-page{perspective:1200px;perspective-origin:50% 25%;}
+  .kpi-row,.mid-row,.ents-row,.bottom-row{transform:rotateY(-0.8deg);transform-origin:50% 50%;}
+}
+
+/* ========================================================
+   ICE-COLD TECH — override intermédiaire (conservé)
    ======================================================== */
 
 /* 1. Fond radial givré + micro-grille interne sur toutes les cartes */
