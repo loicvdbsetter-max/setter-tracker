@@ -1147,19 +1147,7 @@ body::after{
     0 0 95px rgba(var(--cr),0.28) !important;
 }
 
-/* Text glow FUI sur valeurs clés */
-.kpi-val{text-shadow:0 0 12px currentColor,0 0 30px currentColor !important;}
-.dash-title .t{text-shadow:0 0 24px rgba(0,242,255,0.8),0 0 50px rgba(0,242,255,0.38) !important;}
-.kpi-label{text-shadow:0 0 8px rgba(0,242,255,0.5);}
-.graph-title,.funnel-title,.obj-title,.rev-title,.tasks-sub,.stitle,.kpi-tasks-lbl{
-  text-shadow:0 0 8px rgba(0,242,255,0.42);
-}
-.tcval{text-shadow:0 0 12px var(--cyan),0 0 30px var(--cyan) !important;}
-.ring-pct{text-shadow:0 0 12px currentColor,0 0 30px currentColor !important;}
-.dash-ent-name{text-shadow:0 0 10px var(--c),0 0 24px var(--c) !important;}
-.ent-card-name{text-shadow:0 0 10px var(--c),0 0 24px var(--c) !important;}
-.lsum-val{text-shadow:0 0 10px rgba(0,242,255,0.5),0 0 24px rgba(0,242,255,0.22) !important;}
-.jh-title{text-shadow:0 0 18px rgba(0,242,255,0.6),0 0 40px rgba(0,242,255,0.25) !important;}
+/* Text glow FUI — SUPPRIMÉ */
 
 /* Onglet actif : bloom sur l'icône */
 .tab.active .ticon{
@@ -1352,6 +1340,47 @@ body::before{display:none !important;}
     transform:rotateY(-0.8deg);
     transform-origin:50% 50%;
   }
+}
+
+/* ========================================================
+   RESET ABSOLU — doit rester en DERNIER dans le fichier CSS
+   ======================================================== */
+
+/* 1. Fond Deep Ice sur toutes les cartes — écrase ICE-COLD TECH */
+.kpi-card,.kpi-ring-card,.graph-card,.funnel-card,
+.rev-card-dash,.obj-card-dash,.cal-wrap,
+.kpi-tasks-card,.tasks-wrap,.lsum-card,.params-card,.padd,.acc-header{
+  background:linear-gradient(135deg,#020b0d 0%,#082024 100%) !important;
+  background-size:100% 100% !important;
+}
+.dash-ent-card{
+  background:linear-gradient(135deg,#020b0d 0%,#082024 100%) !important;
+  background-size:100% 100% !important;
+}
+.ent-card{
+  background:linear-gradient(135deg,#020b0d 0%,#082024 100%) !important;
+  background-size:100% 100% !important;
+}
+
+/* 2. Zéro text-shadow sur chaque sélecteur texte (spécificité classe > universel) */
+.kpi-val,.kpi-label,.dash-title .t,.graph-title,.funnel-title,
+.obj-title,.rev-title,.tasks-sub,.stitle,.kpi-tasks-lbl,
+.tcval,.ring-pct,.lsum-val,.jh-title,.dash-ent-name,.ent-card-name,
+.dash-ent-val,.dash-ent-lbl,.dash-ent-conv,.mlbl,.mval-input,
+.auth-logo .t,.auth-logo .s{
+  text-shadow:none !important;
+  filter:none !important;
+}
+
+/* 3. Noms des entrepreneurs : blanc pur, zéro gradient, zéro effet */
+.dash-ent-name,.ent-card-name{
+  color:#ffffff !important;
+  -webkit-text-fill-color:#ffffff !important;
+  background:none !important;
+  -webkit-background-clip:unset !important;
+  background-clip:unset !important;
+  text-shadow:none !important;
+  filter:none !important;
 }
 </style>
 </head>
