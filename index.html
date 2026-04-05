@@ -1170,6 +1170,102 @@ body::after{
 .kpi-card[style*="ffd700"]{
   background:radial-gradient(ellipse at 50% 50%,rgba(255,215,0,0.06) 0%,rgba(6,14,22,0.85) 70%) !important;
 }
+
+/* ========================================================
+   ICE-COLD TECH — override final
+   ======================================================== */
+
+/* 1. Fond radial givré + micro-grille interne sur toutes les cartes */
+.kpi-card,.kpi-ring-card,.graph-card,.funnel-card,
+.rev-card-dash,.obj-card-dash,.cal-wrap,
+.kpi-tasks-card,.tasks-wrap,.lsum-card,.params-card,.padd,.acc-header{
+  background:
+    linear-gradient(rgba(0,242,255,0.012) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,242,255,0.012) 1px,transparent 1px),
+    radial-gradient(ellipse at center,#06101a 0%,#0b1b22 100%) !important;
+  background-size:14px 14px,14px 14px,100% 100% !important;
+  border:1px solid rgba(0,242,255,0.2) !important;
+  border-radius:10px !important;
+  box-shadow:
+    inset 1px 1px 10px rgba(0,0,0,0.68),
+    inset -1px -1px 3px rgba(0,242,255,0.02),
+    0 4px 18px rgba(0,0,0,0.42) !important;
+}
+
+/* 2. Cartes Entrepreneur (Dash) : fond coloré + bloom néon vif */
+.dash-ent-card{
+  background:
+    linear-gradient(rgba(var(--cr),0.008) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(var(--cr),0.008) 1px,transparent 1px),
+    radial-gradient(ellipse at 35% 35%,rgba(var(--cr),0.06) 0%,#060d14 55%,#0b1b22 100%) !important;
+  background-size:14px 14px,14px 14px,100% 100% !important;
+  border:1.5px solid rgba(var(--cr),0.55) !important;
+  border-radius:10px !important;
+  box-shadow:
+    inset 1px 1px 10px rgba(0,0,0,0.68),
+    0 0 28px rgba(var(--cr),0.48),
+    0 0 70px rgba(var(--cr),0.2) !important;
+}
+.dash-ent-card:hover{
+  border-color:rgba(var(--cr),0.82) !important;
+  box-shadow:
+    inset 1px 1px 8px rgba(0,0,0,0.62),
+    0 0 45px rgba(var(--cr),0.72),
+    0 0 100px rgba(var(--cr),0.32) !important;
+}
+
+/* 3. Cartes Entrepreneur (Jour) : bloom coloré */
+.ent-card{
+  background:
+    radial-gradient(ellipse at 35% 25%,rgba(var(--cr),0.06) 0%,rgba(6,10,20,0.88) 60%) !important;
+  border-color:rgba(var(--cr),0.35) !important;
+  border-radius:12px !important;
+  box-shadow:
+    inset 1px 1px 10px rgba(0,0,0,0.68),
+    0 0 26px rgba(var(--cr),0.42),
+    0 0 65px rgba(var(--cr),0.16) !important;
+}
+.ent-card:hover{
+  border-color:rgba(var(--cr),0.62) !important;
+  box-shadow:
+    inset 1px 1px 8px rgba(0,0,0,0.62),
+    0 0 40px rgba(var(--cr),0.68),
+    0 0 90px rgba(var(--cr),0.28) !important;
+}
+
+/* 4. SUPPRESSION TOTALE du text-shadow (lisibilité nette) */
+*{text-shadow:none !important;}
+
+/* 5. Textes secondaires : gris technique #a0b0b5 */
+:root{--muted2:#a0b0b5;}
+.kpi-sub,.kpi-label,.funnel-row-lbl,.graph-title,.funnel-title,
+.obj-title,.rev-title,.kpi-tasks-lbl,.stitle,.kpi-ring-lbl,.ring-cnt,
+.tasks-sub,.tasks-status,.tasks-reset,.plabel,.lsum-comm,
+.dash-ent-lbl,.cal-dh,.cal-label,.acc-chevron,.live-lbl,
+.dash-sub,.dash-time,.dash-date-lbl,.dash-ent-conv{
+  color:#a0b0b5 !important;
+}
+/* Valeurs input/metric */
+.mlbl:not(.call){color:#a0b0b5 !important;}
+.dash-ent-val{color:#c8d8e0 !important;}
+
+/* 6. Titres entrepreneur + chiffres clés : cyan vif, NET */
+.dash-ent-name,.ent-card-name{color:var(--c) !important;}
+.dash-title .t,.jh-title,.auth-logo .t{color:#00f2ff !important;}
+.kpi-val{color:var(--kc,var(--cyan)) !important;}
+.lsum-val,.tcval,.ring-pct{color:var(--c,var(--cyan)) !important;}
+
+/* 7. 3D Perspective cockpit — rotateY (user spec) */
+@media(min-width:769px){
+  .dash-page{
+    perspective:1200px;
+    perspective-origin:50% 25%;
+  }
+  .kpi-row,.mid-row,.ents-row,.bottom-row{
+    transform:rotateY(-0.8deg);
+    transform-origin:50% 50%;
+  }
+}
 </style>
 </head>
 <body>
