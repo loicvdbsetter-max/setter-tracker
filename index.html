@@ -1063,6 +1063,113 @@ button:not(.mplus):not(.mminus):not(.auth-btn):not(.psave):not(.ladd-btn):hover 
 @media(max-width:480px){
   .mminus,.mplus{width:40px !important;height:40px !important;}
 }
+
+/* ========================================================
+   FUI OVERDRIVE — COCKPIT IMMERSIF
+   ======================================================== */
+
+/* Micro-grille duale + vignette ambiante */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(0,242,255,0.022) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,242,255,0.022) 1px,transparent 1px),
+    linear-gradient(rgba(0,242,255,0.007) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,242,255,0.007) 1px,transparent 1px);
+  background-size:40px 40px,40px 40px,8px 8px,8px 8px;
+}
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 85% 60% at 50% 28%,rgba(0,242,255,0.065) 0%,transparent 70%),
+    radial-gradient(ellipse 55% 50% at 4% 96%,rgba(0,90,220,0.09) 0%,transparent 55%),
+    radial-gradient(ellipse 45% 45% at 96% 4%,rgba(0,242,255,0.055) 0%,transparent 50%);
+}
+
+/* 3D Perspective cockpit (desktop uniquement) */
+@media(min-width:769px){
+  .dash-page{
+    perspective:2400px;
+    perspective-origin:50% -8%;
+  }
+  .kpi-row,.mid-row,.ents-row,.bottom-row{
+    transform:rotateX(0.8deg);
+    transform-origin:50% 0;
+  }
+}
+
+/* Bloom général : inset relief + néon extérieur */
+.kpi-card,.kpi-ring-card,.graph-card,.funnel-card,
+.obj-card-dash,.cal-wrap,.kpi-tasks-card,.tasks-wrap,
+.rev-card-dash,.lsum-card,.params-card,.acc-header{
+  box-shadow:
+    inset 2px 2px 8px rgba(0,0,0,0.72),
+    inset -1px -1px 3px rgba(255,255,255,0.025),
+    0 0 20px rgba(0,242,255,0.22),
+    0 0 55px rgba(0,242,255,0.08) !important;
+}
+.kpi-card:hover,.graph-card:hover,.funnel-card:hover,
+.cal-wrap:hover,.tasks-wrap:hover,.kpi-tasks-card:hover,
+.rev-card-dash:hover{
+  box-shadow:
+    inset 2px 2px 8px rgba(0,0,0,0.72),
+    inset -1px -1px 3px rgba(255,255,255,0.04),
+    0 0 30px rgba(0,242,255,0.45),
+    0 0 75px rgba(0,242,255,0.16) !important;
+}
+
+/* Entrepreneur cards : bloom coloré par --cr */
+.dash-ent-card{
+  border-color:rgba(var(--cr),0.38) !important;
+  box-shadow:
+    inset 2px 2px 7px rgba(0,0,0,0.68),
+    inset -1px -1px 3px rgba(255,255,255,0.025),
+    0 0 22px rgba(var(--cr),0.35),
+    0 0 60px rgba(var(--cr),0.13) !important;
+}
+.dash-ent-card:hover{
+  border-color:rgba(var(--cr),0.65) !important;
+  box-shadow:
+    inset 1px 1px 5px rgba(0,0,0,0.6),
+    0 0 38px rgba(var(--cr),0.65),
+    0 0 90px rgba(var(--cr),0.28) !important;
+}
+.ent-card{
+  box-shadow:
+    inset 2px 2px 7px rgba(0,0,0,0.68),
+    0 0 24px rgba(var(--cr),0.35),
+    0 0 65px rgba(var(--cr),0.13) !important;
+}
+.ent-card:hover{
+  box-shadow:
+    inset 1px 1px 5px rgba(0,0,0,0.6),
+    0 0 40px rgba(var(--cr),0.65),
+    0 0 95px rgba(var(--cr),0.28) !important;
+}
+
+/* Text glow FUI sur valeurs clés */
+.kpi-val{text-shadow:0 0 12px currentColor,0 0 30px currentColor !important;}
+.dash-title .t{text-shadow:0 0 24px rgba(0,242,255,0.8),0 0 50px rgba(0,242,255,0.38) !important;}
+.kpi-label{text-shadow:0 0 8px rgba(0,242,255,0.5);}
+.graph-title,.funnel-title,.obj-title,.rev-title,.tasks-sub,.stitle,.kpi-tasks-lbl{
+  text-shadow:0 0 8px rgba(0,242,255,0.42);
+}
+.tcval{text-shadow:0 0 12px var(--cyan),0 0 30px var(--cyan) !important;}
+.ring-pct{text-shadow:0 0 12px currentColor,0 0 30px currentColor !important;}
+.dash-ent-name{text-shadow:0 0 10px var(--c),0 0 24px var(--c) !important;}
+.ent-card-name{text-shadow:0 0 10px var(--c),0 0 24px var(--c) !important;}
+.lsum-val{text-shadow:0 0 10px rgba(0,242,255,0.5),0 0 24px rgba(0,242,255,0.22) !important;}
+.jh-title{text-shadow:0 0 18px rgba(0,242,255,0.6),0 0 40px rgba(0,242,255,0.25) !important;}
+
+/* Onglet actif : bloom sur l'icône */
+.tab.active .ticon{
+  filter:drop-shadow(0 0 7px rgba(0,242,255,0.95)) drop-shadow(0 0 18px rgba(0,242,255,0.45)) !important;
+}
+
+/* Fond radial "chambre verre" sur podium KPI */
+.kpi-card[style*="ffd700"]{
+  background:radial-gradient(ellipse at 50% 50%,rgba(255,215,0,0.06) 0%,rgba(6,14,22,0.85) 70%) !important;
+}
 </style>
 </head>
 <body>
