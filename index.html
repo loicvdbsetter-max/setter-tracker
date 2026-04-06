@@ -1617,7 +1617,7 @@ async function loadObjectifs(y,mo){const k=`${y}_${mo}`;if(oCache[k])return oCac
 async function loadRevenus(y,mo){const k=`${y}_${mo}`;if(rCache[k])return rCache[k];try{const s=await get(ref(db,`revenus/${y}/${mo}`));rCache[k]=s.exists()?s.val():{};return rCache[k];}catch(e){return {};}}
 async function loadEntrepreneurs(){
   // Nouvelle palette v2 — écrasement forcé au premier chargement
-  const PALETTE_V='3';
+  const PALETTE_V='4';
   const PALETTE={
     O:{key:'O',name:'Ozcan', hex:'#1E90FF',rate:5},
     J:{key:'J',name:'Jorann',hex:'#8B0000',rate:5},
