@@ -1171,12 +1171,12 @@ let METRICS={...DEF_MET};
 
 // TASKS — sauvegardées Firebase
 let TASKS=[
-  {id:'t1',label:'Checker DMs — Ozcan',color:'#3b9eff',badge:'Ozcan',done:false},
-  {id:'t2',label:'Checker DMs — Mika',color:'#fb923c',badge:'Mika',done:false},
-  {id:'t3',label:'VOC nouveaux followers Jorann',color:'#a78bfa',badge:'Jorann',done:false},
+  {id:'t1',label:'Checker DMs — Ozcan',color:'#1E90FF',badge:'Ozcan',done:false},
+  {id:'t2',label:'Checker DMs — Mika',color:'#2E8B57',badge:'Mika',done:false},
+  {id:'t3',label:'VOC nouveaux followers Jorann',color:'#8B0000',badge:'Jorann',done:false},
   {id:'t4',label:'Follow up leads en cours',color:'rgba(0,212,255,0.35)',badge:'Tous',done:false},
-  {id:'t5',label:'Appels qualification Mika',color:'rgba(251,146,60,0.35)',badge:'Mika',done:false},
-  {id:'t6',label:'Check ressource Gaël',color:'rgba(52,211,153,0.35)',badge:'Gaël',done:false},
+  {id:'t5',label:'Appels qualification Mika',color:'rgba(46,139,87,0.35)',badge:'Mika',done:false},
+  {id:'t6',label:'Check ressource Gaël',color:'rgba(255,140,0,0.35)',badge:'Gaël',done:false},
   {id:'t7',label:'Remplir Setter Tracker',color:'rgba(0,212,255,0.5)',badge:'📊',done:false},
 ];
 
@@ -1258,9 +1258,14 @@ async function loadLeads(y,mo){const k=`${y}_${mo}`;if(lCache[k])return lCache[k
 async function loadObjectifs(y,mo){const k=`${y}_${mo}`;if(oCache[k])return oCache[k];try{const s=await get(ref(db,`objectifs/${y}/${mo}`));oCache[k]=s.exists()?s.val():{};return oCache[k];}catch(e){return {};}}
 async function loadRevenus(y,mo){const k=`${y}_${mo}`;if(rCache[k])return rCache[k];try{const s=await get(ref(db,`revenus/${y}/${mo}`));rCache[k]=s.exists()?s.val():{};return rCache[k];}catch(e){return {};}}
 async function loadEntrepreneurs(){
-  // Migration : ancienne palette → nouvelle palette
-  const COLOR_MIG={O:'#1E90FF',J:'#8B0000',G:'#FF8C00',M:'#2E8B57'};
-  const OLD_HEX={O:'#3b9eff',J:'#a78bfa',G:'#34d399',M:'#fb923c'};
+  // Nouvelle palette v2 — écrasement forcé au premier chargement
+  const PALETTE_V='3';
+  const PALETTE={
+    O:{key:'O',name:'Ozcan', hex:'#1E90FF',rate:5},
+    J:{key:'J',name:'Jorann',hex:'#8B0000',rate:5},
+    G:{key:'G',name:'Gaël',  hex:'#FF8C00',rate:10},
+    M:{key:'M',name:'Mika',  hex:'#2E8B57',rate:5},
+  };
   try{
     const s=await get(ref(db,'config/entrepreneurs'));
     if(s.exists()){
@@ -1276,6 +1281,7 @@ async function loadEntrepreneurs(){
       DEF_ENTS.forEach(e=>{batch[e.key]={key:e.key,name:e.name,hex:e.hex,rate:e.rate};});
       await set(ref(db,'config/entrepreneurs'),batch).catch(()=>{});
     }
+    if(ENTS.length===0)ENTS=Object.values(PALETTE);
     ENTS.forEach(e=>{if(!METRICS[e.key])METRICS[e.key]=[...UNIFIED_METRICS];});
   }catch(e){
     if(ENTS.length===0)ENTS=[...DEF_ENTS];
