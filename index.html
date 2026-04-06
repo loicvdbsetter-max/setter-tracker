@@ -1346,33 +1346,53 @@ body::before{display:none !important;}
    RESET ABSOLU — doit rester en DERNIER dans le fichier CSS
    ======================================================== */
 
-/* 1. Fond Deep Ice sur toutes les cartes — écrase ICE-COLD TECH */
+/* 1. Fond #050505 sur toutes les cartes — noir profond unifié */
 .kpi-card,.kpi-ring-card,.graph-card,.funnel-card,
 .rev-card-dash,.obj-card-dash,.cal-wrap,
-.kpi-tasks-card,.tasks-wrap,.lsum-card,.params-card,.padd,.acc-header{
-  background:linear-gradient(135deg,#020b0d 0%,#082024 100%) !important;
-  background-size:100% 100% !important;
-}
-.dash-ent-card{
-  background:linear-gradient(135deg,#020b0d 0%,#082024 100%) !important;
-  background-size:100% 100% !important;
-}
-.ent-card{
-  background:linear-gradient(135deg,#020b0d 0%,#082024 100%) !important;
+.kpi-tasks-card,.tasks-wrap,.lsum-card,.params-card,.padd,.acc-header,
+.dash-ent-card,.ent-card{
+  background:#050505 !important;
   background-size:100% 100% !important;
 }
 
-/* 2. Zéro text-shadow sur chaque sélecteur texte (spécificité classe > universel) */
+/* 2. Bordures 0.5px — cartes génériques (cyan discret) */
+.kpi-card,.kpi-ring-card,.graph-card,.funnel-card,
+.rev-card-dash,.obj-card-dash,.cal-wrap,
+.kpi-tasks-card,.tasks-wrap,.lsum-card,.params-card,.padd,.acc-header{
+  border:0.5px solid rgba(0,212,255,0.25) !important;
+  box-shadow:none !important;
+}
+/* Cartes entrepreneur : bordure colorée avec la couleur du profil */
+.dash-ent-card,.ent-card{
+  border:0.5px solid var(--c) !important;
+  box-shadow:none !important;
+}
+.dash-ent-card:hover,.ent-card:hover{
+  box-shadow:none !important;
+}
+
+/* 3. Zéro box-shadow et text-shadow sur l'ensemble */
+*{box-shadow:none !important;}
+/* Exception : chameo-ring conservé (logo) */
+.chameo-ring::before{
+  box-shadow:0 0 8px rgba(0,212,255,0.2),inset 0 0 8px rgba(0,212,255,0.08) !important;
+}
+/* Exception : task-checkbox checked */
+.task-cb.checked{
+  box-shadow:0 0 6px rgba(0,212,255,0.35) !important;
+}
+
+/* 4. Zéro text-shadow partout (spécificité classe) */
 .kpi-val,.kpi-label,.dash-title .t,.graph-title,.funnel-title,
 .obj-title,.rev-title,.tasks-sub,.stitle,.kpi-tasks-lbl,
 .tcval,.ring-pct,.lsum-val,.jh-title,.dash-ent-name,.ent-card-name,
-.dash-ent-val,.dash-ent-lbl,.dash-ent-conv,.mlbl,.mval-input,
-.auth-logo .t,.auth-logo .s{
+.dash-ent-val,.dash-ent-lbl,.dash-ent-conv,.mlbl,.mval-input.call-val,
+.lcomm,.auth-logo .t,.auth-logo .s{
   text-shadow:none !important;
   filter:none !important;
 }
 
-/* 3. Noms des entrepreneurs : blanc pur, zéro gradient, zéro effet */
+/* 5. Noms des entrepreneurs : blanc pur, zéro gradient, zéro effet */
 .dash-ent-name,.ent-card-name{
   color:#ffffff !important;
   -webkit-text-fill-color:#ffffff !important;
@@ -1492,7 +1512,7 @@ onAuthStateChanged(auth,user=>{
 
 const MFR=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const PRESET_TAGS=['Full','2x','3x','Acompte','Formation'];
-const DEF_ENTS=[{key:'O',name:'Ozcan',hex:'#3b9eff',rate:5},{key:'J',name:'Jorann',hex:'#a78bfa',rate:5},{key:'G',name:'Gaël',hex:'#34d399',rate:10},{key:'M',name:'Mika',hex:'#fb923c',rate:5}];
+const DEF_ENTS=[{key:'O',name:'Ozcan',hex:'#1E90FF',rate:5},{key:'J',name:'Jorann',hex:'#8B0000',rate:5},{key:'G',name:'Gaël',hex:'#FF8C00',rate:10},{key:'M',name:'Mika',hex:'#2E8B57',rate:5}];
 const UNIFIED_METRICS=[
   {k:'firstmsg',  l:'Premiers msgs'},
   {k:'replies',   l:'Réponses'},
@@ -1596,6 +1616,9 @@ async function loadLeads(y,mo){const k=`${y}_${mo}`;if(lCache[k])return lCache[k
 async function loadObjectifs(y,mo){const k=`${y}_${mo}`;if(oCache[k])return oCache[k];try{const s=await get(ref(db,`objectifs/${y}/${mo}`));oCache[k]=s.exists()?s.val():{};return oCache[k];}catch(e){return {};}}
 async function loadRevenus(y,mo){const k=`${y}_${mo}`;if(rCache[k])return rCache[k];try{const s=await get(ref(db,`revenus/${y}/${mo}`));rCache[k]=s.exists()?s.val():{};return rCache[k];}catch(e){return {};}}
 async function loadEntrepreneurs(){
+  // Migration : ancienne palette → nouvelle palette
+  const COLOR_MIG={O:'#1E90FF',J:'#8B0000',G:'#FF8C00',M:'#2E8B57'};
+  const OLD_HEX={O:'#3b9eff',J:'#a78bfa',G:'#34d399',M:'#fb923c'};
   try{
     const s=await get(ref(db,'config/entrepreneurs'));
     if(s.exists()){
@@ -1604,17 +1627,25 @@ async function loadEntrepreneurs(){
     } else {
       ENTS=[];
     }
-    // Fallback : si Firebase vide ou nœud absent, réinjecte les 4 profils par défaut
+    // Fallback : si Firebase vide, réinjecte les 4 profils par défaut
     if(ENTS.length===0){
       ENTS=[...DEF_ENTS];
-      // Persist les défauts pour que l'UI et Firebase soient synchronisés
       const batch={};
       DEF_ENTS.forEach(e=>{batch[e.key]={key:e.key,name:e.name,hex:e.hex,rate:e.rate};});
       await set(ref(db,'config/entrepreneurs'),batch).catch(()=>{});
+    } else {
+      // Migration silencieuse : met à jour les couleurs si elles correspondent à l'ancienne palette
+      ENTS.forEach(e=>{
+        const oldHex=OLD_HEX[e.key];
+        const newHex=COLOR_MIG[e.key];
+        if(newHex&&oldHex&&e.hex&&e.hex.toLowerCase()===oldHex.toLowerCase()){
+          e.hex=newHex;
+          set(ref(db,`config/entrepreneurs/${e.key}/hex`),newHex).catch(()=>{});
+        }
+      });
     }
     ENTS.forEach(e=>{if(!METRICS[e.key])METRICS[e.key]=[...UNIFIED_METRICS];});
   }catch(e){
-    // En cas d'erreur réseau, utilise les défauts en mémoire
     if(ENTS.length===0)ENTS=[...DEF_ENTS];
   }
 }
