@@ -315,7 +315,7 @@ body{
 .jh-total{font-size:13px;color:var(--muted2);}
 .jh-total span{color:var(--cyan);font-family:'Space Mono',monospace;font-size:1.1rem;font-weight:700;}
 .jh-btn{background:var(--surface2);border:1px solid var(--border2);color:var(--cyan);padding:9px 16px;border-radius:8px;cursor:pointer;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:1px;transition:all 0.2s;}
-.jh-btn:hover{border-color:var(--cyan);box-shadow:0 0 10px rgba(0,212,255,0.18),0 0 22px rgba(0,212,255,0.07);}
+.jh-btn:hover{border-color:var(--cyan);}
 
 /* CALENDAR */
 .cal-wrap{
@@ -407,7 +407,7 @@ body{
 .mminus:hover{background:rgba(255,255,255,0.05);color:var(--text);}
 .mminus:active{transform:scale(0.9);}
 .mval-input{width:46px;text-align:center;background:transparent;border:none;color:var(--text);font-family:'Space Mono',monospace;font-size:15px;outline:none;padding:0;cursor:text;}
-.mval-input.call-val{color:var(--c);text-shadow:0 0 8px currentColor;}
+.mval-input.call-val{color:var(--c);}
 .mval-input::-webkit-inner-spin-button,.mval-input::-webkit-outer-spin-button{-webkit-appearance:none;}
 .mplus{width:38px;height:38px;border:none;background:var(--c);color:#000;cursor:pointer;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center;touch-action:manipulation;transition:all 0.15s;padding:0;line-height:1;border-left:1px solid var(--border2);}
 .mplus:hover{opacity:0.85;}
@@ -575,7 +575,7 @@ body{
 .pfield{margin-bottom:12px;}
 .plabel{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:5px;}
 .pinput{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'Space Mono',monospace;font-size:13px;outline:none;transition:border-color 0.2s,box-shadow 0.2s;}
-.pinput:focus{border-color:var(--c,var(--cyan));box-shadow:0 0 8px rgba(0,212,255,0.12);}
+.pinput:focus{border-color:var(--c,var(--cyan));}
 .psave{width:100%;background:var(--c);color:#000;border:none;border-radius:8px;padding:10px;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;margin-top:4px;transition:opacity 0.2s;}
 .psave:hover{opacity:0.85;}
 .pdel{width:100%;background:transparent;color:#f43f5e;border:1px solid rgba(244,63,94,0.3);border-radius:8px;padding:8px;font-family:'Space Mono',monospace;font-size:11px;cursor:pointer;margin-top:4px;transition:all 0.2s;}
@@ -610,7 +610,7 @@ body{
 .task-config-del:hover{color:#f43f5e;}
 .task-add-row{display:flex;gap:8px;}
 .task-add-input{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'Space Mono',monospace;font-size:13px;outline:none;transition:border-color 0.2s;}
-.task-add-input:focus{border-color:var(--cyan);box-shadow:0 0 6px rgba(0,212,255,0.1);}
+.task-add-input:focus{border-color:var(--cyan);}
 .task-add-btn{background:var(--cyan);color:#000;border:none;border-radius:8px;padding:8px 16px;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;transition:opacity 0.2s,box-shadow 0.2s;}
 .task-add-btn:hover{opacity:0.85;box-shadow:0 0 10px rgba(0,212,255,0.28);}
 
@@ -620,7 +620,7 @@ body{
 .funnel-filters{display:flex;gap:5px;margin-bottom:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;}
 .funnel-filters::-webkit-scrollbar{display:none;}
 .funnel-filter-btn{background:transparent;border:1px solid var(--border2);color:var(--muted2);border-radius:6px;padding:3px 9px;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:0.5px;cursor:pointer;white-space:nowrap;transition:all 0.15s;flex-shrink:0;}
-.funnel-filter-btn:hover{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 6px rgba(0,212,255,0.15);}
+.funnel-filter-btn:hover{border-color:var(--cyan);color:var(--cyan);}
 .funnel-filter-btn.active{font-weight:700;}
 
 /* ===== ACCORDÉONS PARAMS ===== */
@@ -1529,12 +1529,12 @@ let METRICS={...DEF_MET};
 
 // TASKS — sauvegardées Firebase
 let TASKS=[
-  {id:'t1',label:'Checker DMs — Ozcan',color:'#3b9eff',badge:'Ozcan',done:false},
-  {id:'t2',label:'Checker DMs — Mika',color:'#fb923c',badge:'Mika',done:false},
-  {id:'t3',label:'VOC nouveaux followers Jorann',color:'#a78bfa',badge:'Jorann',done:false},
+  {id:'t1',label:'Checker DMs — Ozcan',color:'#1E90FF',badge:'Ozcan',done:false},
+  {id:'t2',label:'Checker DMs — Mika',color:'#2E8B57',badge:'Mika',done:false},
+  {id:'t3',label:'VOC nouveaux followers Jorann',color:'#8B0000',badge:'Jorann',done:false},
   {id:'t4',label:'Follow up leads en cours',color:'rgba(0,212,255,0.35)',badge:'Tous',done:false},
-  {id:'t5',label:'Appels qualification Mika',color:'rgba(251,146,60,0.35)',badge:'Mika',done:false},
-  {id:'t6',label:'Check ressource Gaël',color:'rgba(52,211,153,0.35)',badge:'Gaël',done:false},
+  {id:'t5',label:'Appels qualification Mika',color:'rgba(46,139,87,0.35)',badge:'Mika',done:false},
+  {id:'t6',label:'Check ressource Gaël',color:'rgba(255,140,0,0.35)',badge:'Gaël',done:false},
   {id:'t7',label:'Remplir Setter Tracker',color:'rgba(0,212,255,0.5)',badge:'📊',done:false},
 ];
 
@@ -1616,34 +1616,51 @@ async function loadLeads(y,mo){const k=`${y}_${mo}`;if(lCache[k])return lCache[k
 async function loadObjectifs(y,mo){const k=`${y}_${mo}`;if(oCache[k])return oCache[k];try{const s=await get(ref(db,`objectifs/${y}/${mo}`));oCache[k]=s.exists()?s.val():{};return oCache[k];}catch(e){return {};}}
 async function loadRevenus(y,mo){const k=`${y}_${mo}`;if(rCache[k])return rCache[k];try{const s=await get(ref(db,`revenus/${y}/${mo}`));rCache[k]=s.exists()?s.val():{};return rCache[k];}catch(e){return {};}}
 async function loadEntrepreneurs(){
-  // Migration : ancienne palette → nouvelle palette
-  const COLOR_MIG={O:'#1E90FF',J:'#8B0000',G:'#FF8C00',M:'#2E8B57'};
-  const OLD_HEX={O:'#3b9eff',J:'#a78bfa',G:'#34d399',M:'#fb923c'};
+  // Nouvelle palette v2 — écrasement forcé au premier chargement
+  const PALETTE_V='3';
+  const PALETTE={
+    O:{key:'O',name:'Ozcan', hex:'#1E90FF',rate:5},
+    J:{key:'J',name:'Jorann',hex:'#8B0000',rate:5},
+    G:{key:'G',name:'Gaël',  hex:'#FF8C00',rate:10},
+    M:{key:'M',name:'Mika',  hex:'#2E8B57',rate:5},
+  };
   try{
-    const s=await get(ref(db,'config/entrepreneurs'));
-    if(s.exists()){
-      const val=s.val();
-      ENTS=Object.values(val).filter(e=>e&&e.key&&e.name);
-    } else {
-      ENTS=[];
-    }
-    // Fallback : si Firebase vide, réinjecte les 4 profils par défaut
-    if(ENTS.length===0){
-      ENTS=[...DEF_ENTS];
+    const [s,vSnap]=await Promise.all([
+      get(ref(db,'config/entrepreneurs')),
+      get(ref(db,'config/paletteVersion')),
+    ]);
+    const currentVersion=vSnap.exists()?vSnap.val():'0';
+
+    if(currentVersion!==PALETTE_V){
+      // Applique les nouvelles couleurs en conservant les noms et taux existants
+      const existing=s.exists()?s.val():{};
       const batch={};
-      DEF_ENTS.forEach(e=>{batch[e.key]={key:e.key,name:e.name,hex:e.hex,rate:e.rate};});
-      await set(ref(db,'config/entrepreneurs'),batch).catch(()=>{});
-    } else {
-      // Migration silencieuse : met à jour les couleurs si elles correspondent à l'ancienne palette
-      ENTS.forEach(e=>{
-        const oldHex=OLD_HEX[e.key];
-        const newHex=COLOR_MIG[e.key];
-        if(newHex&&oldHex&&e.hex&&e.hex.toLowerCase()===oldHex.toLowerCase()){
-          e.hex=newHex;
-          set(ref(db,`config/entrepreneurs/${e.key}/hex`),newHex).catch(()=>{});
-        }
+      Object.values(PALETTE).forEach(def=>{
+        const prev=existing[def.key]||{};
+        batch[def.key]={
+          key:def.key,
+          name:prev.name||def.name,
+          hex:def.hex,
+          rate:prev.rate!=null?prev.rate:def.rate,
+        };
       });
+      // Ajoute les entrepreneurs personnalisés hors palette
+      if(s.exists()){
+        Object.values(s.val()).forEach(e=>{
+          if(e&&e.key&&!PALETTE[e.key])batch[e.key]=e;
+        });
+      }
+      await Promise.all([
+        set(ref(db,'config/entrepreneurs'),batch),
+        set(ref(db,'config/paletteVersion'),PALETTE_V),
+      ]).catch(()=>{});
+      ENTS=Object.values(batch).filter(e=>e&&e.key&&e.name);
+    } else if(s.exists()){
+      ENTS=Object.values(s.val()).filter(e=>e&&e.key&&e.name);
+    } else {
+      ENTS=Object.values(PALETTE);
     }
+    if(ENTS.length===0)ENTS=Object.values(PALETTE);
     ENTS.forEach(e=>{if(!METRICS[e.key])METRICS[e.key]=[...UNIFIED_METRICS];});
   }catch(e){
     if(ENTS.length===0)ENTS=[...DEF_ENTS];
