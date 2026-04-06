@@ -2042,19 +2042,18 @@ function drawHexDash(entData){
   ctx.restore();
 }
 
-// ===== PODIUM — cylindres de marbre canvas =====
+// ===== PODIUM — hexagones podium (image_22 style) =====
 function drawPodium(entData){
   const wrap=document.getElementById('podiumWrap');
   if(!wrap)return;
+  wrap.style.overflow='hidden';
 
-  // Créer/réutiliser le canvas
   let cv=wrap.querySelector('canvas');
   if(!cv){wrap.innerHTML='';cv=document.createElement('canvas');cv.style.cssText='width:100%;display:block';wrap.appendChild(cv);}
 
   const dpr=window.devicePixelRatio||1;
-  const W=wrap.offsetWidth||300;
-  const H=190;
-  if(W<10)return;
+  const W=wrap.offsetWidth||280;
+  const H=200;
   cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.style.height=H+'px';
   const ctx=cv.getContext('2d');
   ctx.save();ctx.scale(dpr,dpr);
@@ -2064,101 +2063,96 @@ function drawPodium(entData){
   if(!scores.length){ctx.restore();return;}
 
   const MEDALS=['#FFD700','#C0C0C0','#CD7F32'];
-  const baseY=H-12;
-  // Dimensions : [cx, largeur, hauteur] pour le rang 0,1,2
-  const cw0=Math.min(W*0.30,90);
-  const defs=[
-    {x:W*0.50, w:cw0,        h:Math.min(H*0.84,155)},  // 1er — colossal
-    {x:W*0.20, w:cw0*0.80,   h:Math.min(H*0.58,105)},  // 2e
-    {x:W*0.80, w:cw0*0.70,   h:Math.min(H*0.44,78) },  // 3e
+
+  // Rayon N°1 : occupe quasi 95% de H
+  const r0=Math.min(W*0.28,H*0.47);  // centre (1er)
+  const r1=r0*0.87;                   // côtés (2e, 3e)
+  const spacing=r0*1.74;              // distance centre→côté
+  // Ordre : N°2 gauche / N°1 centre / N°3 droite
+  const layout=[
+    {si:1,cx:W*0.5-spacing, cy:H*0.525,r:r1},
+    {si:0,cx:W*0.5,         cy:H*0.500,r:r0},
+    {si:2,cx:W*0.5+spacing, cy:H*0.525,r:r1},
   ];
 
-  // Dessin de l'arrière vers l'avant : 3e, 2e, 1er
-  [2,1,0].forEach(si=>{
+  function hexPath(cx,cy,rad){
+    ctx.beginPath();
+    for(let i=0;i<6;i++){const a=Math.PI/2+i*Math.PI/3;const x=cx+Math.cos(a)*rad,y=cy+Math.sin(a)*rad;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+    ctx.closePath();
+  }
+
+  // Rendu arrière→avant : 3e, 2e, 1er
+  [2,0,1].forEach(idx=>{
+    const {si,cx,cy,r}=layout[idx];
     if(si>=scores.length)return;
     const s=scores[si],mc=MEDALS[si],rgb=hex2rgb(mc);
-    const {x:cx,w,h}=defs[si];
-    const rx=w/2;
-    const topY=baseY-h;
-    const ey=rx*0.28;          // rayon Y ellipse (perspective)
-    const rh=Math.max(10,rx*0.24); // épaisseur anneau métallique
+    const isFirst=si===0;
 
-    // ── Corps marbre (rectangle) ──
-    const mG=ctx.createLinearGradient(cx-rx,0,cx+rx,0);
-    mG.addColorStop(0,'#020202');mG.addColorStop(0.10,'#0d0d0d');
-    mG.addColorStop(0.28,'#1b1b1b');mG.addColorStop(0.50,'#212121');
-    mG.addColorStop(0.72,'#181818');mG.addColorStop(0.90,'#0c0c0c');mG.addColorStop(1,'#020202');
+    // ── Fond extérieur (aura diffuse) ──
+    hexPath(cx,cy,r*0.97);
+    const bgG=ctx.createRadialGradient(cx,cy,r*0.3,cx,cy,r);
+    bgG.addColorStop(0,'#0a0a0a');bgG.addColorStop(1,'#030303');
+    ctx.fillStyle=bgG;ctx.fill();
+
+    // ── Anneau extérieur fin ──
+    hexPath(cx,cy,r*0.97);
+    ctx.strokeStyle=`rgba(${rgb},0.22)`;ctx.lineWidth=0.8;ctx.stroke();
+
+    // ── Rainure biseautée sombre ──
+    hexPath(cx,cy,r*0.90);
+    ctx.strokeStyle='#010101';ctx.lineWidth=7;ctx.stroke();
+
+    // ── Anneau métallique brillant + lueur néon ──
     ctx.save();
-    ctx.beginPath();ctx.rect(cx-rx,topY+ey*0.6,rx*2,h-ey*0.6);
-    ctx.fillStyle=mG;ctx.fill();
-
-    // Veines métalliques (5 courbes de Bézier, déterministes par rang)
-    ctx.beginPath();ctx.rect(cx-rx,topY+ey*0.6,rx*2,h-ey*0.6);ctx.clip();
-    const vd=[
-      [0.15,0.05,0.25,0.40,0.45,0.90,0.28],
-      [0.60,0.08,0.35,0.45,0.20,0.92,0.20],
-      [0.78,0.02,0.55,0.38,0.62,0.88,0.22],
-      [0.33,0.12,0.10,0.55,0.38,0.95,0.18],
-      [0.50,0.00,0.70,0.50,0.30,0.85,0.16],
-    ];
-    vd.forEach(([tx,ty,cp1xf,cp1yf,cp2xf,eyf,a])=>{
-      const sh=si*0.19;
-      const x0=cx-rx+((tx+sh)%1)*rx*2;      const y0=topY+ty*h;
-      const cp1x=cx-rx+((cp1xf+sh)%1)*rx*2; const cp1y=topY+cp1yf*h;
-      const cp2x=cx-rx+((cp2xf+sh+0.5)%1)*rx*2; const cp2y=topY+0.65*h;
-      const ex2=cx-rx+((tx+si*0.31)%1)*rx*2; const ey2=topY+eyf*h;
-      ctx.beginPath();ctx.moveTo(x0,y0);ctx.bezierCurveTo(cp1x,cp1y,cp2x,cp2y,ex2,ey2);
-      ctx.strokeStyle=`rgba(${rgb},${a+0.10})`;ctx.lineWidth=0.9;ctx.stroke();
-      ctx.beginPath();ctx.moveTo(x0+1.5,y0);ctx.bezierCurveTo(cp1x+1,cp1y,cp2x-1,cp2y,ex2+1,ey2);
-      ctx.strokeStyle=`rgba(${rgb},${a*2.0})`;ctx.lineWidth=0.35;ctx.stroke();
-    });
+    ctx.shadowColor=mc;ctx.shadowBlur=isFirst?22:14;
+    hexPath(cx,cy,r*0.90);
+    ctx.strokeStyle=mc;ctx.lineWidth=2.8;ctx.stroke();
+    // Cœur blanc brillant
+    ctx.shadowBlur=isFirst?8:4;
+    ctx.strokeStyle='rgba(255,255,255,0.60)';ctx.lineWidth=0.8;ctx.stroke();
     ctx.restore();
 
-    // ── Anneaux métalliques biseautés (top + bottom) ──
-    [topY,baseY].forEach(ry_y=>{
-      const rG=ctx.createLinearGradient(cx-rx,0,cx+rx,0);
-      rG.addColorStop(0,'rgba(2,2,2,1)');
-      rG.addColorStop(0.06,`rgba(${rgb},0.18)`);
-      rG.addColorStop(0.22,`rgba(${rgb},0.65)`);
-      rG.addColorStop(0.36,`rgba(255,255,255,0.88)`);
-      rG.addColorStop(0.50,`rgba(${rgb},1.00)`);
-      rG.addColorStop(0.64,`rgba(255,255,255,0.88)`);
-      rG.addColorStop(0.78,`rgba(${rgb},0.65)`);
-      rG.addColorStop(0.94,`rgba(${rgb},0.18)`);
-      rG.addColorStop(1,'rgba(2,2,2,1)');
-      ctx.beginPath();ctx.ellipse(cx,ry_y,rx+2,ey,0,0,Math.PI*2);
-      ctx.strokeStyle=rG;ctx.lineWidth=rh;ctx.stroke();
+    // ── Anneau intérieur (double bague) ──
+    hexPath(cx,cy,r*0.81);
+    ctx.strokeStyle=`rgba(${rgb},0.55)`;ctx.lineWidth=1.4;ctx.stroke();
 
-      // Ligne spéculaire brillante (haut de l'anneau)
-      const sG=ctx.createLinearGradient(cx-rx*0.8,0,cx+rx*0.8,0);
-      sG.addColorStop(0,'transparent');sG.addColorStop(0.28,`rgba(255,255,255,0.30)`);
-      sG.addColorStop(0.50,`rgba(255,255,255,0.90)`);sG.addColorStop(0.72,`rgba(255,255,255,0.30)`);sG.addColorStop(1,'transparent');
-      ctx.beginPath();ctx.ellipse(cx,ry_y-rh*0.28,rx+2,ey*0.55,0,Math.PI*1.07,Math.PI*1.93);
-      ctx.strokeStyle=sG;ctx.lineWidth=1.8;ctx.stroke();
+    // ── Verre dépoli (frosted glass) ──
+    hexPath(cx,cy,r*0.79);
+    const glG=ctx.createRadialGradient(cx-r*0.18,cy-r*0.22,0,cx,cy,r*0.82);
+    glG.addColorStop(0,'rgba(45,48,60,0.80)');
+    glG.addColorStop(0.4,'rgba(12,13,18,0.92)');
+    glG.addColorStop(1,'rgba(3,4,6,0.98)');
+    ctx.fillStyle=glG;ctx.fill();
+    // Reflet spéculaire haut-gauche
+    ctx.save();
+    hexPath(cx,cy,r*0.79);ctx.clip();
+    const hlG=ctx.createRadialGradient(cx-r*0.30,cy-r*0.35,0,cx-r*0.15,cy-r*0.18,r*0.45);
+    hlG.addColorStop(0,'rgba(255,255,255,0.09)');
+    hlG.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=hlG;ctx.fillRect(cx-r,cy-r,r*2,r*2);
+    ctx.restore();
 
-      // Ombre sous l'anneau (profondeur)
-      ctx.beginPath();ctx.ellipse(cx,ry_y+rh*0.4,rx+2,ey*0.5,0,0,Math.PI);
-      ctx.strokeStyle='rgba(0,0,0,0.60)';ctx.lineWidth=2;ctx.stroke();
-    });
-
-    // ── Face supérieure (ellipse marbre teinté) ──
-    const tfG=ctx.createRadialGradient(cx-rx*0.25,topY-ey*0.25,0,cx,topY,rx);
-    tfG.addColorStop(0,`rgba(${rgb},0.22)`);tfG.addColorStop(0.35,'#1e1e1e');tfG.addColorStop(1,'#060606');
-    ctx.beginPath();ctx.ellipse(cx,topY,rx-rh*0.5+1,ey-rh*0.5*(ey/rx)+1,0,0,Math.PI*2);
-    ctx.fillStyle=tfG;ctx.fill();
-
-    // ── Texte gravé ──
-    const midY=topY+h*0.5+ey*0.4;
-    const rkSz=Math.max(16,rx*0.50);
-    const nmSz=Math.max(7, rx*0.23);
-    const scSz=Math.max(6, rx*0.18);
+    // ── Chiffre du rang en filigrane (gros, sombre) ──
+    ctx.save();
+    hexPath(cx,cy,r*0.79);ctx.clip();
+    ctx.fillStyle='rgba(100,105,120,0.18)';
+    ctx.font=`900 ${r*1.30}px monospace`;
     ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillStyle=mc;ctx.font=`900 ${rkSz}px monospace`;
-    ctx.fillText(si+1,cx,midY-nmSz*1.5);
-    ctx.fillStyle='#f0f0f0';ctx.font=`bold ${nmSz}px monospace`;
-    ctx.fillText(s.e.name.toUpperCase(),cx,midY+nmSz*0.2);
-    ctx.fillStyle=`rgba(${rgb},0.78)`;ctx.font=`${scSz}px monospace`;
-    ctx.fillText(s.label,cx,midY+nmSz*2.0);
+    ctx.fillText(si+1,cx,cy-r*0.06);
+    ctx.restore();
+
+    // ── Nom ──
+    const nmSz=Math.max(8,r*0.26);
+    ctx.fillStyle='#ffffff';
+    ctx.font=`bold ${nmSz}px monospace`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(s.e.name.toUpperCase(),cx,cy+r*0.52);
+
+    // ── Score ──
+    const scSz=Math.max(6,r*0.17);
+    ctx.fillStyle=`rgba(${rgb},0.80)`;
+    ctx.font=`${scSz}px monospace`;
+    ctx.fillText(s.label,cx,cy+r*0.74);
     ctx.textBaseline='alphabetic';
   });
 
