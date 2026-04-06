@@ -1959,12 +1959,13 @@ function drawHexDash(entData){
   _hexFrame++;
   const canvas=document.getElementById('hexDash');if(!canvas)return;
   const dpr=window.devicePixelRatio||1;
-  const W=canvas.offsetWidth||300,H=120;
+  const W=canvas.offsetWidth||300,H=150;
   if(canvas.width!==W*dpr||canvas.height!==H*dpr){canvas.width=W*dpr;canvas.height=H*dpr;}
   const ctx=canvas.getContext('2d');ctx.save();ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
   if(!_hexMetalPat){const pc=document.createElement('canvas');pc.width=4;pc.height=4;const pctx=pc.getContext('2d');pctx.fillStyle='#2a2a2a';pctx.fillRect(0,0,4,4);pctx.strokeStyle='#353535';pctx.lineWidth=0.5;pctx.beginPath();pctx.moveTo(0,0);pctx.lineTo(4,4);pctx.stroke();pctx.beginPath();pctx.moveTo(2,0);pctx.lineTo(4,2);pctx.stroke();pctx.beginPath();pctx.moveTo(0,2);pctx.lineTo(2,4);pctx.stroke();_hexMetalPat=ctx.createPattern(pc,'repeat');}
   const r=Math.min(W/6,H*0.38);
-  const positions=[{x:W*0.13,y:H*0.52},{x:W*0.38,y:H*0.52},{x:W*0.63,y:H*0.52},{x:W*0.88,y:H*0.52}];
+  const hx=r*0.866,cy=H*0.52,sx=(W-2*hx)/3;
+  const positions=[{x:hx,y:cy},{x:hx+sx,y:cy},{x:hx+2*sx,y:cy},{x:W-hx,y:cy}];
 
   function hexVerts(cx,cy,rad){const v=[];for(let i=0;i<6;i++){const a=Math.PI/6+i*Math.PI/3;v.push({x:cx+Math.cos(a)*rad,y:cy+Math.sin(a)*rad});}return v;}
   function hexPath(cx,cy,rad){const v=hexVerts(cx,cy,rad);ctx.beginPath();ctx.moveTo(v[0].x,v[0].y);for(let i=1;i<6;i++)ctx.lineTo(v[i].x,v[i].y);ctx.closePath();}
@@ -2001,12 +2002,13 @@ function drawHexDash(entData){
     // ── 2. RAINURE NOIRE PROFONDE ──
     hexPath(p.x,p.y,RI);ctx.fillStyle='#020202';ctx.fill();
 
-    // ── 3. ANNEAU FIBRE OPTIQUE — enchâssé dans la rainure ──
-    hexPath(p.x,p.y,RF);
+    // ── 3. ANNEAU FIBRE OPTIQUE — enchâssé dans la rainure, glow confiné ──
     ctx.save();
-    ctx.shadowColor=col;ctx.shadowBlur=12;
-    ctx.strokeStyle=col;ctx.lineWidth=4;ctx.stroke();
-    ctx.shadowBlur=3;ctx.strokeStyle='rgba(255,255,255,0.80)';ctx.lineWidth=0.7;ctx.stroke();
+    hexPath(p.x,p.y,RI);ctx.clip();
+    hexPath(p.x,p.y,RF);
+    ctx.shadowColor=col;ctx.shadowBlur=8;
+    ctx.strokeStyle=col;ctx.lineWidth=3.5;ctx.stroke();
+    ctx.shadowBlur=0;ctx.strokeStyle='rgba(255,255,255,0.85)';ctx.lineWidth=0.6;ctx.stroke();
     ctx.restore();
 
     // ── 4. ÉCRAN INTÉRIEUR SOMBRE ET MAT ──
@@ -2019,7 +2021,6 @@ function drawHexDash(entData){
     ctx.strokeStyle='rgba(255,255,255,0.016)';ctx.lineWidth=0.5;
     for(let ly=p.y-RS;ly<p.y+RS;ly+=1.8){ctx.beginPath();ctx.moveTo(p.x-RS,ly);ctx.lineTo(p.x+RS,ly);ctx.stroke();}
     ctx.restore();
-    hexPath(p.x,p.y,RS);ctx.save();ctx.shadowColor=col;ctx.shadowBlur=RS*0.45;ctx.strokeStyle=col+'1a';ctx.lineWidth=0.5;ctx.stroke();ctx.restore();
 
     // ── 5. ARC CONVERSION ──
     const cv=Math.min(d.conv/100,1);
@@ -2423,7 +2424,7 @@ async function renderDash(){
         <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#00d4ff,transparent)"></div>
         <div style="position:absolute;inset:0;opacity:0.025;background-image:linear-gradient(#00d4ff 1px,transparent 1px),linear-gradient(90deg,#00d4ff 1px,transparent 1px);background-size:18px 18px;pointer-events:none"></div>
         <div style="font-size:8px;color:rgba(0,212,255,0.4);letter-spacing:2px;margin-bottom:10px;position:relative">CONVERSION — par entrepreneur</div>
-        <canvas id="hexDash" style="width:100%;display:block;position:relative" height="120"></canvas>
+        <canvas id="hexDash" style="width:100%;display:block;position:relative" height="150"></canvas>
       </div>
     </div>
   </div>`;
