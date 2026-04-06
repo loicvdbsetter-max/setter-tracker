@@ -2024,45 +2024,41 @@ function drawPodium(entData){
     label:d.comm>0?d.comm.toFixed(0)+'€':'—'
   })).sort((a,b)=>b.score-a.score);
 
-  const MEDALS=['#ffd700','#c0c0c0','#cd7f32'];
-  const GLOW=['rgba(255,215,0,0.8)','rgba(192,192,192,0.6)','rgba(205,127,50,0.6)'];
+  const MEDALS=['#ffd700','#C0C0C0','#CD7F32'];
   const baseY=H-8;
   const first=scores[0];
 
-  // Couronne géométrique SVG-like
-  function drawCrown(cx,cy,size,color,glow){
-    ctx.save();ctx.shadowColor=glow;ctx.shadowBlur=14;
-    ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.fillStyle=color+'22';
-    const bw=size*0.9,bh=size*0.25;
-    // Base
+  // Fond noir pur
+  ctx.fillStyle='#050505';
+  ctx.fillRect(0,0,W,H);
+
+  // Couronne géométrique — plaque gravée, zéro glow
+  function drawCrown(cx,cy,size,color){
+    ctx.save();
+    ctx.strokeStyle=color;ctx.lineWidth=0.8;ctx.fillStyle=color+'18';
+    const bw=size*0.9;
     ctx.beginPath();ctx.moveTo(cx-bw/2,cy+size*0.1);ctx.lineTo(cx+bw/2,cy+size*0.1);ctx.lineTo(cx+bw/2,cy+size*0.35);ctx.lineTo(cx-bw/2,cy+size*0.35);ctx.closePath();ctx.fill();ctx.stroke();
-    // 3 pointes
     [[cx-bw/2,cy+size*0.1,cx-bw/2,cy-size*0.28,cx-bw*0.18,cy+size*0.1],
      [cx-bw*0.18,cy+size*0.1,cx,cy-size*0.48,cx+bw*0.18,cy+size*0.1],
      [cx+bw*0.18,cy+size*0.1,cx+bw/2,cy-size*0.28,cx+bw/2,cy+size*0.1]
     ].forEach(p=>{ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(p[2],p[3]);ctx.lineTo(p[4],p[5]);ctx.closePath();ctx.fill();ctx.stroke();});
-    // Losanges aux pointes
     [[cx-bw/2,cy-size*0.28,size*0.07],[cx,cy-size*0.48,size*0.1],[cx+bw/2,cy-size*0.28,size*0.07]].forEach(p=>{
-      const ds=p[2];ctx.save();ctx.shadowBlur=10;ctx.fillStyle=color;
-      ctx.beginPath();ctx.moveTo(p[0],p[1]-ds);ctx.lineTo(p[0]+ds,p[1]);ctx.lineTo(p[0],p[1]+ds);ctx.lineTo(p[0]-ds,p[1]);ctx.closePath();ctx.fill();ctx.restore();
+      const ds=p[2];ctx.fillStyle=color;
+      ctx.beginPath();ctx.moveTo(p[0],p[1]-ds);ctx.lineTo(p[0]+ds,p[1]);ctx.lineTo(p[0],p[1]+ds);ctx.lineTo(p[0]-ds,p[1]);ctx.closePath();ctx.fill();
     });
-    // Ligne déco pointillée
     ctx.beginPath();ctx.setLineDash([2,3]);ctx.moveTo(cx-bw/2+3,cy+size*0.22);ctx.lineTo(cx+bw/2-3,cy+size*0.22);ctx.stroke();ctx.setLineDash([]);
     ctx.restore();
   }
 
-  // Médaille circulaire
-  function drawMedal(cx,cy,rank,color,glow,size){
-    ctx.save();ctx.shadowColor=glow;ctx.shadowBlur=12;
-    ctx.beginPath();ctx.arc(cx,cy,size,0,Math.PI*2);ctx.strokeStyle=color+'55';ctx.lineWidth=0.7;ctx.stroke();
-    const gr=ctx.createRadialGradient(cx,cy-size*0.2,0,cx,cy,size);
-    gr.addColorStop(0,color+'40');gr.addColorStop(1,color+'08');
-    ctx.beginPath();ctx.arc(cx,cy,size*0.8,0,Math.PI*2);ctx.fillStyle=gr;ctx.fill();ctx.strokeStyle=color+'88';ctx.lineWidth=1;ctx.stroke();
-    const prog=rank===2?0.8:0.55;
-    ctx.beginPath();ctx.arc(cx,cy,size*0.8,-Math.PI/2,-Math.PI/2+prog*Math.PI*2);
-    ctx.shadowBlur=8;ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.lineCap='round';ctx.stroke();
-    ctx.fillStyle=color;ctx.font='bold '+(size*0.9)+'px monospace';ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(rank,cx,cy+1);ctx.textBaseline='alphabetic';
+  // Badge rang (cercle gravé, pas de médaille ronde) — chiffre propre
+  function drawRankBadge(cx,cy,rank,color,size){
+    ctx.save();
+    ctx.beginPath();ctx.arc(cx,cy,size,0,Math.PI*2);
+    ctx.fillStyle='#050505';ctx.fill();
+    ctx.strokeStyle=color;ctx.lineWidth=0.5;ctx.stroke();
+    ctx.fillStyle=color;ctx.font='bold '+(size*0.9)+'px monospace';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(rank,cx,cy+0.5);ctx.textBaseline='alphabetic';
     ctx.restore();
   }
 
@@ -2070,73 +2066,44 @@ function drawPodium(entData){
   const fw=W*0.3, fh=72;
   const fcx=W*0.5, fby=baseY-fh;
 
-  // Halo
-  const halo=ctx.createRadialGradient(fcx,baseY,0,fcx,baseY,fw*1.8);
-  halo.addColorStop(0,'rgba(255,215,0,0.1)');halo.addColorStop(1,'transparent');
-  ctx.fillStyle=halo;ctx.fillRect(fcx-fw*1.5,0,fw*3,H);
+  // Bloc 1er — fond #050505, bordure 0.5px or
+  ctx.fillStyle='#050505';
+  ctx.beginPath();if(ctx.roundRect)ctx.roundRect(fcx-fw/2,fby,fw,fh,4);else ctx.rect(fcx-fw/2,fby,fw,fh);
+  ctx.fill();
+  ctx.strokeStyle='#ffd700';ctx.lineWidth=0.5;ctx.stroke();
 
-  // Bloc 1er
-  ctx.save();ctx.shadowColor='rgba(255,215,0,0.7)';ctx.shadowBlur=20;
-  const gr1=ctx.createLinearGradient(0,fby,0,fby+fh);
-  gr1.addColorStop(0,'rgba(255,215,0,0.35)');gr1.addColorStop(1,'rgba(255,215,0,0.05)');
-  ctx.fillStyle=gr1;
-  ctx.beginPath();if(ctx.roundRect)ctx.roundRect(fcx-fw/2,fby,fw,fh,5);else ctx.rect(fcx-fw/2,fby,fw,fh);
-  ctx.fill();ctx.strokeStyle='rgba(255,215,0,0.85)';ctx.lineWidth=1.5;ctx.stroke();ctx.restore();
+  // Couronne gravée au-dessus
+  drawCrown(fcx,fby-10,14,'#ffd700');
 
-  // Top line néon
-  ctx.save();ctx.shadowColor='#ffd700';ctx.shadowBlur=14;
-  ctx.beginPath();ctx.moveTo(fcx-fw/2+3,fby);ctx.lineTo(fcx+fw/2-3,fby);
-  ctx.strokeStyle='#ffd700';ctx.lineWidth=2.5;ctx.stroke();ctx.restore();
-
-  // Couronne au-dessus
-  drawCrown(fcx,fby-10,14,'#ffd700','rgba(255,215,0,0.9)');
-
-  // Nom + montant 1er
-  ctx.save();ctx.shadowColor='#ffd700';ctx.shadowBlur=8;
+  // Nom + montant 1er — texte net
   ctx.fillStyle='#ffd700';ctx.font='bold 10px monospace';ctx.textAlign='center';
-  ctx.fillText(first.e.name,fcx,fby+22);ctx.restore();
-  ctx.save();ctx.shadowColor='#ffd700';ctx.shadowBlur=6;
-  ctx.fillStyle='rgba(255,215,0,0.95)';ctx.font='bold 13px monospace';ctx.textAlign='center';
-  ctx.fillText(first.label,fcx,fby+40);ctx.restore();
-  ctx.fillStyle='rgba(255,215,0,0.22)';ctx.font='7px monospace';ctx.textAlign='center';
+  ctx.fillText(first.e.name,fcx,fby+22);
+  ctx.fillStyle='#ffd700';ctx.font='bold 13px monospace';ctx.textAlign='center';
+  ctx.fillText(first.label,fcx,fby+40);
+  ctx.fillStyle='rgba(255,215,0,0.35)';ctx.font='7px monospace';ctx.textAlign='center';
   ctx.fillText('// 1ER //',fcx,fby+fh-9);
 
   // === 2E ET 3E ===
   [[1,W*0.17,50],[2,W*0.83,38]].forEach(([si,x,bh])=>{
     if(si>=scores.length)return;
     const s=scores[si];
-    const mc=MEDALS[si],glow=GLOW[si];
+    const mc=MEDALS[si];
     const bw=W*0.18,by=baseY-bh;
-    // Glow sol
-    const gg=ctx.createRadialGradient(x,baseY,0,x,baseY,bw);
-    gg.addColorStop(0,mc+'18');gg.addColorStop(1,'transparent');
-    ctx.fillStyle=gg;ctx.fillRect(x-bw,baseY-10,bw*2,14);
-    // Bloc
-    const gr=ctx.createLinearGradient(0,by,0,by+bh);
-    gr.addColorStop(0,mc+'28');gr.addColorStop(1,mc+'05');
-    ctx.save();ctx.shadowColor=glow;ctx.shadowBlur=10;
-    ctx.fillStyle=gr;
-    ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x-bw/2,by,bw,bh,4);else ctx.rect(x-bw/2,by,bw,bh);
-    ctx.fill();ctx.strokeStyle=mc+'44';ctx.lineWidth=0.8;ctx.stroke();ctx.restore();
-    // Top line
-    ctx.save();ctx.shadowColor=mc;ctx.shadowBlur=8;
-    ctx.beginPath();ctx.moveTo(x-bw/2+2,by);ctx.lineTo(x+bw/2-2,by);
-    ctx.strokeStyle=mc;ctx.lineWidth=1.2;ctx.stroke();ctx.restore();
-    // Médaille
-    drawMedal(x,by-14,si+1,mc,glow,10);
-    // Nom + montant
-    ctx.fillStyle=mc+'cc';ctx.font='bold 8px monospace';ctx.textAlign='center';ctx.fillText(s.e.name,x,by+18);
-    ctx.fillStyle=mc+'77';ctx.font='7px monospace';ctx.textAlign='center';ctx.fillText(s.label,x,by+30);
+    // Bloc — fond #050505, bordure 0.5px
+    ctx.fillStyle='#050505';
+    ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x-bw/2,by,bw,bh,3);else ctx.rect(x-bw/2,by,bw,bh);
+    ctx.fill();
+    ctx.strokeStyle=mc;ctx.lineWidth=0.5;ctx.stroke();
+    // Badge rang
+    drawRankBadge(x,by-12,si+1,mc,9);
+    // Nom + montant — texte net
+    ctx.fillStyle=mc;ctx.font='bold 8px monospace';ctx.textAlign='center';ctx.fillText(s.e.name,x,by+18);
+    ctx.fillStyle=mc+'aa';ctx.font='7px monospace';ctx.textAlign='center';ctx.fillText(s.label,x,by+30);
   });
 
-  // Sol lumineux
-  ctx.save();ctx.shadowColor='rgba(255,215,0,0.3)';ctx.shadowBlur=6;
-  const solG=ctx.createLinearGradient(0,0,W,0);
-  solG.addColorStop(0,'transparent');solG.addColorStop(0.3,'rgba(255,215,0,0.25)');
-  solG.addColorStop(0.7,'rgba(255,215,0,0.25)');solG.addColorStop(1,'transparent');
-  ctx.strokeStyle=solG;ctx.lineWidth=1;
+  // Sol — ligne fine, pas de glow
+  ctx.strokeStyle='rgba(255,215,0,0.2)';ctx.lineWidth=0.5;
   ctx.beginPath();ctx.moveTo(W*0.05,baseY);ctx.lineTo(W*0.95,baseY);ctx.stroke();
-  ctx.restore();
 }
 
 async function renderDash(){
@@ -2245,8 +2212,8 @@ async function renderDash(){
 
     <!-- KPI -->
     <div class="kpi-row">
-      <div class="kpi-card" style="--kc:#ffd700;padding:10px 12px;background:linear-gradient(135deg,#060e16,#08121c);border:1px solid rgba(255,215,0,0.15);">
-        <div class="kpi-label" style="color:rgba(255,215,0,0.5)">TOP CE MOIS</div>
+      <div class="kpi-card" style="--kc:#ffd700;padding:10px 12px;background:#050505;border:0.5px solid #ffd700;">
+        <div class="kpi-label" style="color:#ffd700;letter-spacing:2px">TOP CE MOIS</div>
         <canvas id="podiumCanvas" style="width:100%;display:block;margin-top:4px" height="115"></canvas>
       </div>
       <div class="kpi-card" style="--kc:#34d399">
