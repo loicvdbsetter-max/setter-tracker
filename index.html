@@ -2042,107 +2042,80 @@ function drawHexDash(entData){
   ctx.restore();
 }
 
-// ===== PODIUM =====
+// ===== PODIUM — cylindres de marbre =====
 function drawPodium(entData){
-  const canvas=document.getElementById('podiumCanvas');
-  if(!canvas)return;
-  const dpr=window.devicePixelRatio||1;
-  const rect=canvas.getBoundingClientRect();
-  const W=rect.width||canvas.offsetWidth||260;
-  const H=115;
-  if(W<10)return;
-  canvas.width=Math.round(W*dpr);
-  canvas.height=H*dpr;
-  const ctx=canvas.getContext('2d');
-  ctx.scale(dpr,dpr);
+  const wrap=document.getElementById('podiumWrap');
+  if(!wrap)return;
 
-  // Scores basés sur commission réelle
   const scores=entData.map(d=>({
     e:d.e,
     score:d.comm,
     label:d.comm>0?d.comm.toFixed(0)+'€':'—'
   })).sort((a,b)=>b.score-a.score);
 
-  const MEDALS=['#ffd700','#C0C0C0','#CD7F32'];
-  const baseY=H-8;
-  const first=scores[0];
+  const MEDALS=['#FFD700','#C0C0C0','#CD7F32'];
+  // Hauteurs relatives du cylindre (% du conteneur)
+  const HEIGHTS=[100,68,50];
+  // Ordre d'affichage : 2e gauche, 1er centre, 3e droite
+  const ORDER=[1,0,2];
 
-  // Fond noir pur
-  ctx.fillStyle='#050505';
-  ctx.fillRect(0,0,W,H);
-
-  // Couronne géométrique — plaque gravée, zéro glow
-  function drawCrown(cx,cy,size,color){
-    ctx.save();
-    ctx.strokeStyle=color;ctx.lineWidth=0.8;ctx.fillStyle=color+'18';
-    const bw=size*0.9;
-    ctx.beginPath();ctx.moveTo(cx-bw/2,cy+size*0.1);ctx.lineTo(cx+bw/2,cy+size*0.1);ctx.lineTo(cx+bw/2,cy+size*0.35);ctx.lineTo(cx-bw/2,cy+size*0.35);ctx.closePath();ctx.fill();ctx.stroke();
-    [[cx-bw/2,cy+size*0.1,cx-bw/2,cy-size*0.28,cx-bw*0.18,cy+size*0.1],
-     [cx-bw*0.18,cy+size*0.1,cx,cy-size*0.48,cx+bw*0.18,cy+size*0.1],
-     [cx+bw*0.18,cy+size*0.1,cx+bw/2,cy-size*0.28,cx+bw/2,cy+size*0.1]
-    ].forEach(p=>{ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(p[2],p[3]);ctx.lineTo(p[4],p[5]);ctx.closePath();ctx.fill();ctx.stroke();});
-    [[cx-bw/2,cy-size*0.28,size*0.07],[cx,cy-size*0.48,size*0.1],[cx+bw/2,cy-size*0.28,size*0.07]].forEach(p=>{
-      const ds=p[2];ctx.fillStyle=color;
-      ctx.beginPath();ctx.moveTo(p[0],p[1]-ds);ctx.lineTo(p[0]+ds,p[1]);ctx.lineTo(p[0],p[1]+ds);ctx.lineTo(p[0]-ds,p[1]);ctx.closePath();ctx.fill();
-    });
-    ctx.beginPath();ctx.setLineDash([2,3]);ctx.moveTo(cx-bw/2+3,cy+size*0.22);ctx.lineTo(cx+bw/2-3,cy+size*0.22);ctx.stroke();ctx.setLineDash([]);
-    ctx.restore();
-  }
-
-  // Badge rang (cercle gravé, pas de médaille ronde) — chiffre propre
-  function drawRankBadge(cx,cy,rank,color,size){
-    ctx.save();
-    ctx.beginPath();ctx.arc(cx,cy,size,0,Math.PI*2);
-    ctx.fillStyle='#050505';ctx.fill();
-    ctx.strokeStyle=color;ctx.lineWidth=0.5;ctx.stroke();
-    ctx.fillStyle=color;ctx.font='bold '+(size*0.9)+'px monospace';
-    ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(rank,cx,cy+0.5);ctx.textBaseline='alphabetic';
-    ctx.restore();
-  }
-
-  // === 1ER AU CENTRE ===
-  const fw=W*0.3, fh=72;
-  const fcx=W*0.5, fby=baseY-fh;
-
-  // Bloc 1er — fond #050505, bordure 0.5px or
-  ctx.fillStyle='#050505';
-  ctx.beginPath();if(ctx.roundRect)ctx.roundRect(fcx-fw/2,fby,fw,fh,4);else ctx.rect(fcx-fw/2,fby,fw,fh);
-  ctx.fill();
-  ctx.strokeStyle='#ffd700';ctx.lineWidth=0.5;ctx.stroke();
-
-  // Couronne gravée au-dessus
-  drawCrown(fcx,fby-10,14,'#ffd700');
-
-  // Nom + montant 1er — texte net
-  ctx.fillStyle='#ffd700';ctx.font='bold 10px monospace';ctx.textAlign='center';
-  ctx.fillText(first.e.name,fcx,fby+22);
-  ctx.fillStyle='#ffd700';ctx.font='bold 13px monospace';ctx.textAlign='center';
-  ctx.fillText(first.label,fcx,fby+40);
-  ctx.fillStyle='rgba(255,215,0,0.35)';ctx.font='7px monospace';ctx.textAlign='center';
-  ctx.fillText('// 1ER //',fcx,fby+fh-9);
-
-  // === 2E ET 3E ===
-  [[1,W*0.17,50],[2,W*0.83,38]].forEach(([si,x,bh])=>{
-    if(si>=scores.length)return;
+  function cylHTML(si){
+    if(si>=scores.length)return '<div style="width:28%"></div>';
     const s=scores[si];
     const mc=MEDALS[si];
-    const bw=W*0.18,by=baseY-bh;
-    // Bloc — fond #050505, bordure 0.5px
-    ctx.fillStyle='#050505';
-    ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x-bw/2,by,bw,bh,3);else ctx.rect(x-bw/2,by,bw,bh);
-    ctx.fill();
-    ctx.strokeStyle=mc;ctx.lineWidth=0.5;ctx.stroke();
-    // Badge rang
-    drawRankBadge(x,by-12,si+1,mc,9);
-    // Nom + montant — texte net
-    ctx.fillStyle=mc;ctx.font='bold 8px monospace';ctx.textAlign='center';ctx.fillText(s.e.name,x,by+18);
-    ctx.fillStyle=mc+'aa';ctx.font='7px monospace';ctx.textAlign='center';ctx.fillText(s.label,x,by+30);
-  });
+    const rgb=hex2rgb(mc);
+    const h=HEIGHTS[si];
+    const rank=si+1;
+    const isFirst=rank===1;
 
-  // Sol — ligne fine, pas de glow
-  ctx.strokeStyle='rgba(255,215,0,0.2)';ctx.lineWidth=0.5;
-  ctx.beginPath();ctx.moveTo(W*0.05,baseY);ctx.lineTo(W*0.95,baseY);ctx.stroke();
+    // Veines de marbre métalliques via gradients empilés (angles uniques par rang)
+    const a1=30+si*29, a2=155-si*21, a3=80+si*37, a4=10+si*51;
+    const veins=[
+      `linear-gradient(${a1}deg,transparent 38%,rgba(${rgb},0.22) 39.5%,rgba(${rgb},0.40) 40.5%,rgba(${rgb},0.22) 41.5%,transparent 43%)`,
+      `linear-gradient(${a2}deg,transparent 24%,rgba(${rgb},0.12) 25%,rgba(${rgb},0.28) 26.5%,rgba(${rgb},0.12) 28%,transparent 29%)`,
+      `linear-gradient(${a3}deg,transparent 60%,rgba(${rgb},0.16) 61%,rgba(${rgb},0.32) 62%,rgba(${rgb},0.16) 63.5%,transparent 65%)`,
+      `linear-gradient(${a4}deg,transparent 72%,rgba(${rgb},0.10) 73%,rgba(${rgb},0.20) 74%,transparent 75.5%)`,
+      `radial-gradient(ellipse at 30% 45%,#1e1e1e 0%,#0a0a0a 55%,#040404 100%)`
+    ].join(',');
+
+    // Face supérieure : ellipse biseautée
+    const topFace=`
+      <div style="width:90%;height:${isFirst?'18':'14'}px;border-radius:50%;flex-shrink:0;position:relative;z-index:2;
+        background:linear-gradient(to bottom,rgba(${rgb},0.35) 0%,rgba(${rgb},0.12) 45%,#0e0e0e 100%);
+        border:0.5px solid ${mc};
+        box-shadow:0 -1px 4px rgba(${rgb},0.25),inset 0 1px 2px rgba(255,255,255,0.06)">
+      </div>`;
+
+    // Corps cylindrique
+    const body=`
+      <div style="width:90%;flex:1;position:relative;overflow:hidden;
+        background:${veins};
+        border-left:0.5px solid rgba(${rgb},0.30);
+        border-right:0.5px solid rgba(${rgb},0.30);
+        display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px">
+        <!-- Reflet courbe côté gauche -->
+        <div style="position:absolute;left:0;top:0;bottom:0;width:22%;background:linear-gradient(to right,rgba(255,255,255,0.05),transparent);pointer-events:none"></div>
+        <!-- Ombre côté droit -->
+        <div style="position:absolute;right:0;top:0;bottom:0;width:15%;background:linear-gradient(to left,rgba(0,0,0,0.35),transparent);pointer-events:none"></div>
+        <div style="font-size:${isFirst?'22':'17'}px;font-weight:900;color:${mc};font-family:monospace;line-height:1;position:relative;opacity:0.85">${rank}</div>
+        <div style="font-size:${isFirst?'10':'8'}px;font-weight:bold;color:#ffffff;font-family:monospace;letter-spacing:1px;position:relative;text-transform:uppercase">${s.e.name}</div>
+        <div style="font-size:${isFirst?'9':'7'}px;color:rgba(${rgb},0.80);font-family:monospace;position:relative">${s.label}</div>
+      </div>`;
+
+    // Socle bas
+    const base=`
+      <div style="width:98%;height:8px;border-radius:50%;flex-shrink:0;
+        background:linear-gradient(to bottom,#252525,#080808);
+        border:0.5px solid rgba(${rgb},0.40)">
+      </div>`;
+
+    return `
+      <div style="width:28%;height:${h}%;display:flex;flex-direction:column;align-items:center;position:relative">
+        ${topFace}${body}${base}
+      </div>`;
+  }
+
+  wrap.innerHTML=ORDER.map(si=>cylHTML(si)).join('');
 }
 
 async function renderDash(){
@@ -2253,7 +2226,7 @@ async function renderDash(){
     <div class="kpi-row">
       <div class="kpi-card" style="--kc:#ffd700;padding:10px 12px;background:#050505;border:0.5px solid #ffd700;">
         <div class="kpi-label" style="color:#ffd700;letter-spacing:2px">TOP CE MOIS</div>
-        <canvas id="podiumCanvas" style="width:100%;display:block;margin-top:4px" height="115"></canvas>
+        <div id="podiumWrap" style="display:flex;align-items:flex-end;justify-content:center;gap:4%;width:100%;height:170px;padding:2px 0;box-sizing:border-box"></div>
       </div>
       <div class="kpi-card" style="--kc:#34d399">
         <div class="kpi-label">MA PART CE MOIS</div>
