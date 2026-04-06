@@ -1953,6 +1953,7 @@ async function render(){
 
 // ===== HEX DASHBOARD =====
 let _hexFrame=0;
+let _hexMetalPat=null;
 function drawHexDash(entData){
   window._lastEntData=entData;
   _hexFrame++;
@@ -1961,108 +1962,81 @@ function drawHexDash(entData){
   const W=canvas.offsetWidth||300,H=120;
   if(canvas.width!==W*dpr||canvas.height!==H*dpr){canvas.width=W*dpr;canvas.height=H*dpr;}
   const ctx=canvas.getContext('2d');ctx.save();ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
+  if(!_hexMetalPat){const pc=document.createElement('canvas');pc.width=4;pc.height=4;const pctx=pc.getContext('2d');pctx.fillStyle='#2a2a2a';pctx.fillRect(0,0,4,4);pctx.strokeStyle='#353535';pctx.lineWidth=0.5;pctx.beginPath();pctx.moveTo(0,0);pctx.lineTo(4,4);pctx.stroke();pctx.beginPath();pctx.moveTo(2,0);pctx.lineTo(4,2);pctx.stroke();pctx.beginPath();pctx.moveTo(0,2);pctx.lineTo(2,4);pctx.stroke();_hexMetalPat=ctx.createPattern(pc,'repeat');}
   const r=Math.min(W/6,H*0.38);
   const positions=[{x:W*0.13,y:H*0.52},{x:W*0.38,y:H*0.52},{x:W*0.63,y:H*0.52},{x:W*0.88,y:H*0.52}];
 
-  function hexPath(cx,cy,r2){
-    ctx.beginPath();
-    for(let i=0;i<6;i++){const a=Math.PI/6+i*Math.PI/3;i===0?ctx.moveTo(cx+Math.cos(a)*r2,cy+Math.sin(a)*r2):ctx.lineTo(cx+Math.cos(a)*r2,cy+Math.sin(a)*r2);}
-    ctx.closePath();
-  }
-
-  // Carbon fiber pattern — créé une fois par frame
-  const cfSize=6;
-  const cfCanvas=document.createElement('canvas');cfCanvas.width=cfSize;cfCanvas.height=cfSize;
-  const cfc=cfCanvas.getContext('2d');
-  cfc.fillStyle='#0e0e0e';cfc.fillRect(0,0,cfSize,cfSize);
-  cfc.strokeStyle='#1c1c1c';cfc.lineWidth=0.8;
-  cfc.beginPath();cfc.moveTo(0,0);cfc.lineTo(cfSize/2,cfSize/2);cfc.stroke();
-  cfc.beginPath();cfc.moveTo(cfSize/2,0);cfc.lineTo(cfSize,cfSize/2);cfc.stroke();
-  cfc.strokeStyle='#161616';
-  cfc.beginPath();cfc.moveTo(0,cfSize/2);cfc.lineTo(cfSize/2,cfSize);cfc.stroke();
-  cfc.beginPath();cfc.moveTo(cfSize/2,cfSize/2);cfc.lineTo(cfSize,cfSize);cfc.stroke();
-  const cfPat=ctx.createPattern(cfCanvas,'repeat');
+  function hexVerts(cx,cy,rad){const v=[];for(let i=0;i<6;i++){const a=Math.PI/6+i*Math.PI/3;v.push({x:cx+Math.cos(a)*rad,y:cy+Math.sin(a)*rad});}return v;}
+  function hexPath(cx,cy,rad){const v=hexVerts(cx,cy,rad);ctx.beginPath();ctx.moveTo(v[0].x,v[0].y);for(let i=1;i<6;i++)ctx.lineTo(v[i].x,v[i].y);ctx.closePath();}
 
   entData.forEach((d,i)=>{
     const p=positions[i];
-    const pulse=1+Math.sin(_hexFrame*0.04+i*1.2)*0.02;
-    const rp=r*pulse;
+    const col=d.e.hex;
+    // Couches (fraction du rayon)
+    const RO=r;        // bord extérieur biseau
+    const RI=r*0.63;   // bord intérieur biseau / bord ext rainure
+    const RF=r*0.565;  // centre anneau fibre optique
+    const RS=r*0.52;   // bord intérieur écran
 
-    if(d.e.key==='J'){
-      // ===== JORANN — BEVEL 3D + FIBRE OPTIQUE (TEST) =====
-      const col=d.e.hex; // #8B0000
-
-      // 1. Biseau extérieur — dégradé métal brossé haut-gauche → bas-droite
-      hexPath(p.x,p.y,rp*1.08);
-      const bvG=ctx.createLinearGradient(p.x-rp,p.y-rp,p.x+rp*0.8,p.y+rp*0.8);
-      bvG.addColorStop(0,'#2e2e2e');bvG.addColorStop(0.45,'#1a1a1a');bvG.addColorStop(1,'#080808');
-      ctx.fillStyle=bvG;ctx.fill();
-
-      // 2. Rainure sombre — espace avant la ligne fibre optique
-      hexPath(p.x,p.y,rp*0.96);
-      ctx.fillStyle='#030303';ctx.fill();
-
-      // 3. Ligne fibre optique — trait coloré intense + glow resserré
-      hexPath(p.x,p.y,rp*0.93);
-      ctx.save();
-      ctx.shadowColor=col;ctx.shadowBlur=9;
-      ctx.strokeStyle=col;ctx.lineWidth=2;ctx.stroke();
-      // Deuxième passe pour l'intensité (cœur blanc-chaud)
-      ctx.shadowBlur=3;ctx.strokeStyle='#ff4444';ctx.lineWidth=0.6;ctx.stroke();
-      ctx.restore();
-
-      // 4. Intérieur — fond fibre de carbone texturé
-      hexPath(p.x,p.y,rp*0.88);
-      ctx.save();ctx.clip();
-      ctx.fillStyle=cfPat;ctx.fillRect(p.x-rp,p.y-rp,rp*2,rp*2);
-      ctx.restore();
-
-      // 5. Arc conversion (sur fond texturé)
-      const cv=Math.min(d.conv/100,1);
-      if(cv>0){
-        ctx.save();
-        ctx.beginPath();ctx.arc(p.x,p.y,rp*0.62,-Math.PI/2,-Math.PI/2+cv*Math.PI*2);
-        ctx.shadowColor=col;ctx.shadowBlur=6;
-        ctx.strokeStyle=col;ctx.lineWidth=2.5;ctx.lineCap='round';ctx.stroke();
-        const ea=-Math.PI/2+cv*Math.PI*2;
-        ctx.beginPath();ctx.arc(p.x+Math.cos(ea)*rp*0.62,p.y+Math.sin(ea)*rp*0.62,2.5,0,Math.PI*2);
-        ctx.fillStyle='#fff';ctx.fill();
-        ctx.restore();
-      }
-
-      // 6. Labels nets
-      ctx.fillStyle=col;ctx.font='bold 8px monospace';ctx.textAlign='center';
-      ctx.fillText(d.e.name,p.x,p.y-7);
-      ctx.fillStyle='#f0f0f0';ctx.font='bold 11px monospace';
-      ctx.fillText(d.conv+'%',p.x,p.y+5);
-      ctx.fillStyle=col+'99';ctx.font='7px monospace';
-      ctx.fillText(d.calls+' calls',p.x,p.y+16);
-
-    } else {
-      // ===== DESIGN EXISTANT pour les autres entrepreneurs =====
-      [1.45,1.22].forEach(s=>{hexPath(p.x,p.y,rp*s);ctx.strokeStyle=d.e.hex+'14';ctx.lineWidth=0.6;ctx.stroke();});
-      hexPath(p.x,p.y,rp);
-      const g=ctx.createRadialGradient(p.x,p.y-rp*0.2,0,p.x,p.y,rp);
-      g.addColorStop(0,d.e.hex+'30');g.addColorStop(1,d.e.hex+'06');
-      ctx.fillStyle=g;ctx.fill();
-      ctx.save();ctx.shadowColor=d.e.hex;ctx.shadowBlur=10;ctx.strokeStyle=d.e.hex;ctx.lineWidth=1.2;ctx.stroke();ctx.restore();
-      const cv=Math.min(d.conv/100,1);
-      if(cv>0){
-        ctx.save();ctx.shadowColor=d.e.hex;ctx.shadowBlur=8;
-        ctx.beginPath();ctx.arc(p.x,p.y,rp*0.72,-Math.PI/2,-Math.PI/2+cv*Math.PI*2);
-        ctx.strokeStyle=d.e.hex;ctx.lineWidth=2.5;ctx.lineCap='round';ctx.stroke();ctx.restore();
-        const ea=-Math.PI/2+cv*Math.PI*2;
-        ctx.save();ctx.shadowColor=d.e.hex;ctx.shadowBlur=6;
-        ctx.beginPath();ctx.arc(p.x+Math.cos(ea)*rp*0.72,p.y+Math.sin(ea)*rp*0.72,2,0,Math.PI*2);
-        ctx.fillStyle='#fff';ctx.fill();ctx.restore();
-      }
-      ctx.fillStyle=d.e.hex;ctx.font='bold 8px monospace';ctx.textAlign='center';
-      ctx.fillText(d.e.name,p.x,p.y-7);
-      ctx.fillStyle='#e8f4ff';ctx.font='bold 11px monospace';
-      ctx.fillText(d.conv+'%',p.x,p.y+5);
-      ctx.fillStyle=d.e.hex+'88';ctx.font='7px monospace';
-      ctx.fillText(d.calls+' calls',p.x,p.y+16);
+    // ── 1. FACES TRAPÉZOÏDALES DU BISEAU MÉTALLIQUE ──
+    // Face i : outerV[i]→outerV[i+1] + innerV[i+1]→innerV[i]
+    // Lumière haut-gauche : face 3 (normale 240°) = plus lumineuse, face 1 (120°) = plus sombre
+    const outerV=hexVerts(p.x,p.y,RO);
+    const innerV=hexVerts(p.x,p.y,RI);
+    const faceC=['#1d1d1d','#141414','#212121','#484848','#565656','#2e2e2e'];
+    for(let f=0;f<6;f++){
+      const f2=(f+1)%6;
+      ctx.beginPath();
+      ctx.moveTo(outerV[f].x,outerV[f].y);ctx.lineTo(outerV[f2].x,outerV[f2].y);
+      ctx.lineTo(innerV[f2].x,innerV[f2].y);ctx.lineTo(innerV[f].x,innerV[f].y);
+      ctx.closePath();
+      ctx.fillStyle=faceC[f];ctx.fill();
+      ctx.save();ctx.globalAlpha=0.10;ctx.fillStyle=_hexMetalPat;ctx.fill();ctx.restore();
     }
+    // Arête lumineuse sur faces 3+4 (haut-gauche/haut)
+    [3,4].forEach(f=>{const f2=(f+1)%6;ctx.beginPath();ctx.moveTo(outerV[f].x,outerV[f].y);ctx.lineTo(outerV[f2].x,outerV[f2].y);ctx.strokeStyle='#7a7a7a';ctx.lineWidth=0.7;ctx.stroke();});
+    // Arête sombre sur faces 0+1 (bas)
+    [0,1].forEach(f=>{const f2=(f+1)%6;ctx.beginPath();ctx.moveTo(outerV[f].x,outerV[f].y);ctx.lineTo(outerV[f2].x,outerV[f2].y);ctx.strokeStyle='#080808';ctx.lineWidth=0.7;ctx.stroke();});
+
+    // ── 2. RAINURE NOIRE PROFONDE ──
+    hexPath(p.x,p.y,RI);ctx.fillStyle='#020202';ctx.fill();
+
+    // ── 3. ANNEAU FIBRE OPTIQUE — enchâssé dans la rainure ──
+    hexPath(p.x,p.y,RF);
+    ctx.save();
+    ctx.shadowColor=col;ctx.shadowBlur=12;
+    ctx.strokeStyle=col;ctx.lineWidth=4;ctx.stroke();
+    ctx.shadowBlur=3;ctx.strokeStyle='rgba(255,255,255,0.80)';ctx.lineWidth=0.7;ctx.stroke();
+    ctx.restore();
+
+    // ── 4. ÉCRAN INTÉRIEUR SOMBRE ET MAT ──
+    hexPath(p.x,p.y,RS);
+    ctx.save();ctx.clip();
+    hexPath(p.x,p.y,RS);
+    const sg=ctx.createRadialGradient(p.x,p.y-RS*0.2,0,p.x,p.y,RS);
+    sg.addColorStop(0,'#0c1014');sg.addColorStop(1,'#040404');
+    ctx.fillStyle=sg;ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.016)';ctx.lineWidth=0.5;
+    for(let ly=p.y-RS;ly<p.y+RS;ly+=1.8){ctx.beginPath();ctx.moveTo(p.x-RS,ly);ctx.lineTo(p.x+RS,ly);ctx.stroke();}
+    ctx.restore();
+    hexPath(p.x,p.y,RS);ctx.save();ctx.shadowColor=col;ctx.shadowBlur=RS*0.45;ctx.strokeStyle=col+'1a';ctx.lineWidth=0.5;ctx.stroke();ctx.restore();
+
+    // ── 5. ARC CONVERSION ──
+    const cv=Math.min(d.conv/100,1);
+    if(cv>0){
+      ctx.save();
+      ctx.beginPath();ctx.arc(p.x,p.y,RS*0.78,-Math.PI/2,-Math.PI/2+cv*Math.PI*2);
+      ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.lineCap='round';ctx.stroke();
+      const ea=-Math.PI/2+cv*Math.PI*2;
+      ctx.beginPath();ctx.arc(p.x+Math.cos(ea)*RS*0.78,p.y+Math.sin(ea)*RS*0.78,1.8,0,Math.PI*2);
+      ctx.fillStyle='#fff';ctx.fill();
+      ctx.restore();
+    }
+
+    // ── 6. LABELS ──
+    ctx.fillStyle=col;ctx.font='bold 7px monospace';ctx.textAlign='center';ctx.fillText(d.e.name,p.x,p.y-5);
+    ctx.fillStyle='#e8f4ff';ctx.font='bold 10px monospace';ctx.fillText(d.conv+'%',p.x,p.y+4);
+    ctx.fillStyle=col+'99';ctx.font='6px monospace';ctx.fillText(d.calls+' calls',p.x,p.y+13);
   });
   ctx.restore();
 }
