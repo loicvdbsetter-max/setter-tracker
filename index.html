@@ -2093,18 +2093,20 @@ function drawPodium(entData){
     const rr=3;
     const badgeR=7;
 
-    // ── Badge rang ──
-    const badgeY=topMargin-badgeR-1; // fixé dans la zone topMargin
-    ctx.save();
-    ctx.beginPath();ctx.arc(cx,badgeY,badgeR,0,Math.PI*2);
-    ctx.fillStyle='#050505';ctx.fill();
-    ctx.strokeStyle=mc;ctx.lineWidth=isFirst?1.1:0.7;ctx.stroke();
-    ctx.fillStyle=mc;ctx.font=`bold ${Math.round(badgeR*0.85)}px monospace`;ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(si+1,cx,badgeY+0.5);ctx.textBaseline='alphabetic';
-    ctx.restore();
-
-    // Couronne (N°1)
-    if(isFirst)drawCrown(cx,badgeY-badgeR,11,mc);
+    if(isFirst){
+      // N°1 : couronne seule, pas de cercle badge
+      drawCrown(cx,10,12,mc);
+    } else {
+      // N°2 / N°3 : cercle badge avec chiffre
+      const badgeY=topMargin-badgeR-1;
+      ctx.save();
+      ctx.beginPath();ctx.arc(cx,badgeY,badgeR,0,Math.PI*2);
+      ctx.fillStyle='#050505';ctx.fill();
+      ctx.strokeStyle=mc;ctx.lineWidth=0.7;ctx.stroke();
+      ctx.fillStyle=mc;ctx.font=`bold ${Math.round(badgeR*0.85)}px monospace`;ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(si+1,cx,badgeY+0.5);ctx.textBaseline='alphabetic';
+      ctx.restore();
+    }
 
     // ── Fond du rectangle ──
     ctx.save();
@@ -2265,9 +2267,9 @@ async function renderDash(){
 
     <!-- KPI -->
     <div class="kpi-row">
-      <div class="kpi-card" style="--kc:#ffd700;padding:10px 12px;background:#050505;border:0.5px solid #ffd700;">
-        <div class="kpi-label" style="color:#ffd700;letter-spacing:2px">TOP CE MOIS</div>
-        <div id="podiumWrap" style="width:100%;margin-top:4px"></div>
+      <div class="kpi-card" style="--kc:#ffd700;padding:8px 8px 0;background:#050505;border:0.5px solid #ffd700;">
+        <div class="kpi-label" style="color:#ffd700;letter-spacing:2px;margin-bottom:2px">TOP CE MOIS</div>
+        <div id="podiumWrap" style="width:calc(100% + 16px);margin:0 -8px;"></div>
       </div>
       <div class="kpi-card" style="--kc:#34d399">
         <div class="kpi-label">MA PART CE MOIS</div>
