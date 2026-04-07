@@ -2052,12 +2052,8 @@ function drawPodium(entData){
 
   const dpr=window.devicePixelRatio||1;
   const W=wrap.offsetWidth||260;
-  // Hauteur dynamique : hauteur réelle de la card (grid row) - hauteur du titre
-  const card=document.getElementById('podiumCard');
-  const title=document.getElementById('podiumTitle');
-  const cardH=card?card.getBoundingClientRect().height:0;
-  const titleH=title?title.getBoundingClientRect().height:22;
-  const H=Math.max(60,Math.round(cardH-titleH))||90;
+  // height:100% sur wrap → offsetHeight = hauteur réelle de la card (grid stretch)
+  const H=Math.max(60,wrap.offsetHeight)||100;
   cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.style.height=H+'px';
   const ctx=cv.getContext('2d');
   ctx.save();ctx.scale(dpr,dpr);
@@ -2271,9 +2267,9 @@ async function renderDash(){
 
     <!-- KPI -->
     <div class="kpi-row">
-      <div id="podiumCard" class="kpi-card" style="--kc:#ffd700;padding:0;background:#050505;border:0.5px solid #ffd700;">
-        <div id="podiumTitle" class="kpi-label" style="color:#ffd700;letter-spacing:2px;padding:5px 8px 3px;">TOP CE MOIS</div>
-        <div id="podiumWrap" style="width:100%;"></div>
+      <div id="podiumCard" class="kpi-card" style="--kc:#ffd700;padding:0;background:#050505;border:0.5px solid #ffd700;position:relative;">
+        <div id="podiumTitle" class="kpi-label" style="color:#ffd700;letter-spacing:2px;padding:5px 8px 3px;position:absolute;top:0;left:0;z-index:2;pointer-events:none;">TOP CE MOIS</div>
+        <div id="podiumWrap" style="width:100%;height:100%;"></div>
       </div>
       <div class="kpi-card" style="--kc:#34d399">
         <div class="kpi-label">MA PART CE MOIS</div>
