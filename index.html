@@ -2052,7 +2052,8 @@ function drawPodium(entData){
 
   const dpr=window.devicePixelRatio||1;
   const W=wrap.offsetWidth||260;
-  const H=115; // aligné sur les autres cards pour ne pas étirer la kpi-row
+  // H=90 : correspond à la ring DAILY TASKS (90px) → row à hauteur uniforme
+  const H=90;
   cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.style.height=H+'px';
   const ctx=cv.getContext('2d');
   ctx.save();ctx.scale(dpr,dpr);
@@ -2062,50 +2063,48 @@ function drawPodium(entData){
   if(!scores.length){ctx.restore();return;}
 
   const MEDALS=['#FFD700','#C0C0C0','#CD7F32'];
-  const baseY=H-8;
+  // Espace réservé en haut pour badge+couronne, en bas pour ligne de sol
+  const topMargin=22, baseY=H-5;
+  const availH=baseY-topMargin; // ~63px
 
-  // Couronne filaire au-dessus du N°1
+  // Couronne filaire (N°1)
   function drawCrown(cx,cy,sz,col){
-    ctx.save();ctx.strokeStyle=col;ctx.lineWidth=0.7;ctx.fillStyle=col+'18';
+    ctx.save();ctx.strokeStyle=col;ctx.lineWidth=0.6;ctx.fillStyle=col+'18';
     const bw=sz*0.88;
     ctx.beginPath();ctx.moveTo(cx-bw/2,cy+sz*0.1);ctx.lineTo(cx+bw/2,cy+sz*0.1);ctx.lineTo(cx+bw/2,cy+sz*0.35);ctx.lineTo(cx-bw/2,cy+sz*0.35);ctx.closePath();ctx.fill();ctx.stroke();
-    [[cx-bw/2,cy+sz*0.1,cx-bw/2,cy-sz*0.28,cx-bw*0.18,cy+sz*0.1],
-     [cx-bw*0.18,cy+sz*0.1,cx,cy-sz*0.50,cx+bw*0.18,cy+sz*0.1],
-     [cx+bw*0.18,cy+sz*0.1,cx+bw/2,cy-sz*0.28,cx+bw/2,cy+sz*0.1]
+    [[cx-bw/2,cy+sz*0.1,cx-bw/2,cy-sz*0.28,cx-bw*0.18,cy+sz*0.1],[cx-bw*0.18,cy+sz*0.1,cx,cy-sz*0.50,cx+bw*0.18,cy+sz*0.1],[cx+bw*0.18,cy+sz*0.1,cx+bw/2,cy-sz*0.28,cx+bw/2,cy+sz*0.1]
     ].forEach(([x1,y1,x2,y2,x3,y3])=>{ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.lineTo(x3,y3);ctx.closePath();ctx.fill();ctx.stroke();});
-    [[cx-bw/2,cy-sz*0.28,sz*0.065],[cx,cy-sz*0.50,sz*0.085],[cx+bw/2,cy-sz*0.28,sz*0.065]].forEach(([px,py,ds])=>{
-      ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(px,py-ds);ctx.lineTo(px+ds,py);ctx.lineTo(px,py+ds);ctx.lineTo(px-ds,py);ctx.closePath();ctx.fill();
-    });
+    [[cx-bw/2,cy-sz*0.28,sz*0.06],[cx,cy-sz*0.50,sz*0.08],[cx+bw/2,cy-sz*0.28,sz*0.06]].forEach(([px,py,ds])=>{ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(px,py-ds);ctx.lineTo(px+ds,py);ctx.lineTo(px,py+ds);ctx.lineTo(px-ds,py);ctx.closePath();ctx.fill();});
     ctx.restore();
   }
 
-  // Blocs [si=rang index, cx, largeur, hauteur]
+  // Blocs proportionnels à availH
   const blocs=[
-    {si:1, cx:W*0.19, bw:W*0.22, bh:H*0.62},  // 2e gauche
-    {si:0, cx:W*0.50, bw:W*0.32, bh:H*0.82},  // 1er centre
-    {si:2, cx:W*0.81, bw:W*0.22, bh:H*0.48},  // 3e droite
+    {si:1, cx:W*0.19, bw:W*0.22, bh:availH*0.74},  // 2e
+    {si:0, cx:W*0.50, bw:W*0.32, bh:availH},         // 1er
+    {si:2, cx:W*0.81, bw:W*0.22, bh:availH*0.57},   // 3e
   ];
 
   blocs.forEach(({si,cx,bw,bh})=>{
     if(si>=scores.length)return;
     const s=scores[si],mc=MEDALS[si],rgb=hex2rgb(mc);
-    const by=baseY-bh;   // top du rectangle
+    const by=baseY-bh;
     const isFirst=si===0;
-    const rr=4;          // rayon des coins
-    const badgeR=9;
+    const rr=3;
+    const badgeR=7;
 
-    // ── Badge rang (cercle au-dessus du bloc) ──
-    const badgeY=by-badgeR-3;
+    // ── Badge rang ──
+    const badgeY=topMargin-badgeR-1; // fixé dans la zone topMargin
     ctx.save();
     ctx.beginPath();ctx.arc(cx,badgeY,badgeR,0,Math.PI*2);
     ctx.fillStyle='#050505';ctx.fill();
-    ctx.strokeStyle=mc;ctx.lineWidth=isFirst?1.2:0.8;ctx.stroke();
-    ctx.fillStyle=mc;ctx.font=`bold ${Math.round(badgeR*0.88)}px monospace`;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.strokeStyle=mc;ctx.lineWidth=isFirst?1.1:0.7;ctx.stroke();
+    ctx.fillStyle=mc;ctx.font=`bold ${Math.round(badgeR*0.85)}px monospace`;ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText(si+1,cx,badgeY+0.5);ctx.textBaseline='alphabetic';
     ctx.restore();
 
-    // Couronne filaire (N°1 uniquement)
-    if(isFirst)drawCrown(cx,badgeY-badgeR-1,13,mc);
+    // Couronne (N°1)
+    if(isFirst)drawCrown(cx,badgeY-badgeR,11,mc);
 
     // ── Fond du rectangle ──
     ctx.save();
@@ -2137,19 +2136,19 @@ function drawPodium(entData){
     ctx.restore();
 
     // ── Nom (majuscules, haut) ──
-    const nmSz=isFirst?10:8;
+    const nmSz=isFirst?8:7;
     ctx.fillStyle=mc;ctx.font=`bold ${nmSz}px monospace`;ctx.textAlign='center';
-    ctx.fillText(s.e.name.toUpperCase(),cx,by+nmSz+6);
+    ctx.fillText(s.e.name.toUpperCase(),cx,by+nmSz+4);
 
     // ── Montant (gros, centré) ──
-    const amtSz=isFirst?14:10;
+    const amtSz=isFirst?12:9;
     ctx.fillStyle='#f0f0f0';ctx.font=`bold ${amtSz}px monospace`;ctx.textAlign='center';
-    ctx.fillText(s.label,cx,by+bh*0.56+amtSz*0.38);
+    ctx.fillText(s.label,cx,by+bh*0.58+amtSz*0.4);
 
     // ── Sous-label N°1 ──
     if(isFirst){
-      ctx.fillStyle=`rgba(${rgb},0.35)`;ctx.font='7px monospace';ctx.textAlign='center';
-      ctx.fillText('// 1ER //',cx,by+bh-8);
+      ctx.fillStyle=`rgba(${rgb},0.35)`;ctx.font='6px monospace';ctx.textAlign='center';
+      ctx.fillText('// 1ER //',cx,by+bh-5);
     }
   });
 
