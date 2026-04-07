@@ -1201,12 +1201,23 @@ body::before{display:none !important;}
   background:linear-gradient(135deg,#020b0d 0%,#051a1d 100%) !important;
   background-size:100% 100% !important;
   border:1px solid rgba(var(--cr),0.38) !important;
-  border-top:2px solid var(--c) !important;
+  border-top:1.5px solid var(--c) !important;
   border-radius:12px !important;
   box-shadow:
     0 0 22px rgba(var(--cr),0.35),
     0 0 55px rgba(var(--cr),0.13),
     0 4px 20px rgba(0,0,0,0.5) !important;
+}
+.ent-card::after{
+  content:'';position:absolute;inset:0;pointer-events:none;opacity:1;
+  --cc:var(--c);--cs:18px;
+  background:
+    linear-gradient(to left,var(--cc) var(--cs),transparent var(--cs)) top right/var(--cs) 1px no-repeat,
+    linear-gradient(to bottom,var(--cc) var(--cs),transparent var(--cs)) top right/1px var(--cs) no-repeat,
+    linear-gradient(to right,var(--cc) var(--cs),transparent var(--cs)) bottom left/var(--cs) 1px no-repeat,
+    linear-gradient(to top,var(--cc) var(--cs),transparent var(--cs)) bottom left/1px var(--cs) no-repeat,
+    linear-gradient(to left,var(--cc) var(--cs),transparent var(--cs)) bottom right/var(--cs) 1px no-repeat,
+    linear-gradient(to top,var(--cc) var(--cs),transparent var(--cs)) bottom right/1px var(--cs) no-repeat !important;
 }
 .ent-card:hover{
   border-color:rgba(var(--cr),0.62) !important;
@@ -1215,7 +1226,6 @@ body::before{display:none !important;}
     0 0 34px rgba(var(--cr),0.58),
     0 0 78px rgba(var(--cr),0.24) !important;
 }
-
 /* ZÉRO néon/glow sur les textes — absolu */
 *{text-shadow:none !important;}
 
