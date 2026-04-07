@@ -2052,8 +2052,8 @@ function drawPodium(entData){
 
   const dpr=window.devicePixelRatio||1;
   const W=wrap.offsetWidth||260;
-  // H=90 : correspond à la ring DAILY TASKS (90px) → row à hauteur uniforme
-  const H=90;
+  // Hauteur dynamique : prend tout l'espace vertical disponible dans le flex
+  const H=Math.max(60,wrap.offsetHeight)||90;
   cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.style.height=H+'px';
   const ctx=cv.getContext('2d');
   ctx.save();ctx.scale(dpr,dpr);
@@ -2267,9 +2267,9 @@ async function renderDash(){
 
     <!-- KPI -->
     <div class="kpi-row">
-      <div class="kpi-card" style="--kc:#ffd700;padding:8px 8px 0;background:#050505;border:0.5px solid #ffd700;">
-        <div class="kpi-label" style="color:#ffd700;letter-spacing:2px;margin-bottom:2px">TOP CE MOIS</div>
-        <div id="podiumWrap" style="width:calc(100% + 16px);margin:0 -8px;"></div>
+      <div class="kpi-card" style="--kc:#ffd700;padding:0;background:#050505;border:0.5px solid #ffd700;display:flex;flex-direction:column;">
+        <div class="kpi-label" style="color:#ffd700;letter-spacing:2px;padding:6px 8px 3px;flex-shrink:0">TOP CE MOIS</div>
+        <div id="podiumWrap" style="flex:1;width:100%;min-height:0;"></div>
       </div>
       <div class="kpi-card" style="--kc:#34d399">
         <div class="kpi-label">MA PART CE MOIS</div>
