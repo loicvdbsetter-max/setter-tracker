@@ -2098,7 +2098,7 @@ function drawPodium(entData){
       drawCrown(cx,10,12,mc);
     } else {
       // N°2 / N°3 : cercle badge avec chiffre
-      const badgeY=topMargin-badgeR-1;
+      const badgeY=by-badgeR-2;
       ctx.save();
       ctx.beginPath();ctx.arc(cx,badgeY,badgeR,0,Math.PI*2);
       ctx.fillStyle='#050505';ctx.fill();
