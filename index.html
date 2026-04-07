@@ -2042,19 +2042,17 @@ function drawHexDash(entData){
   ctx.restore();
 }
 
-// ===== PODIUM — hexagones podium (image_22 style) =====
+// ===== PODIUM — rectangles premium =====
 function drawPodium(entData){
   const wrap=document.getElementById('podiumWrap');
   if(!wrap)return;
-  wrap.style.overflow='hidden';
 
   let cv=wrap.querySelector('canvas');
   if(!cv){wrap.innerHTML='';cv=document.createElement('canvas');cv.style.cssText='width:100%;display:block';wrap.appendChild(cv);}
 
   const dpr=window.devicePixelRatio||1;
   const W=wrap.offsetWidth||260;
-  // H aligné sur l'ancienne hauteur pour ne pas étirer la kpi-row
-  const H=Math.min(Math.round(W*0.56),140);
+  const H=115; // aligné sur les autres cards pour ne pas étirer la kpi-row
   cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.style.height=H+'px';
   const ctx=cv.getContext('2d');
   ctx.save();ctx.scale(dpr,dpr);
@@ -2064,99 +2062,100 @@ function drawPodium(entData){
   if(!scores.length){ctx.restore();return;}
 
   const MEDALS=['#FFD700','#C0C0C0','#CD7F32'];
+  const baseY=H-8;
 
-  // r0 calculé pour que les 3 hexes tiennent EXACTEMENT dans W (sans débord)
-  // bord gauche de N°2 = W/2 - spacing - r1*sin60 = W/2 - r0*(1.74 + 0.87*0.866)
-  const r0=Math.min((W*0.5-6)/(1.74+0.87*0.866), H*0.44);
-  const r1=r0*0.87;
-  const spacing=r0*1.74;
-  const cyAll=H*0.50; // centrage vertical unique
-  const layout=[
-    {si:1,cx:W*0.5-spacing, cy:cyAll,r:r1},
-    {si:0,cx:W*0.5,         cy:cyAll,r:r0},
-    {si:2,cx:W*0.5+spacing, cy:cyAll,r:r1},
-  ];
-
-  function hexPath(cx,cy,rad){
-    ctx.beginPath();
-    for(let i=0;i<6;i++){const a=Math.PI/2+i*Math.PI/3;const x=cx+Math.cos(a)*rad,y=cy+Math.sin(a)*rad;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
-    ctx.closePath();
+  // Couronne filaire au-dessus du N°1
+  function drawCrown(cx,cy,sz,col){
+    ctx.save();ctx.strokeStyle=col;ctx.lineWidth=0.7;ctx.fillStyle=col+'18';
+    const bw=sz*0.88;
+    ctx.beginPath();ctx.moveTo(cx-bw/2,cy+sz*0.1);ctx.lineTo(cx+bw/2,cy+sz*0.1);ctx.lineTo(cx+bw/2,cy+sz*0.35);ctx.lineTo(cx-bw/2,cy+sz*0.35);ctx.closePath();ctx.fill();ctx.stroke();
+    [[cx-bw/2,cy+sz*0.1,cx-bw/2,cy-sz*0.28,cx-bw*0.18,cy+sz*0.1],
+     [cx-bw*0.18,cy+sz*0.1,cx,cy-sz*0.50,cx+bw*0.18,cy+sz*0.1],
+     [cx+bw*0.18,cy+sz*0.1,cx+bw/2,cy-sz*0.28,cx+bw/2,cy+sz*0.1]
+    ].forEach(([x1,y1,x2,y2,x3,y3])=>{ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.lineTo(x3,y3);ctx.closePath();ctx.fill();ctx.stroke();});
+    [[cx-bw/2,cy-sz*0.28,sz*0.065],[cx,cy-sz*0.50,sz*0.085],[cx+bw/2,cy-sz*0.28,sz*0.065]].forEach(([px,py,ds])=>{
+      ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(px,py-ds);ctx.lineTo(px+ds,py);ctx.lineTo(px,py+ds);ctx.lineTo(px-ds,py);ctx.closePath();ctx.fill();
+    });
+    ctx.restore();
   }
 
-  // Rendu arrière→avant : 3e, 2e, 1er
-  [2,0,1].forEach(idx=>{
-    const {si,cx,cy,r}=layout[idx];
+  // Blocs [si=rang index, cx, largeur, hauteur]
+  const blocs=[
+    {si:1, cx:W*0.19, bw:W*0.22, bh:H*0.62},  // 2e gauche
+    {si:0, cx:W*0.50, bw:W*0.32, bh:H*0.82},  // 1er centre
+    {si:2, cx:W*0.81, bw:W*0.22, bh:H*0.48},  // 3e droite
+  ];
+
+  blocs.forEach(({si,cx,bw,bh})=>{
     if(si>=scores.length)return;
     const s=scores[si],mc=MEDALS[si],rgb=hex2rgb(mc);
+    const by=baseY-bh;   // top du rectangle
     const isFirst=si===0;
+    const rr=4;          // rayon des coins
+    const badgeR=9;
 
-    // ── Fond extérieur (aura diffuse) ──
-    hexPath(cx,cy,r*0.97);
-    const bgG=ctx.createRadialGradient(cx,cy,r*0.3,cx,cy,r);
-    bgG.addColorStop(0,'#0a0a0a');bgG.addColorStop(1,'#030303');
-    ctx.fillStyle=bgG;ctx.fill();
-
-    // ── Anneau extérieur fin ──
-    hexPath(cx,cy,r*0.97);
-    ctx.strokeStyle=`rgba(${rgb},0.22)`;ctx.lineWidth=0.8;ctx.stroke();
-
-    // ── Rainure biseautée sombre ──
-    hexPath(cx,cy,r*0.90);
-    ctx.strokeStyle='#010101';ctx.lineWidth=7;ctx.stroke();
-
-    // ── Anneau métallique brillant + lueur néon ──
+    // ── Badge rang (cercle au-dessus du bloc) ──
+    const badgeY=by-badgeR-3;
     ctx.save();
-    ctx.shadowColor=mc;ctx.shadowBlur=isFirst?22:14;
-    hexPath(cx,cy,r*0.90);
-    ctx.strokeStyle=mc;ctx.lineWidth=2.8;ctx.stroke();
-    // Cœur blanc brillant
-    ctx.shadowBlur=isFirst?8:4;
-    ctx.strokeStyle='rgba(255,255,255,0.60)';ctx.lineWidth=0.8;ctx.stroke();
+    ctx.beginPath();ctx.arc(cx,badgeY,badgeR,0,Math.PI*2);
+    ctx.fillStyle='#050505';ctx.fill();
+    ctx.strokeStyle=mc;ctx.lineWidth=isFirst?1.2:0.8;ctx.stroke();
+    ctx.fillStyle=mc;ctx.font=`bold ${Math.round(badgeR*0.88)}px monospace`;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(si+1,cx,badgeY+0.5);ctx.textBaseline='alphabetic';
     ctx.restore();
 
-    // ── Anneau intérieur (double bague) ──
-    hexPath(cx,cy,r*0.81);
-    ctx.strokeStyle=`rgba(${rgb},0.55)`;ctx.lineWidth=1.4;ctx.stroke();
+    // Couronne filaire (N°1 uniquement)
+    if(isFirst)drawCrown(cx,badgeY-badgeR-1,13,mc);
 
-    // ── Verre dépoli (frosted glass) ──
-    hexPath(cx,cy,r*0.79);
-    const glG=ctx.createRadialGradient(cx-r*0.18,cy-r*0.22,0,cx,cy,r*0.82);
-    glG.addColorStop(0,'rgba(45,48,60,0.80)');
-    glG.addColorStop(0.4,'rgba(12,13,18,0.92)');
-    glG.addColorStop(1,'rgba(3,4,6,0.98)');
-    ctx.fillStyle=glG;ctx.fill();
-    // Reflet spéculaire haut-gauche
+    // ── Fond du rectangle ──
     ctx.save();
-    hexPath(cx,cy,r*0.79);ctx.clip();
-    const hlG=ctx.createRadialGradient(cx-r*0.30,cy-r*0.35,0,cx-r*0.15,cy-r*0.18,r*0.45);
-    hlG.addColorStop(0,'rgba(255,255,255,0.09)');
-    hlG.addColorStop(1,'rgba(255,255,255,0)');
-    ctx.fillStyle=hlG;ctx.fillRect(cx-r,cy-r,r*2,r*2);
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(cx-bw/2,by,bw,bh,rr);else ctx.rect(cx-bw/2,by,bw,bh);
+    ctx.fillStyle='#060606';ctx.fill();
+
+    // ── Reflet verre (diagonal, haut-gauche) ──
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(cx-bw/2,by,bw,bh,rr);else ctx.rect(cx-bw/2,by,bw,bh);
+    ctx.clip();
+    const glG=ctx.createLinearGradient(cx-bw/2,by,cx+bw*0.1,by+bh*0.5);
+    glG.addColorStop(0,'rgba(255,255,255,0.09)');
+    glG.addColorStop(0.35,'rgba(255,255,255,0.03)');
+    glG.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=glG;ctx.fillRect(cx-bw/2,by,bw,bh);
+    // Légère teinte colorée en haut
+    const topG=ctx.createLinearGradient(0,by,0,by+bh*0.3);
+    topG.addColorStop(0,`rgba(${rgb},0.07)`);topG.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=topG;ctx.fillRect(cx-bw/2,by,bw,bh);
     ctx.restore();
 
-    // ── Chiffre du rang en filigrane (gros, sombre) ──
+    // ── Bordure métallique (avec lueur douce sur N°1) ──
     ctx.save();
-    hexPath(cx,cy,r*0.79);ctx.clip();
-    ctx.fillStyle='rgba(100,105,120,0.18)';
-    ctx.font=`900 ${r*1.30}px monospace`;
-    ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(si+1,cx,cy-r*0.06);
+    if(isFirst){ctx.shadowColor=mc;ctx.shadowBlur=8;}
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(cx-bw/2,by,bw,bh,rr);else ctx.rect(cx-bw/2,by,bw,bh);
+    ctx.strokeStyle=mc;ctx.lineWidth=isFirst?1.2:0.7;ctx.stroke();
     ctx.restore();
 
-    // ── Nom ──
-    const nmSz=Math.max(8,r*0.26);
-    ctx.fillStyle='#ffffff';
-    ctx.font=`bold ${nmSz}px monospace`;
-    ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(s.e.name.toUpperCase(),cx,cy+r*0.52);
+    // ── Nom (majuscules, haut) ──
+    const nmSz=isFirst?10:8;
+    ctx.fillStyle=mc;ctx.font=`bold ${nmSz}px monospace`;ctx.textAlign='center';
+    ctx.fillText(s.e.name.toUpperCase(),cx,by+nmSz+6);
 
-    // ── Score ──
-    const scSz=Math.max(6,r*0.17);
-    ctx.fillStyle=`rgba(${rgb},0.80)`;
-    ctx.font=`${scSz}px monospace`;
-    ctx.fillText(s.label,cx,cy+r*0.74);
-    ctx.textBaseline='alphabetic';
+    // ── Montant (gros, centré) ──
+    const amtSz=isFirst?14:10;
+    ctx.fillStyle='#f0f0f0';ctx.font=`bold ${amtSz}px monospace`;ctx.textAlign='center';
+    ctx.fillText(s.label,cx,by+bh*0.56+amtSz*0.38);
+
+    // ── Sous-label N°1 ──
+    if(isFirst){
+      ctx.fillStyle=`rgba(${rgb},0.35)`;ctx.font='7px monospace';ctx.textAlign='center';
+      ctx.fillText('// 1ER //',cx,by+bh-8);
+    }
   });
+
+  // Ligne de sol fine
+  ctx.strokeStyle='rgba(255,215,0,0.12)';ctx.lineWidth=0.5;
+  ctx.beginPath();ctx.moveTo(W*0.04,baseY);ctx.lineTo(W*0.96,baseY);ctx.stroke();
 
   ctx.restore();
 }
