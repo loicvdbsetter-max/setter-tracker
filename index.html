@@ -983,7 +983,7 @@ button:not(.mplus):not(.mminus):not(.auth-btn):not(.psave):not(.ladd-btn):hover 
 }
 
 /* Typographie revenus renforcée */
-.lsum-val{font-family:'Orbitron','Bebas Neue',sans-serif !important;font-size:1.9rem !important;font-weight:900 !important;letter-spacing:4px;color:#111111 !important;-webkit-text-stroke:1.5px #c9922a;text-shadow:0 -1px 0 #fff0a0,0 1px 1px #5a3800,1px 0 0 #a07428,-1px 0 0 #a07428,0 0 4px rgba(160,110,20,0.18) !important;}
+.lsum-val{font-family:'Orbitron','Bebas Neue',sans-serif !important;font-size:1.9rem !important;font-weight:900 !important;letter-spacing:4px;}
 .lsum-comm{font-size:11px !important;color:var(--cyan);margin-top:4px;font-weight:700;}
 .lsum-name{font-size:11px !important;letter-spacing:1.5px;}
 
@@ -1339,7 +1339,9 @@ body::before{display:none !important;}
 .dash-ent-name,.ent-card-name{color:var(--c) !important;}
 .dash-title .t,.jh-title,.auth-logo .t{color:#00f2ff !important;}
 .kpi-val{color:var(--kc,var(--cyan)) !important;}
-.lsum-val,.tcval,.ring-pct{color:var(--c,var(--cyan)) !important;}
+.tcval,.ring-pct{color:var(--c,var(--cyan)) !important;}
+/* Luxe Or Vieilli — override final, doit rester après toutes les règles de couleur */
+.lsum-val{color:#111111 !important;-webkit-text-stroke:1.5px #b59410 !important;text-shadow:0 -1px 0 #d4b84a,0 1px 1px #3a2600,1px 0 0 #8a700b,-1px 0 0 #8a700b !important;}
 
 /* 7. 3D Perspective cockpit — rotateY (user spec) */
 @media(min-width:769px){
