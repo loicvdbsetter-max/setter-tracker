@@ -2926,7 +2926,7 @@ async function renderLeads(){
     const e=ENTS.find(x=>x.key===l.entKey)||ENTS[0];
     const cash=parseFloat(l.cashReceived)||0;
     const comm=cash*(e.rate/100);
-    const tagsHtml=(l.tags||[]).map(t=>`<span class="ltag">${t}<span class="ltag-x" onclick="removeTag(${cY},${cM},'${id}',${JSON.stringify(l.tags||[])},${JSON.stringify(t)})">×</span></span>`).join('');
+    const tagsHtml=(l.tags||[]).map(t=>`<span class="ltag">${t}<span class="ltag-x" data-y="${cY}" data-m="${cM}" data-id="${id}" data-tag="${t.replace(/"/g,'&quot;')}" onclick="removeTag(this)">×</span></span>`).join('');
     rows+=`<tr>
       <td><input class="linput" value="${l.name||''}" onblur="upLead(${cY},${cM},'${id}','name',this.value)" placeholder="Nom"></td>
       <td><select style="background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:5px 8px;font-size:12px;outline:none;" onchange="upLead(${cY},${cM},'${id}','entKey',this.value)">${ENTS.map(x=>`<option value="${x.key}" ${l.entKey===x.key?'selected':''}>${x.name}</option>`).join('')}</select></td>
@@ -2934,7 +2934,7 @@ async function renderLeads(){
       <td><input class="lcash" type="number" value="${l.cashReceived||0}" onblur="upLead(${cY},${cM},'${id}','cashReceived',parseFloat(this.value)||0)">€</td>
       <td><span class="lcomm">${comm.toFixed(0)}€</span></td>
       <td><div style="display:flex;flex-wrap:wrap;gap:2px;align-items:center">${tagsHtml}
-        <select style="background:var(--surface2);border:1px solid var(--border2);color:var(--muted2);border-radius:20px;padding:2px 6px;font-size:11px;outline:none;" onchange="if(this.value){addTag(${cY},${cM},'${id}',${JSON.stringify(l.tags||[])},this.value);this.value=''}">
+        <select style="background:var(--surface2);border:1px solid var(--border2);color:var(--muted2);border-radius:20px;padding:2px 6px;font-size:11px;outline:none;" onchange="if(this.value){addTag(${cY},${cM},'${id}',this.value);this.value=''}">
           <option value="">+ tag</option>${PRESET_TAGS.map(t=>`<option value="${t}">${t}</option>`).join('')}
         </select>
       </div></td>
@@ -3040,9 +3040,9 @@ async function addLead(y,mo,ek){const lead={name:'Nouveau lead',entKey:ek,cashCo
 window.addLead=addLead;
 async function upLead(y,mo,id,field,val){try{await set(ref(db,`leads/${y}/${mo}/${id}/${field}`),val);delete lCache[`${y}_${mo}`];}catch(e){}}
 window.upLead=upLead;
-async function addTag(y,mo,id,tags,tag){if(tags.includes(tag))return;await upLead(y,mo,id,'tags',[...tags,tag]);setTimeout(()=>renderLeads(),200);}
+async function addTag(y,mo,id,tag){const snap=await get(ref(db,`leads/${y}/${mo}/${id}/tags`));const tags=snap.val()||[];if(tags.includes(tag))return;await upLead(y,mo,id,'tags',[...tags,tag]);setTimeout(()=>renderLeads(),200);}
 window.addTag=addTag;
-async function removeTag(y,mo,id,tags,tag){await upLead(y,mo,id,'tags',tags.filter(t=>t!==tag));setTimeout(()=>renderLeads(),200);}
+async function removeTag(el){const y=+el.dataset.y,mo=+el.dataset.m,id=el.dataset.id,tag=el.dataset.tag;const snap=await get(ref(db,`leads/${y}/${mo}/${id}/tags`));const tags=snap.val()||[];await upLead(y,mo,id,'tags',tags.filter(t=>t!==tag));setTimeout(()=>renderLeads(),200);}
 window.removeTag=removeTag;
 async function delLead(y,mo,id){if(!confirm('Supprimer ce lead ?'))return;try{await remove(ref(db,`leads/${y}/${mo}/${id}`));delete lCache[`${y}_${mo}`];renderLeads();}catch(e){}}
 window.delLead=delLead;
