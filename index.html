@@ -2098,7 +2098,7 @@ function drawPodium(entData){
   blocs.forEach(({si,cx,bw,bh})=>{
     if(si>=scores.length)return;
     const s=scores[si],mc=MEDALS[si],rgb=hex2rgb(mc);
-    const by=baseY-bh;
+    const badgeY=by-badgeR-2;
     const isFirst=si===0;
     const rr=3;
     const badgeR=7;
