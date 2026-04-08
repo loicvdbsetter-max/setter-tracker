@@ -2055,17 +2055,13 @@ function drawHexDash(entData){
 
 // ===== PODIUM — rectangles premium =====
 function drawPodium(entData){
-  const wrap=document.getElementById('podiumWrap');
-  if(!wrap)return;
-
-  let cv=wrap.querySelector('canvas');
-  if(!cv){wrap.innerHTML='';cv=document.createElement('canvas');cv.style.cssText='width:100%;display:block';wrap.appendChild(cv);}
-
+  const cv=document.getElementById('podiumCanvas');
+  if(!cv)return;
+  const card=document.getElementById('podiumCard');
   const dpr=window.devicePixelRatio||1;
-  const W=wrap.offsetWidth||260;
-  // height:100% sur wrap → offsetHeight = hauteur réelle de la card (grid stretch)
-  const H=Math.max(60,wrap.offsetHeight)||100;
-  cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.style.height=H+'px';
+  const W=card.offsetWidth||260;
+  const H=Math.max(100,card.offsetHeight)||130;
+  cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
   const ctx=cv.getContext('2d');
   ctx.save();ctx.scale(dpr,dpr);
   ctx.clearRect(0,0,W,H);ctx.fillStyle='#050505';ctx.fillRect(0,0,W,H);
@@ -2278,9 +2274,9 @@ async function renderDash(){
 
     <!-- KPI -->
     <div class="kpi-row">
-      <div id="podiumCard" class="kpi-card" style="--kc:#ffd700;padding:0;background:#050505;border:0.5px solid #ffd700;position:relative;">
-        <div id="podiumTitle" class="kpi-label" style="color:#ffd700;letter-spacing:2px;padding:5px 8px 3px;position:absolute;top:0;left:0;z-index:2;pointer-events:none;">TOP CE MOIS</div>
-        <div id="podiumWrap" style="width:100%;height:100%;"></div>
+      <div id="podiumCard" class="kpi-card" style="--kc:#ffd700;padding:0;background:#050505;border:0.5px solid #ffd700;position:relative;min-height:120px;">
+        <div id="podiumTitle" class="kpi-label" style="color:#ffd700;letter-spacing:2px;padding:5px 8px 3px;position:absolute;top:0;left:0;z-index:3;pointer-events:none;">TOP CE MOIS</div>
+        <canvas id="podiumCanvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;z-index:1;"></canvas>
       </div>
       <div class="kpi-card" style="--kc:#34d399">
         <div class="kpi-label">MA PART CE MOIS</div>
