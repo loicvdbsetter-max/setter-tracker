@@ -1971,12 +1971,19 @@ function drawHexDash(entData){
   if(canvas.width!==W*dpr||canvas.height!==H*dpr){canvas.width=W*dpr;canvas.height=H*dpr;}
   const ctx=canvas.getContext('2d');ctx.save();ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
   if(!_hexMetalPat){const pc=document.createElement('canvas');pc.width=4;pc.height=4;const pctx=pc.getContext('2d');pctx.fillStyle='#2a2a2a';pctx.fillRect(0,0,4,4);pctx.strokeStyle='#353535';pctx.lineWidth=0.5;pctx.beginPath();pctx.moveTo(0,0);pctx.lineTo(4,4);pctx.stroke();pctx.beginPath();pctx.moveTo(2,0);pctx.lineTo(4,2);pctx.stroke();pctx.beginPath();pctx.moveTo(0,2);pctx.lineTo(2,4);pctx.stroke();_hexMetalPat=ctx.createPattern(pc,'repeat');}
-  const r=Math.min(W/6,H*0.38);
-  const hx=r*0.866,cy=H*0.52,sx=(W-2*hx)/3;
-  const positions=[{x:hx,y:cy},{x:hx+sx,y:cy},{x:hx+2*sx,y:cy},{x:W-hx,y:cy}];
+  const r=Math.min(W/6,H*0.38)*1.15;
+  const cy=H*0.52;
+  const positions=[{x:W/8,y:cy},{x:W*3/8,y:cy},{x:W*5/8,y:cy},{x:W*7/8,y:cy}];
 
   function hexVerts(cx,cy,rad){const v=[];for(let i=0;i<6;i++){const a=Math.PI/6+i*Math.PI/3;v.push({x:cx+Math.cos(a)*rad,y:cy+Math.sin(a)*rad});}return v;}
   function hexPath(cx,cy,rad){const v=hexVerts(cx,cy,rad);ctx.beginPath();ctx.moveTo(v[0].x,v[0].y);for(let i=1;i<6;i++)ctx.lineTo(v[i].x,v[i].y);ctx.closePath();}
+
+  // ── Grid dots ──
+  ctx.save();ctx.fillStyle='#1a1a1a';
+  for(let gx=10;gx<W;gx+=20){for(let gy=10;gy<H;gy+=20){ctx.beginPath();ctx.arc(gx,gy,0.7,0,Math.PI*2);ctx.fill();}}
+  ctx.restore();
+  // ── Rail horizontal ──
+  ctx.save();ctx.beginPath();ctx.moveTo(W*0.08,cy);ctx.lineTo(W*0.92,cy);ctx.strokeStyle='#333';ctx.lineWidth=1;ctx.stroke();ctx.restore();
 
   entData.forEach((d,i)=>{
     const p=positions[i];
