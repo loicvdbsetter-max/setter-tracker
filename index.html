@@ -501,14 +501,9 @@ body{
 .ladd-btn{color:#d8d8d8;border:1px solid #3c3c3c;border-radius:8px;padding:9px 14px;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;background:linear-gradient(180deg,#2c2c2c 0%,#1c1c1c 55%,#111 100%);text-shadow:0 1px 3px rgba(0,0,0,0.9);letter-spacing:1px;}
 .ladd-btn:hover{opacity:0.9;filter:brightness(1.15);}
 .leads-table{width:100%;border-collapse:collapse;font-size:13px;}
-.leads-table th{text-align:left;padding:10px;border-bottom:1px solid var(--border2);font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);}
-.leads-table td{padding:10px;border-bottom:1px solid var(--border);vertical-align:middle;transition:background 0.12s,box-shadow 0.12s;}
-.leads-table tr:hover td{
-  background:rgba(0,170,255,0.04);
-  box-shadow:inset 0 0.5px 0 rgba(0,212,255,0.18),inset 0 -0.5px 0 rgba(0,212,255,0.18);
-}
-.leads-table tr:hover td:first-child{box-shadow:inset 1.5px 0.5px 0 rgba(0,212,255,0.28),inset 0 -0.5px 0 rgba(0,212,255,0.18);}
-.leads-table tr:hover td:last-child{box-shadow:inset -1.5px 0.5px 0 rgba(0,212,255,0.28),inset 0 -0.5px 0 rgba(0,212,255,0.18);}
+.leads-table th{text-align:left;padding:10px;border-bottom:1px solid #1a1a1a;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#555;font-family:'Orbitron',sans-serif;font-weight:400;}
+.leads-table td{padding:10px;border-bottom:1px solid #1a1a1a;vertical-align:middle;}
+.leads-table tr:hover td{background:none;}
 .linput{background:transparent;border:none;color:var(--text);font-family:'Space Mono',monospace;font-size:13px;outline:none;width:100%;min-width:80px;}
 .linput:focus{background:var(--surface);border-radius:4px;padding:2px 4px;}
 .lcash{font-family:'Space Mono',monospace;font-size:12px;width:70px;background:transparent;border:none;color:var(--text);outline:none;}
@@ -1197,35 +1192,36 @@ body::before{display:none !important;}
 }
 
 /* Cartes entrepreneur Jour */
-.setter-card{
+.ent-card{
   background:linear-gradient(135deg,#020b0d 0%,#051a1d 100%) !important;
   background-size:100% 100% !important;
   border:1px solid rgba(var(--cr),0.38) !important;
-  border-top: 3px solid rgba(var(--cr), 1) !important;
+  border-top:1.5px solid var(--c) !important;
   border-radius:12px !important;
   box-shadow:
     0 0 22px rgba(var(--cr),0.35),
     0 0 55px rgba(var(--cr),0.13),
     0 4px 20px rgba(0,0,0,0.5) !important;
 }
-.setter-card::after{
-  content:'';position:absolute;inset:0;pointer-events:none;opacity:1;
-  --cc:var(--c);--cs:18px;
+.ent-card::after{
+  content:'' !important;position:absolute !important;inset:-1px !important;pointer-events:none !important;opacity:1 !important;z-index:3 !important;border-radius:12px !important;
+  --cc:var(--c);--cs:20px;
   background:
-    linear-gradient(to left,var(--cc) var(--cs),transparent var(--cs)) top right/var(--cs) 1px no-repeat,
-    linear-gradient(to bottom,var(--cc) var(--cs),transparent var(--cs)) top right/1px var(--cs) no-repeat,
-    linear-gradient(to right,var(--cc) var(--cs),transparent var(--cs)) bottom left/var(--cs) 1px no-repeat,
-    linear-gradient(to top,var(--cc) var(--cs),transparent var(--cs)) bottom left/1px var(--cs) no-repeat,
-    linear-gradient(to left,var(--cc) var(--cs),transparent var(--cs)) bottom right/var(--cs) 1px no-repeat,
-    linear-gradient(to top,var(--cc) var(--cs),transparent var(--cs)) bottom right/1px var(--cs) no-repeat !important;
+    linear-gradient(to left,var(--cc) var(--cs),transparent var(--cs)) top right/var(--cs) 1.5px no-repeat,
+    linear-gradient(to bottom,var(--cc) var(--cs),transparent var(--cs)) top right/1.5px var(--cs) no-repeat,
+    linear-gradient(to right,var(--cc) var(--cs),transparent var(--cs)) bottom left/var(--cs) 1.5px no-repeat,
+    linear-gradient(to top,var(--cc) var(--cs),transparent var(--cs)) bottom left/1.5px var(--cs) no-repeat,
+    linear-gradient(to left,var(--cc) var(--cs),transparent var(--cs)) bottom right/var(--cs) 1.5px no-repeat,
+    linear-gradient(to top,var(--cc) var(--cs),transparent var(--cs)) bottom right/1.5px var(--cs) no-repeat !important;
 }
-.setter-card:hover{
+.ent-card:hover{
   border-color:rgba(var(--cr),0.62) !important;
   border-top-color:var(--c) !important;
   box-shadow:
     0 0 34px rgba(var(--cr),0.58),
     0 0 78px rgba(var(--cr),0.24) !important;
 }
+
 /* ZÉRO néon/glow sur les textes — absolu */
 *{text-shadow:none !important;}
 
@@ -1340,7 +1336,7 @@ body::before{display:none !important;}
 .kpi-val{color:var(--kc,var(--cyan)) !important;}
 .tcval,.ring-pct{color:var(--c,var(--cyan)) !important;}
 /* Luxe Or Vieilli — override final, doit rester après toutes les règles de couleur */
-.lsum-val{color:#111111 !important;-webkit-text-stroke:1.5px #b59410 !important;text-shadow:0 -1px 0 #d4b84a,0 1px 1px #3a2600,1px 0 0 #8a700b,-1px 0 0 #8a700b !important;}
+.lsum-val{color:#111111 !important;-webkit-text-stroke:1.5px #b59410 !important;text-shadow:1px 1px 0px #d4af37,-1px -1px 0px #8a700b !important;}
 
 /* 7. 3D Perspective cockpit — rotateY (user spec) */
 @media(min-width:769px){
@@ -2056,17 +2052,13 @@ function drawHexDash(entData){
 
 // ===== PODIUM — rectangles premium =====
 function drawPodium(entData){
-  const wrap=document.getElementById('podiumWrap');
-  if(!wrap)return;
-
-  let cv=wrap.querySelector('canvas');
-  if(!cv){wrap.innerHTML='';cv=document.createElement('canvas');cv.style.cssText='width:100%;display:block';wrap.appendChild(cv);}
-
+  const cv=document.getElementById('podiumCanvas');
+  if(!cv)return;
+  const card=document.getElementById('podiumCard');
   const dpr=window.devicePixelRatio||1;
-  const W=wrap.offsetWidth||260;
-  // height:100% sur wrap → offsetHeight = hauteur réelle de la card (grid stretch)
-  const H=Math.max(60,wrap.offsetHeight)||100;
-  cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.style.height=H+'px';
+  const W=card.offsetWidth||260;
+  const H=Math.max(100,card.offsetHeight)||130;
+  cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
   const ctx=cv.getContext('2d');
   ctx.save();ctx.scale(dpr,dpr);
   ctx.clearRect(0,0,W,H);ctx.fillStyle='#050505';ctx.fillRect(0,0,W,H);
@@ -2279,9 +2271,9 @@ async function renderDash(){
 
     <!-- KPI -->
     <div class="kpi-row">
-      <div id="podiumCard" class="kpi-card" style="--kc:#ffd700;padding:0;background:#050505;border:0.5px solid #ffd700;position:relative;">
-        <div id="podiumTitle" class="kpi-label" style="color:#ffd700;letter-spacing:2px;padding:5px 8px 3px;position:absolute;top:0;left:0;z-index:2;pointer-events:none;">TOP CE MOIS</div>
-        <div id="podiumWrap" style="width:100%;height:100%;"></div>
+      <div id="podiumCard" class="kpi-card" style="--kc:#ffd700;padding:0;background:#050505;border:0.5px solid #ffd700;position:relative;min-height:120px;">
+        <div id="podiumTitle" class="kpi-label" style="color:#ffd700;letter-spacing:2px;padding:5px 8px 3px;position:absolute;top:0;left:0;z-index:3;pointer-events:none;">TOP CE MOIS</div>
+        <canvas id="podiumCanvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;z-index:1;"></canvas>
       </div>
       <div class="kpi-card" style="--kc:#34d399">
         <div class="kpi-label">MA PART CE MOIS</div>
@@ -2964,10 +2956,10 @@ async function renderLeads(){
 
   // Filter buttons — dynamiques selon ENTS
   const filterBtns=[
-    `<button onclick="window.setLeadsFilter('all')" style="background:${lf==='all'?'var(--cyan)':'transparent'};color:${lf==='all'?'#000':'var(--muted2)'};border:1px solid ${lf==='all'?'var(--cyan)':'var(--border2)'};border-radius:20px;padding:7px 16px;cursor:pointer;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;transition:all 0.2s">Tous</button>`,
+    `<button onclick="window.setLeadsFilter('all')" style="background:linear-gradient(180deg,#222 0%,#000 100%);color:${lf==='all'?'#d4af37':'#555'};border:1px solid #333;border-radius:20px;padding:7px 16px;cursor:pointer;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;transition:all 0.2s${lf==='all'?';text-shadow:0 0 1px #d4af37':''}">Tous</button>`,
     ...ENTS.map(e=>{
       const active=lf===e.key;
-      return `<button onclick="window.setLeadsFilter('${e.key}')" style="background:${active?e.hex:'transparent'};color:${active?'#000':e.hex};border:1px solid ${e.hex};border-radius:20px;padding:7px 16px;cursor:pointer;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;transition:all 0.2s;${active?'box-shadow:0 0 8px '+e.hex+'44':''}">${e.name}</button>`;
+      return `<button onclick="window.setLeadsFilter('${e.key}')" style="background:linear-gradient(180deg,#222 0%,#000 100%);color:${active?e.hex:'#555'};border:1px solid #333;border-radius:20px;padding:7px 16px;cursor:pointer;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;transition:all 0.2s${active?';text-shadow:0 0 1px '+e.hex:''}">${e.name}</button>`;
     })
   ].join('');
 
