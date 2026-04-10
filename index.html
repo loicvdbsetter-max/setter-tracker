@@ -1335,8 +1335,8 @@ body::before{display:none !important;}
 .dash-title .t,.jh-title,.auth-logo .t{color:#00f2ff !important;}
 .kpi-val{color:var(--kc,var(--cyan)) !important;}
 .tcval,.ring-pct{color:var(--c,var(--cyan)) !important;}
-/* lsum-val — gravure supprimée */
-.lsum-val{color:#00d4ff !important;-webkit-text-fill-color:#00d4ff !important;-webkit-text-stroke:none !important;text-shadow:none !important;}
+/* lsum-val — gravure supprimée, métal sobre */
+.lsum-val{color:#b0c4d4 !important;-webkit-text-fill-color:#b0c4d4 !important;-webkit-text-stroke:none !important;text-shadow:none !important;}
 
 /* 7. 3D Perspective cockpit — rotateY (user spec) */
 @media(min-width:769px){
@@ -1596,12 +1596,12 @@ body::before{display:none !important;}
 .lsum-card:hover{
   box-shadow:0 4px 24px rgba(0,0,0,0.65),inset 0 0 0 1px rgba(255,255,255,0.025) !important;
 }
-/* Valeur principale : cyan net, lisible, premium */
+/* Valeur principale : gris métal sobre, micro-trait bleu — zéro glow */
 .lsum-val{
-  color:#00d4ff !important;
-  -webkit-text-fill-color:#00d4ff !important;
-  -webkit-text-stroke:none !important;
-  text-shadow:0 0 18px rgba(0,212,255,0.35) !important;
+  color:#b0c4d4 !important;
+  -webkit-text-fill-color:#b0c4d4 !important;
+  -webkit-text-stroke:0.5px rgba(0,160,220,0.2) !important;
+  text-shadow:none !important;
   font-family:'Space Mono',monospace !important;
   font-size:1.55rem !important;
   font-weight:700 !important;
