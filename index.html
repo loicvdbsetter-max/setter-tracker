@@ -1425,12 +1425,12 @@ body::before{display:none !important;}
   --metal-border:linear-gradient(135deg,rgba(200,160,80,0.85) 0%,rgba(122,80,32,0.67) 35%,rgba(184,134,42,0.8) 65%,rgba(74,48,16,0.67) 100%);
 }
 
-/* — Bordure dégradée or + fond bleu-canard — */
+/* — Bordure dégradée or + fond noir mat — */
 .kpi-card,.kpi-ring-card,.graph-card,.funnel-card,
 .dash-ent-card,.rev-card-dash,.acc-header,.obj-card-dash,
 .lsum-card,.tasks-wrap{
   background:
-    linear-gradient(#071a2e,#061220) padding-box,
+    #050505 padding-box,
     linear-gradient(135deg,#c8a050dd,#7a5020aa,#b8862acc,#4a3010aa,#c8a050dd) border-box !important;
   border:1.5px solid transparent !important;
   border-radius:0 !important;
@@ -1445,7 +1445,7 @@ body::before{display:none !important;}
 /* dash-ent-card : gradient simplifié sur 3 stops */
 .dash-ent-card{
   background:
-    linear-gradient(#071a2e,#061220) padding-box,
+    #050505 padding-box,
     linear-gradient(135deg,#c8a050bb,#5a3810aa,#c8a050bb) border-box !important;
 }
 
@@ -1483,7 +1483,7 @@ body::before{display:none !important;}
 /* Podium : fond spécial conservé */
 #podiumCard{
   background:
-    linear-gradient(#071a2e,#061220) padding-box,
+    #050505 padding-box,
     linear-gradient(135deg,#c8a050dd,#7a5020aa,#b8862acc,#4a3010aa,#c8a050dd) border-box !important;
   border:1.5px solid transparent !important;
   clip-path:none !important;
@@ -2267,7 +2267,7 @@ function drawPodium(entData){
     ctx.save();
     ctx.beginPath();
     if(ctx.roundRect)ctx.roundRect(cx-bw/2,by,bw,bh,rr);else ctx.rect(cx-bw/2,by,bw,bh);
-    ctx.fillStyle='#060606';ctx.fill();
+    ctx.fillStyle='#050505';ctx.fill();
 
     // ── Reflet verre (diagonal, haut-gauche) ──
     ctx.beginPath();
@@ -2711,8 +2711,8 @@ function drawConvChart(convData,dim){
 
   // === FOND IRON MAN ===
   // Grille
-  const gs=22;
-  ctx.strokeStyle='rgba(255,255,255,0.03)';ctx.lineWidth=0.4;
+  const gs=20;
+  ctx.strokeStyle='#1a1a1a';ctx.lineWidth=0.5;
   for(let x=0;x<W;x+=gs){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
   for(let y=0;y<H;y+=gs){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
 
