@@ -2752,161 +2752,149 @@ function drawSparkIron(canvasId, data, color){
   ctx.fillStyle='#fff'; ctx.fill(); ctx.restore();
 }
 function drawConvChart(convData,dim){
-  try{_drawConvChart(convData,dim);}catch(err){
-    const canvas=document.getElementById('convChart');
-    if(canvas){const ctx=canvas.getContext('2d');ctx.fillStyle='#050505';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#ff4444';ctx.font='11px monospace';ctx.fillText('ERR: '+err.message,10,20);}
-    console.error('drawConvChart error:',err);
-  }
-}
-function _drawConvChart(convData,dim){
   const canvas=document.getElementById('convChart');
   if(!canvas)return;
   const wrap=canvas.parentElement;
   const W=canvas.getBoundingClientRect().width||canvas.offsetWidth||wrap&&wrap.getBoundingClientRect().width||wrap&&wrap.offsetWidth||(window.innerWidth-32)||300;
   const H=canvas.getBoundingClientRect().height||canvas.offsetHeight||wrap&&wrap.getBoundingClientRect().height||wrap&&wrap.offsetHeight||200;
   if(W<10||H<10)return;
-  if(!canvas.style.width||canvas.style.width==='100%'){canvas.style.width=W+'px';}
-  if(!canvas.style.height||canvas.style.height==='100%'){canvas.style.height=H+'px';}
-  if(drawConvChart._lastW&&(Math.abs(drawConvChart._lastW-W)>20||Math.abs(drawConvChart._lastH-H)>20)){
-    drawConvChart._p=null;drawConvChart._r=null;drawConvChart._s=undefined;
-  }
+  if(!canvas.style.width||canvas.style.width==='100%')canvas.style.width=W+'px';
+  if(drawConvChart._lastW&&(Math.abs(drawConvChart._lastW-W)>20||Math.abs(drawConvChart._lastH-H)>20))drawConvChart._lastW=null;
   drawConvChart._lastW=W;drawConvChart._lastH=H;
   const dpr=window.devicePixelRatio||1;
-  canvas.width=Math.round(W*dpr);
-  canvas.height=H*dpr;
+  canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);
   const ctx=canvas.getContext('2d');
   ctx.scale(dpr,dpr);
 
-  const pL=32,pR=62,pT=12,pB=8;
-  const cW=W-pL-pR, cH=H-pT-pB;
+  // Palette cohérente avec le dashboard (or mat + acier)
+  const GOLD='rgba(200,160,80,';
+  const pL=36,pR=56,pT=14,pB=16;
+  const cW=W-pL-pR,cH=H-pT-pB;
 
+  // Helper bezier lissé
+  function bz(pts,dy=0){
+    if(!pts.length)return;
+    ctx.moveTo(pts[0].x,pts[0].y+dy);
+    for(let i=1;i<pts.length;i++){
+      const a=pts[Math.max(0,i-2)],b=pts[i-1],c=pts[i],d=pts[Math.min(pts.length-1,i+1)];
+      ctx.bezierCurveTo(b.x+(c.x-a.x)*.25,b.y+(c.y-a.y)*.25+dy,c.x-(d.x-b.x)*.25,c.y-(d.y-b.y)*.25+dy,c.x,c.y+dy);
+    }
+  }
+
+  // Helper rgb depuis hex
+  function rgb(hex){return [parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)];}
+  function rga(hex,a){const[r,g,b]=rgb(hex);return `rgba(${r},${g},${b},${a})`;}
+  // Couleur "acier froid" — mélange la couleur entrepreneur avec #8a9aaa (acier)
+  function steel(hex,blend=0.45){
+    const[r,g,b]=rgb(hex);
+    return[Math.round(r*(1-blend)+138*blend),Math.round(g*(1-blend)+154*blend),Math.round(b*(1-blend)+170*blend)];
+  }
+
+  // Données
   const allVals=convData.flatMap(d=>d.pts.filter(v=>v!==null&&v>0));
   const dataMax=allVals.length>0?Math.max(...allVals):30;
   const maxV=dataMax<=30?40:dataMax<=60?70:dataMax<=90?100:110;
 
-  // Helper: trace le chemin Bézier lissé
-  function bzPath(pts,dy=0){
-    ctx.moveTo(pts[0].x,pts[0].y+dy);
-    for(let i=1;i<pts.length;i++){
-      const p0=pts[Math.max(0,i-2)],p1=pts[i-1],p2=pts[i],p3=pts[Math.min(pts.length-1,i+1)];
-      ctx.bezierCurveTo(
-        p1.x+(p2.x-p0.x)*0.25,p1.y+(p2.y-p0.y)*0.25+dy,
-        p2.x-(p3.x-p1.x)*0.25,p2.y-(p3.y-p1.y)*0.25+dy,
-        p2.x,p2.y+dy
-      );
-    }
-  }
-
-  // Fond — fill opaque pour garantir que le canvas est visible
-  ctx.fillStyle='#050505';ctx.fillRect(0,0,W,H);
-
-  // Fond grille — or très atténué, cohérent cockpit
-  const gs=20;
-  ctx.strokeStyle='rgba(200,160,80,0.06)';ctx.lineWidth=0.5;
-  for(let x=0;x<W;x+=gs){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-  for(let y=0;y<H;y+=gs){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
-
-  // Lignes de référence horizontales + labels Y
-  const gridSteps=maxV<=40?[0,10,20,30,40]:maxV<=70?[0,20,40,60]:maxV<=100?[0,25,50,75,100]:[0,25,50,75,100];
-  gridSteps.forEach(v=>{
-    const y=pT+cH-v/maxV*cH;
-    ctx.beginPath();ctx.strokeStyle='rgba(200,160,80,0.1)';ctx.lineWidth=0.4;
-    ctx.setLineDash([2,7]);ctx.moveTo(pL,y);ctx.lineTo(pL+cW,y);ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle='rgba(200,160,80,0.4)';ctx.font='700 7px "Space Mono",monospace';ctx.textAlign='right';
-    ctx.fillText(v+'%',pL-4,y+2.5);
-  });
-
-  // Ligne "aujourd'hui"
-  const n=new Date();
-  if(n.getFullYear()===cY&&n.getMonth()===cM&&dim>1){
-    const todayD=Math.min(n.getDate(),dim);
-    const tx=pL+(todayD-1)/(dim-1)*cW;
-    ctx.strokeStyle='rgba(200,160,80,0.18)';ctx.lineWidth=0.6;ctx.setLineDash([2,4]);
-    ctx.beginPath();ctx.moveTo(tx,pT);ctx.lineTo(tx,pT+cH);ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle='rgba(200,160,80,0.35)';ctx.font='7px "Space Mono",monospace';ctx.textAlign='center';
-    ctx.fillText('auj.',tx,pT+cH+9);
-  }
-
-  // Calcul des points pour toutes les courbes
-  const allSeries=convData.map(({e,pts})=>({
+  const series=convData.map(({e,pts})=>({
     e,
-    vPts:pts.map((v,i)=>({
-      x:pL+i/(dim-1||1)*cW,
-      y:v!==null?pT+cH-Math.min(v,maxV)/maxV*cH:null,
-      v
-    })).filter(p=>p.y!==null)
+    sc:steel(e.hex,0.38),
+    vPts:pts.map((v,i)=>({x:pL+i/(dim-1||1)*cW,y:v!==null?pT+cH-Math.min(v,maxV)/maxV*cH:null,v})).filter(p=>p.y!==null)
   })).filter(s=>s.vPts.length>=2);
 
-  // Helper rgba depuis hex (#rrggbb)
-  function rga(hex,a){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return 'rgba('+r+','+g+','+b+','+a+')';}
+  // === FOND ===
+  ctx.fillStyle='#050505';ctx.fillRect(0,0,W,H);
 
-  // Passe A : aires sous les courbes (clip)
-  allSeries.forEach(({e,vPts})=>{
+  // === GRILLE ===
+  const gs=22;
+  ctx.strokeStyle=GOLD+'0.045)';ctx.lineWidth=0.5;
+  for(let x=pL;x<=pL+cW;x+=gs){ctx.beginPath();ctx.moveTo(x,pT);ctx.lineTo(x,pT+cH);ctx.stroke();}
+  for(let y=pT;y<=pT+cH;y+=gs){ctx.beginPath();ctx.moveTo(pL,y);ctx.lineTo(pL+cW,y);ctx.stroke();}
+
+  // === LIGNES DE RÉFÉRENCE + LABELS Y ===
+  const steps=maxV<=40?[0,10,20,30,40]:maxV<=70?[0,20,40,60]:maxV<=100?[0,25,50,75,100]:[0,25,50,75,100];
+  ctx.font='600 6.5px "Space Mono",monospace';ctx.textAlign='right';
+  steps.forEach(v=>{
+    const y=pT+cH-v/maxV*cH;
+    if(v>0){
+      ctx.beginPath();ctx.strokeStyle=GOLD+'0.08)';ctx.lineWidth=0.4;ctx.setLineDash([1,6]);
+      ctx.moveTo(pL,y);ctx.lineTo(pL+cW,y);ctx.stroke();ctx.setLineDash([]);
+    }
+    ctx.fillStyle=GOLD+'0.38)';ctx.fillText(v+'%',pL-5,y+2.5);
+  });
+
+  // Axe X — numéros de jours
+  ctx.font='600 6px "Space Mono",monospace';ctx.textAlign='center';ctx.fillStyle=GOLD+'0.25)';
+  const xStep=Math.ceil(dim/6);
+  for(let d=1;d<=dim;d+=xStep){
+    const x=pL+(d-1)/(dim-1||1)*cW;
+    ctx.fillText(d,x,pT+cH+11);
+  }
+
+  // Ligne "aujourd'hui"
+  const now=new Date();
+  if(now.getFullYear()===cY&&now.getMonth()===cM&&dim>1){
+    const tx=pL+(Math.min(now.getDate(),dim)-1)/(dim-1)*cW;
+    ctx.strokeStyle=GOLD+'0.2)';ctx.lineWidth=0.6;ctx.setLineDash([2,5]);
+    ctx.beginPath();ctx.moveTo(tx,pT);ctx.lineTo(tx,pT+cH);ctx.stroke();ctx.setLineDash([]);
+    ctx.font='600 6px "Space Mono",monospace';ctx.textAlign='center';
+    ctx.fillStyle=GOLD+'0.28)';ctx.fillText('auj.',tx,pT+cH+11);
+  }
+
+  // === COURBES ===
+  series.forEach(({e,sc,vPts})=>{
+    const[sr,sg,sb]=sc;
+
+    // Aire très légère
     ctx.save();ctx.beginPath();ctx.rect(pL,pT,cW,cH);ctx.clip();
-    const aG=ctx.createLinearGradient(0,pT,0,pT+cH);
-    aG.addColorStop(0,rga(e.hex,0.18));aG.addColorStop(1,rga(e.hex,0));
-    ctx.beginPath();bzPath(vPts);
+    const ag=ctx.createLinearGradient(0,pT,0,pT+cH);
+    ag.addColorStop(0,`rgba(${sr},${sg},${sb},0.12)`);
+    ag.addColorStop(1,`rgba(${sr},${sg},${sb},0)`);
+    ctx.beginPath();bz(vPts);
     ctx.lineTo(vPts[vPts.length-1].x,pT+cH);ctx.lineTo(vPts[0].x,pT+cH);ctx.closePath();
-    ctx.fillStyle=aG;ctx.fill();ctx.restore();
-  });
+    ctx.fillStyle=ag;ctx.fill();ctx.restore();
 
-  // Passe B : câbles — 4 couches par courbe (clip)
-  allSeries.forEach(({e,vPts})=>{
+    // Ligne principale — fine et précise
     ctx.save();ctx.beginPath();ctx.rect(pL,pT,cW,cH);ctx.clip();
-
-    // Couche 1 — gaine extérieure (halo de profondeur)
-    ctx.beginPath();bzPath(vPts);
-    ctx.strokeStyle=rga(e.hex,0.25);ctx.lineWidth=8;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();
-
-    // Couche 2 — corps principal du câble
-    ctx.beginPath();bzPath(vPts);
-    ctx.strokeStyle=rga(e.hex,0.65);ctx.lineWidth=4;ctx.stroke();
-
-    // Couche 3 — fil central lumineux
-    ctx.beginPath();bzPath(vPts);
-    ctx.strokeStyle=rga(e.hex,0.95);ctx.lineWidth=1.5;ctx.stroke();
-
-    // Couche 4 — reflet blanc sur le dessus du câble
-    ctx.beginPath();bzPath(vPts,-1);
-    ctx.strokeStyle='rgba(255,255,255,0.22)';ctx.lineWidth=0.7;ctx.stroke();
-
+    ctx.beginPath();bz(vPts);
+    ctx.strokeStyle=`rgba(${sr},${sg},${sb},0.85)`;ctx.lineWidth=1.5;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();
+    // Micro-reflet : ligne décalée plus claire
+    ctx.beginPath();bz(vPts,-0.7);
+    ctx.strokeStyle=`rgba(255,255,255,0.12)`;ctx.lineWidth=0.5;ctx.stroke();
     ctx.restore();
+
+    // Point terminal
+    const last=vPts[vPts.length-1];
+    ctx.beginPath();ctx.arc(last.x,last.y,2.5,0,Math.PI*2);
+    ctx.fillStyle=`rgba(${sr},${sg},${sb},1)`;ctx.fill();
+    ctx.beginPath();ctx.arc(last.x,last.y,1,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,0.7)';ctx.fill();
+
+    // Badge terminal — sobre
+    if(last.v!==null){
+      ctx.font='700 7px "Space Mono",monospace';
+      const lbl=last.v+'%';
+      const tw=ctx.measureText(lbl).width;
+      const bx=last.x+7,by=last.y-5.5,bw=tw+8,bh=11;
+      ctx.fillStyle='rgba(8,8,8,0.92)';
+      ctx.strokeStyle=`rgba(${sr},${sg},${sb},0.45)`;ctx.lineWidth=0.7;
+      ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,by,bw,bh,1.5);else ctx.rect(bx,by,bw,bh);
+      ctx.fill();ctx.stroke();
+      ctx.fillStyle=`rgba(${sr},${sg},${sb},0.9)`;ctx.textAlign='left';
+      ctx.fillText(lbl,bx+4,by+bh-3);
+    }
   });
 
-  // Passe C : badges terminaux (hors clip — dans la zone pR)
-  ctx.font='700 7.5px "Space Mono",monospace';
-  allSeries.forEach(({e,vPts})=>{
-    const last=vPts[vPts.length-1];
-    if(last.v===null)return;
-    const lbl=last.v+'%';
-    const tw=ctx.measureText(lbl).width;
-    const bx=last.x+9, by=last.y-6, bw=tw+10, bh=12;
-
-    // Trait pointillé de connexion
-    ctx.strokeStyle=rga(e.hex,0.45);ctx.lineWidth=0.7;ctx.setLineDash([2,3]);
-    ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(bx,last.y);ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Fond badge
-    ctx.fillStyle='#080808';
-    ctx.strokeStyle=rga(e.hex,0.55);ctx.lineWidth=0.8;
-    ctx.beginPath();
-    if(ctx.roundRect)ctx.roundRect(bx,by,bw,bh,1.5);else ctx.rect(bx,by,bw,bh);
-    ctx.fill();ctx.stroke();
-
-    // Liseré supérieur — reflet métallique
-    ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=0.5;
-    ctx.beginPath();
-    if(ctx.roundRect)ctx.roundRect(bx+0.5,by+0.5,bw-1,1,1);else ctx.rect(bx+0.5,by+0.5,bw-1,1);
-    ctx.stroke();
-
-    // Texte valeur
-    ctx.fillStyle=rga(e.hex,0.95);ctx.textAlign='left';
-    ctx.fillText(lbl,bx+5,by+bh-3.5);
-
-    // Point de terminaison sur la courbe
-    ctx.beginPath();ctx.arc(last.x,last.y,2.2,0,Math.PI*2);
-    ctx.fillStyle='#fff';ctx.globalAlpha=0.55;ctx.fill();ctx.globalAlpha=1;
+  // === LÉGENDE ===
+  ctx.font='600 6.5px "Space Mono",monospace';
+  let lx=pL+cW;
+  [...series].reverse().forEach(({e,sc})=>{
+    const[sr,sg,sb]=sc;
+    const tw=ctx.measureText(e.name).width+14;
+    lx-=tw;
+    ctx.beginPath();ctx.arc(lx+4,pT-4,2.5,0,Math.PI*2);
+    ctx.fillStyle=`rgba(${sr},${sg},${sb},0.9)`;ctx.fill();
+    ctx.fillStyle=GOLD+'0.45)';ctx.textAlign='left';
+    ctx.fillText(e.name,lx+10,pT-1.5);
   });
 }
 
