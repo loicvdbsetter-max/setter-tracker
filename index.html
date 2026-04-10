@@ -1410,106 +1410,91 @@ body::before{display:none !important;}
   text-shadow:none !important;
   filter:none !important;
 }
-/* ===== OR VIEILLI MAT — Horlogerie de Luxe ===== */
+/* ===== PREMIUM GOLD — Art Déco ===== */
 :root{
-  --or:#C2A87D;--or2:#A87932;
-  --cyan:#C2A87D;
-  --cyan2:#A87932;
-  --cyan-glow:rgba(194,168,125,0.2);
-  --glow:0 10px 30px rgba(0,0,0,0.6),0 0 0 1px rgba(194,168,125,0.2);
-  --glow-strong:0 10px 40px rgba(0,0,0,0.75),0 0 0 1px rgba(194,168,125,0.2);
-  --laser:linear-gradient(90deg,transparent,#C2A87D,transparent);
-  --metal-border:linear-gradient(135deg,rgba(194,168,125,0.6) 0%,rgba(139,101,50,0.18) 35%,rgba(80,60,20,0.06) 65%,rgba(194,168,125,0.5) 100%);
+  --or:#c8a050;--or2:#8a6a2a;
+  --cyan:#c8a050;
+  --cyan2:#8a6a2a;
+  --cyan-glow:rgba(200,160,80,0.15);
+  --gold:#c8a050;
+  --gold2:#8a6a2a;
+  --gold-glow:rgba(200,160,80,0.15);
+  --glow:0 8px 28px rgba(0,255,247,0.08),0 4px 12px rgba(0,180,200,0.06),0 2px 6px rgba(0,0,0,0.6),inset 0 1px 0 rgba(200,160,80,0.06);
+  --glow-strong:0 10px 40px rgba(0,0,0,0.75),0 0 0 1px rgba(200,160,80,0.2);
+  --laser:linear-gradient(90deg,transparent,#c8a050,transparent);
+  --metal-border:linear-gradient(135deg,rgba(200,160,80,0.85) 0%,rgba(122,80,32,0.67) 35%,rgba(184,134,42,0.8) 65%,rgba(74,48,16,0.67) 100%);
 }
 
-/* — Fond bleu-canard sombre, bordure or visible — */
+/* — Bordure dégradée or + fond bleu-canard — */
 .kpi-card,.kpi-ring-card,.graph-card,.funnel-card,
 .dash-ent-card,.rev-card-dash,.acc-header,.obj-card-dash,
 .lsum-card,.tasks-wrap{
-  background:#060e16 !important;
-  border:1px solid rgba(194,168,125,0.55) !important;
+  background:
+    linear-gradient(#071a2e,#061220) padding-box,
+    linear-gradient(135deg,#c8a050dd,#7a5020aa,#b8862acc,#4a3010aa,#c8a050dd) border-box !important;
+  border:1.5px solid transparent !important;
   border-radius:0 !important;
   clip-path:none !important;
-  box-shadow:none !important;
+  box-shadow:0 8px 28px rgba(0,255,247,0.08),0 4px 12px rgba(0,180,200,0.06),0 2px 6px rgba(0,0,0,0.6),inset 0 1px 0 rgba(200,160,80,0.06) !important;
   backdrop-filter:none !important;
   -webkit-backdrop-filter:none !important;
   position:relative !important;
   overflow:hidden !important;
   isolation:isolate !important;
 }
-
-/* — Coins renforcés : TL (haut-gauche) + BR (bas-droite) via ::before — */
-.kpi-card::before,.kpi-ring-card::before,.graph-card::before,.funnel-card::before,
-.dash-ent-card::before,.rev-card-dash::before,.acc-header::before,.obj-card-dash::before,
-.lsum-card::before,.tasks-wrap::before{
-  content:'';
-  position:absolute;inset:0;
-  pointer-events:none;z-index:2;
-  background-image:
-    linear-gradient(#C2A87D,#C2A87D),
-    linear-gradient(#C2A87D,#C2A87D),
-    linear-gradient(#C2A87D,#C2A87D),
-    linear-gradient(#C2A87D,#C2A87D);
-  background-size:25px 4px,4px 25px,25px 4px,4px 25px;
-  background-position:0 0,0 0,100% 100%,100% 100%;
-  background-repeat:no-repeat;
-  display:block !important;
+/* dash-ent-card : gradient simplifié sur 3 stops */
+.dash-ent-card{
+  background:
+    linear-gradient(#071a2e,#061220) padding-box,
+    linear-gradient(135deg,#c8a050bb,#5a3810aa,#c8a050bb) border-box !important;
 }
 
-/* — Coins renforcés : TR (haut-droite) + BL (bas-gauche) via ::after — */
-.kpi-card::after,.kpi-ring-card::after,.graph-card::after,.funnel-card::after,
-.dash-ent-card::after,.rev-card-dash::after,.acc-header::after,.obj-card-dash::after,
-.lsum-card::after,.tasks-wrap::after{
+/* — Coins Art Déco dorés (TL=::before, TR=::after, BL/BR=child divs) — */
+.gold-corner::before,.gold-corner::after,
+.gold-corner .gc-bl,.gold-corner .gc-br{
   content:'';
-  position:absolute;inset:0;
-  pointer-events:none;z-index:2;
-  background-image:
-    linear-gradient(#C2A87D,#C2A87D),
-    linear-gradient(#C2A87D,#C2A87D),
-    linear-gradient(#C2A87D,#C2A87D),
-    linear-gradient(#C2A87D,#C2A87D);
-  background-size:25px 4px,4px 25px,25px 4px,4px 25px;
-  background-position:100% 0,100% 0,0 100%,0 100%;
-  background-repeat:no-repeat;
-  display:block !important;
+  position:absolute;
+  width:8px;height:8px;
+  border-color:#c8a050;
+  border-style:solid;
+  z-index:3;
+  pointer-events:none;
 }
+/* Override complet du ::before filament pour les gold-corner */
+.gold-corner::before{
+  inset:unset !important;
+  top:-1px !important;left:-1px !important;
+  right:unset !important;bottom:unset !important;
+  width:8px !important;height:8px !important;
+  background:none !important;
+  border-width:2px 0 0 2px;
+}
+.gold-corner::after{
+  inset:unset !important;
+  top:-1px !important;right:-1px !important;
+  left:unset !important;bottom:unset !important;
+  width:8px !important;height:8px !important;
+  background:none !important;
+  border-width:2px 2px 0 0;
+}
+.gold-corner .gc-bl{bottom:-1px;left:-1px;border-width:0 0 2px 2px;}
+.gold-corner .gc-br{bottom:-1px;right:-1px;border-width:0 2px 2px 0;}
 
-/* Podium : style spécial conservé */
+/* Podium : fond spécial conservé */
 #podiumCard{
-  border:1px solid rgba(194,168,125,0.55) !important;
-  background:#060e16 !important;
+  background:
+    linear-gradient(#071a2e,#061220) padding-box,
+    linear-gradient(135deg,#c8a050dd,#7a5020aa,#b8862acc,#4a3010aa,#c8a050dd) border-box !important;
+  border:1.5px solid transparent !important;
   clip-path:none !important;
   border-radius:0 !important;
   position:relative !important;
   isolation:isolate !important;
 }
-#podiumCard::before{
-  content:'';
-  position:absolute;inset:0;
-  pointer-events:none;z-index:2;
-  background-image:
-    linear-gradient(#C2A87D,#C2A87D),
-    linear-gradient(#C2A87D,#C2A87D),
-    linear-gradient(#C2A87D,#C2A87D),
-    linear-gradient(#C2A87D,#C2A87D);
-  background-size:25px 4px,4px 25px,25px 4px,4px 25px;
-  background-position:0 0,0 0,100% 100%,100% 100%;
-  background-repeat:no-repeat;
-  display:block !important;
-}
-#podiumCard::after{
-  content:'';
-  position:absolute;inset:0;
-  pointer-events:none;z-index:2;
-  background-image:
-    linear-gradient(#C2A87D,#C2A87D),
-    linear-gradient(#C2A87D,#C2A87D),
-    linear-gradient(#C2A87D,#C2A87D),
-    linear-gradient(#C2A87D,#C2A87D);
-  background-size:25px 4px,4px 25px,25px 4px,4px 25px;
-  background-position:100% 0,100% 0,0 100%,0 100%;
-  background-repeat:no-repeat;
-  display:block !important;
+
+/* — Filet supérieur → or (pour les cartes sans gold-corner) — */
+.kpi-card::before,.graph-card::before,.funnel-card::before{
+  background:linear-gradient(90deg,transparent,#c8a050,transparent) !important;
 }
 
 /* — KPI card layout : grille 2 lignes — */
@@ -1519,18 +1504,18 @@ body::before{display:none !important;}
   gap:5px !important;
 }
 
-/* — Titres + labels : Or vieilli, Space Mono, 0.75rem — */
+/* — Labels/titres : or foncé, Space Mono — */
 .graph-title,.funnel-title,.kpi-tasks-lbl,.stitle,.rev-title,.obj-title,.kpi-label{
   background:none !important;
   -webkit-background-clip:unset !important;
   background-clip:unset !important;
-  -webkit-text-fill-color:#C2A87D !important;
-  color:#C2A87D !important;
+  -webkit-text-fill-color:#8a6a2a !important;
+  color:#8a6a2a !important;
   font-family:'Space Mono',monospace !important;
   font-size:0.75rem !important;
   font-weight:700 !important;
   text-transform:uppercase !important;
-  letter-spacing:1.5px !important;
+  letter-spacing:2px !important;
   text-shadow:none !important;
 }
 .graph-title,.funnel-title,.kpi-tasks-lbl,.stitle,.rev-title,.obj-title{
@@ -1542,32 +1527,38 @@ body::before{display:none !important;}
 .stitle::after,.rev-title::after,.obj-title::after{
   content:'';position:absolute;
   bottom:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,#C2A87D,transparent);
+  background:linear-gradient(90deg,transparent,#c8a050,transparent);
   opacity:0.4;
 }
 
-/* — Valeurs KPI + ROI : Cyan pur, zéro ombre — */
+/* — Valeurs KPI — */
 .kpi-val{color:#00F2FF !important;text-shadow:none !important;}
 .funnel-row-pct{color:#00F2FF !important;text-shadow:none !important;}
 
-/* — Filtres funnel : or mat — */
+/* — Filtres funnel — */
 .funnel-filter-btn{
-  border:1px solid rgba(194,168,125,0.35) !important;
-  color:rgba(194,168,125,0.6) !important;
+  border:1px solid rgba(200,160,80,0.35) !important;
+  color:rgba(200,160,80,0.6) !important;
   border-radius:2px !important;
   background:transparent !important;
 }
-.funnel-filter-btn:hover,.funnel-filter-btn.active{
-  border-color:#C2A87D !important;
-  color:#C2A87D !important;
+.funnel-filter-btn.active{
+  background:rgba(184,134,42,0.15) !important;
+  border-color:#c8a050 !important;
+  color:#c8a050 !important;
+  font-weight:700 !important;
+}
+.funnel-filter-btn:hover{
+  border-color:#c8a050 !important;
+  color:#c8a050 !important;
 }
 
 /* — Tabs actif : or — */
-.tab.active .tlbl{color:#C2A87D !important;}
-.tab::after{background:linear-gradient(90deg,transparent,#C2A87D,transparent) !important;}
-.tab.active .ticon{filter:drop-shadow(0 0 4px rgba(194,168,125,0.5)) !important;}
+.tab.active .tlbl{color:#c8a050 !important;}
+.tab::after{background:linear-gradient(90deg,transparent,#c8a050,transparent) !important;}
+.tab.active .ticon{filter:drop-shadow(0 0 4px rgba(200,160,80,0.5)) !important;}
 .ladd-btn{border-radius:2px !important;}
-.ldel:hover{color:#C2A87D !important;}
+.ldel:hover{color:#c8a050 !important;}
 </style>
 
 </head>
@@ -2431,23 +2422,27 @@ async function renderDash(){
 
     <!-- KPI -->
     <div class="kpi-row">
-      <div id="podiumCard" class="kpi-card" style="--kc:#ffd700;padding:0;background:#050505;border:0.5px solid #ffd700;position:relative;min-height:120px;">
+      <div id="podiumCard" class="kpi-card gold-corner" style="--kc:#ffd700;padding:0;position:relative;min-height:120px;">
+        <div class="gc-bl"></div><div class="gc-br"></div>
         <div id="podiumTitle" class="kpi-label" style="color:#ffd700;letter-spacing:2px;padding:5px 8px 3px;position:absolute;top:0;left:0;z-index:3;pointer-events:none;">TOP CE MOIS</div>
         <canvas id="podiumCanvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;z-index:1;"></canvas>
       </div>
-      <div class="kpi-card" style="--kc:#34d399">
+      <div class="kpi-card gold-corner" style="--kc:#34d399">
+        <div class="gc-bl"></div><div class="gc-br"></div>
         <div class="kpi-label">MA PART CE MOIS</div>
         <div class="kpi-val">${myPart.toFixed(0)}€</div>
         <div class="kpi-sub">Générées : ${totalRev.toFixed(0)}€</div>
         <canvas id="spark_rev" style="width:100%;display:block;margin-top:6px" height="28"></canvas>
       </div>
-      <div class="kpi-card" style="--kc:#a78bfa">
+      <div class="kpi-card gold-corner" style="--kc:#a78bfa">
+        <div class="gc-bl"></div><div class="gc-br"></div>
         <div class="kpi-label">CALLS CE MOIS</div>
         <div class="kpi-val">${monthCalls}</div>
         <div class="kpi-sub">tous entrepreneurs</div>
         <canvas id="spark_calls" style="width:100%;display:block;margin-top:6px" height="28"></canvas>
       </div>
-      <div class="kpi-card" style="--kc:#fb923c">
+      <div class="kpi-card gold-corner" style="--kc:#fb923c">
+        <div class="gc-bl"></div><div class="gc-br"></div>
         <div class="kpi-label">CONVERSION</div>
         <div class="kpi-val">${pct(tc,tfm)}%</div>
         <div class="kpi-sub">msgs → calls</div>
@@ -2469,7 +2464,8 @@ async function renderDash(){
 
     <!-- GRAPH + FUNNEL -->
     <div class="mid-row">
-      <div class="graph-card">
+      <div class="graph-card gold-corner">
+        <div class="gc-bl"></div><div class="gc-br"></div>
         <div class="graph-head" style="position:relative;z-index:2">
           <div class="graph-title">TAUX DE CONVERSION — msgs → calls (cumulatif)</div>
           <div class="graph-legend" style="display:flex;gap:10px;flex-wrap:wrap">
@@ -2483,7 +2479,8 @@ async function renderDash(){
           <span>1</span><span>${Math.round(dim/4)}</span><span>${Math.round(dim/2)}</span><span>${Math.round(dim*3/4)}</span><span>${dim}</span>
         </div>
       </div>
-      <div class="funnel-card">
+      <div class="funnel-card gold-corner">
+        <div class="gc-bl"></div><div class="gc-br"></div>
         <div class="funnel-title">FUNNEL CONVERSION</div>
         <div class="funnel-filters">
           <button class="funnel-filter-btn${ff==='all'?' active':''}" onclick="window.setDashFunnelFilter('all')" style="${ff==='all'?'background:var(--cyan);color:#000;border-color:var(--cyan)':''}">Tous</button>
@@ -2507,7 +2504,8 @@ async function renderDash(){
     <!-- ENT CARDS -->
     <div class="ents-row">
       ${entData.map(d=>`
-        <div class="dash-ent-card" style="--c:${d.e.hex};--cr:${hex2rgb(d.e.hex)}">
+        <div class="dash-ent-card gold-corner" style="--c:${d.e.hex};--cr:${hex2rgb(d.e.hex)}">
+          <div class="gc-bl"></div><div class="gc-br"></div>
           <div class="dash-ent-name">${d.e.name} <span style="font-size:0.5rem;opacity:0.4">${d.e.rate}%</span></div>
           <div class="dash-ent-body">
             <div class="dash-ent-row"><span class="dash-ent-lbl">Premiers msgs</span><span class="dash-ent-val">${d.fm}</span></div>
@@ -2523,7 +2521,8 @@ async function renderDash(){
 
     <!-- REVENUS + OBJECTIFS -->
     <div class="bottom-row">
-      <div class="rev-card-dash">
+      <div class="rev-card-dash gold-corner">
+        <div class="gc-bl"></div><div class="gc-br"></div>
         <div class="rev-title">REVENUS CE MOIS — par entrepreneur</div>
 
         <!-- Totaux en haut : 4 colonnes avec icônes filaires -->
