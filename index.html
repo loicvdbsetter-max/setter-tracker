@@ -2752,6 +2752,13 @@ function drawSparkIron(canvasId, data, color){
   ctx.fillStyle='#fff'; ctx.fill(); ctx.restore();
 }
 function drawConvChart(convData,dim){
+  try{_drawConvChart(convData,dim);}catch(err){
+    const canvas=document.getElementById('convChart');
+    if(canvas){const ctx=canvas.getContext('2d');ctx.fillStyle='#050505';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#ff4444';ctx.font='11px monospace';ctx.fillText('ERR: '+err.message,10,20);}
+    console.error('drawConvChart error:',err);
+  }
+}
+function _drawConvChart(convData,dim){
   const canvas=document.getElementById('convChart');
   if(!canvas)return;
   const wrap=canvas.parentElement;
@@ -2789,6 +2796,9 @@ function drawConvChart(convData,dim){
       );
     }
   }
+
+  // Fond — fill opaque pour garantir que le canvas est visible
+  ctx.fillStyle='#050505';ctx.fillRect(0,0,W,H);
 
   // Fond grille — or très atténué, cohérent cockpit
   const gs=20;
