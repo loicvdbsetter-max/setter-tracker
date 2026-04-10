@@ -1335,8 +1335,8 @@ body::before{display:none !important;}
 .dash-title .t,.jh-title,.auth-logo .t{color:#00f2ff !important;}
 .kpi-val{color:var(--kc,var(--cyan)) !important;}
 .tcval,.ring-pct{color:var(--c,var(--cyan)) !important;}
-/* Luxe Or Vieilli — override final, doit rester après toutes les règles de couleur */
-.lsum-val{color:#111111 !important;-webkit-text-stroke:1.5px #b59410 !important;text-shadow:1px 1px 0px #d4af37,-1px -1px 0px #8a700b !important;}
+/* lsum-val — gravure supprimée */
+.lsum-val{color:#00d4ff !important;-webkit-text-fill-color:#00d4ff !important;-webkit-text-stroke:none !important;text-shadow:none !important;}
 
 /* 7. 3D Perspective cockpit — rotateY (user spec) */
 @media(min-width:769px){
@@ -1596,36 +1596,41 @@ body::before{display:none !important;}
 .lsum-card:hover{
   box-shadow:0 4px 24px rgba(0,0,0,0.65),inset 0 0 0 1px rgba(255,255,255,0.025) !important;
 }
-/* Valeur principale : cyan net, Space Mono */
+/* Valeur principale : cyan net, lisible, premium */
 .lsum-val{
   color:#00d4ff !important;
   -webkit-text-fill-color:#00d4ff !important;
   -webkit-text-stroke:none !important;
-  text-shadow:none !important;
+  text-shadow:0 0 18px rgba(0,212,255,0.35) !important;
   font-family:'Space Mono',monospace !important;
-  font-size:1.2rem !important;
+  font-size:1.55rem !important;
   font-weight:700 !important;
-  letter-spacing:1.5px !important;
+  letter-spacing:2px !important;
   filter:none !important;
   background:none !important;
   -webkit-background-clip:unset !important;
   background-clip:unset !important;
+  line-height:1.1 !important;
 }
-/* Label nom : or mat discret */
+/* Label nom : or lisible */
 .lsum-name{
-  color:rgba(200,160,80,0.65) !important;
+  color:rgba(200,160,80,0.85) !important;
+  -webkit-text-fill-color:rgba(200,160,80,0.85) !important;
   font-family:'Space Mono',monospace !important;
-  font-size:0.63rem !important;
-  letter-spacing:1.5px !important;
+  font-size:0.65rem !important;
+  letter-spacing:2px !important;
   font-weight:700 !important;
   text-transform:uppercase !important;
   -webkit-text-stroke:none !important;
+  margin-bottom:6px !important;
 }
-/* Sous-texte : blanc atténué */
+/* Sous-texte : blanc discret mais lisible */
 .lsum-comm{
-  color:rgba(255,255,255,0.28) !important;
-  font-size:0.6rem !important;
+  color:rgba(255,255,255,0.38) !important;
+  font-size:0.62rem !important;
   font-weight:400 !important;
+  margin-top:4px !important;
+  letter-spacing:0.5px !important;
 }
 </style>
 
