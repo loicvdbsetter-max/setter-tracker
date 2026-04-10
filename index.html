@@ -2770,26 +2770,39 @@ function drawConvChart(convData,dim){
   const ctx=canvas.getContext('2d');
   ctx.scale(dpr,dpr);
 
-  const pL=30,pR=52,pT=10,pB=4;
+  const pL=32,pR=62,pT=12,pB=8;
   const cW=W-pL-pR, cH=H-pT-pB;
 
   const allVals=convData.flatMap(d=>d.pts.filter(v=>v!==null&&v>0));
   const dataMax=allVals.length>0?Math.max(...allVals):30;
   const maxV=dataMax<=30?40:dataMax<=60?70:dataMax<=90?100:110;
 
-  // Fond — grille fine
+  // Helper: trace le chemin Bézier lissé
+  function bzPath(pts,dy=0){
+    ctx.moveTo(pts[0].x,pts[0].y+dy);
+    for(let i=1;i<pts.length;i++){
+      const p0=pts[Math.max(0,i-2)],p1=pts[i-1],p2=pts[i],p3=pts[Math.min(pts.length-1,i+1)];
+      ctx.bezierCurveTo(
+        p1.x+(p2.x-p0.x)*0.25,p1.y+(p2.y-p0.y)*0.25+dy,
+        p2.x-(p3.x-p1.x)*0.25,p2.y-(p3.y-p1.y)*0.25+dy,
+        p2.x,p2.y+dy
+      );
+    }
+  }
+
+  // Fond grille — or très atténué, cohérent cockpit
   const gs=20;
-  ctx.strokeStyle='#111';ctx.lineWidth=0.5;
+  ctx.strokeStyle='rgba(200,160,80,0.06)';ctx.lineWidth=0.5;
   for(let x=0;x<W;x+=gs){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
   for(let y=0;y<H;y+=gs){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
 
-  // Lignes horizontales de référence + labels Y
+  // Lignes de référence horizontales + labels Y
   const gridSteps=maxV<=40?[0,10,20,30,40]:maxV<=70?[0,20,40,60]:maxV<=100?[0,25,50,75,100]:[0,25,50,75,100];
   gridSteps.forEach(v=>{
     const y=pT+cH-v/maxV*cH;
-    ctx.beginPath();ctx.strokeStyle='rgba(200,160,80,0.07)';ctx.lineWidth=0.4;
-    ctx.setLineDash([2,6]);ctx.moveTo(pL,y);ctx.lineTo(pL+cW,y);ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle='rgba(180,180,180,0.35)';ctx.font='700 7px "Space Mono",monospace';ctx.textAlign='right';
+    ctx.beginPath();ctx.strokeStyle='rgba(200,160,80,0.1)';ctx.lineWidth=0.4;
+    ctx.setLineDash([2,7]);ctx.moveTo(pL,y);ctx.lineTo(pL+cW,y);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='rgba(200,160,80,0.4)';ctx.font='700 7px "Space Mono",monospace';ctx.textAlign='right';
     ctx.fillText(v+'%',pL-4,y+2.5);
   });
 
@@ -2798,62 +2811,89 @@ function drawConvChart(convData,dim){
   if(n.getFullYear()===cY&&n.getMonth()===cM&&dim>1){
     const todayD=Math.min(n.getDate(),dim);
     const tx=pL+(todayD-1)/(dim-1)*cW;
-    ctx.strokeStyle='rgba(200,160,80,0.15)';ctx.lineWidth=0.6;ctx.setLineDash([2,4]);
+    ctx.strokeStyle='rgba(200,160,80,0.18)';ctx.lineWidth=0.6;ctx.setLineDash([2,4]);
     ctx.beginPath();ctx.moveTo(tx,pT);ctx.lineTo(tx,pT+cH);ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle='rgba(200,160,80,0.3)';ctx.font='7px "Space Mono",monospace';ctx.textAlign='center';
+    ctx.fillStyle='rgba(200,160,80,0.35)';ctx.font='7px "Space Mono",monospace';ctx.textAlign='center';
     ctx.fillText('auj.',tx,pT+cH+9);
   }
 
-  // Courbes
-  convData.forEach(({e,pts})=>{
-    const vPts=pts.map((v,i)=>({
+  // Calcul des points pour toutes les courbes
+  const allSeries=convData.map(({e,pts})=>({
+    e,
+    vPts:pts.map((v,i)=>({
       x:pL+i/(dim-1||1)*cW,
       y:v!==null?pT+cH-Math.min(v,maxV)/maxV*cH:null,
       v
-    })).filter(p=>p.y!==null);
-    if(vPts.length<2)return;
+    })).filter(p=>p.y!==null)
+  })).filter(s=>s.vPts.length>=2);
 
-    // Aire légère
-    ctx.save();
-    ctx.beginPath();ctx.rect(pL,pT,cW,cH);ctx.clip();
+  // Passe A : aires sous les courbes (clip)
+  allSeries.forEach(({e,vPts})=>{
+    ctx.save();ctx.beginPath();ctx.rect(pL,pT,cW,cH);ctx.clip();
     const aG=ctx.createLinearGradient(0,pT,0,pT+cH);
-    aG.addColorStop(0,e.hex+'14');
-    aG.addColorStop(1,e.hex+'00');
-    ctx.beginPath();
-    ctx.moveTo(vPts[0].x,vPts[0].y);
-    for(let i=1;i<vPts.length;i++){
-      const p0=vPts[Math.max(0,i-2)],p1=vPts[i-1],p2=vPts[i],p3=vPts[Math.min(vPts.length-1,i+1)];
-      ctx.bezierCurveTo(p1.x+(p2.x-p0.x)*0.25,p1.y+(p2.y-p0.y)*0.25,p2.x-(p3.x-p1.x)*0.25,p2.y-(p3.y-p1.y)*0.25,p2.x,p2.y);
-    }
-    ctx.lineTo(vPts[vPts.length-1].x,pT+cH);
-    ctx.lineTo(vPts[0].x,pT+cH);
-    ctx.closePath();ctx.fillStyle=aG;ctx.fill();
-    ctx.restore();
+    aG.addColorStop(0,e.hex+'0f');aG.addColorStop(1,e.hex+'00');
+    ctx.beginPath();bzPath(vPts);
+    ctx.lineTo(vPts[vPts.length-1].x,pT+cH);ctx.lineTo(vPts[0].x,pT+cH);ctx.closePath();
+    ctx.fillStyle=aG;ctx.fill();ctx.restore();
+  });
 
-    // Ligne fine — aucun glow
-    ctx.save();
-    ctx.beginPath();ctx.rect(pL,pT,cW,cH);ctx.clip();
-    ctx.beginPath();
-    ctx.moveTo(vPts[0].x,vPts[0].y);
-    for(let i=1;i<vPts.length;i++){
-      const p0=vPts[Math.max(0,i-2)],p1=vPts[i-1],p2=vPts[i],p3=vPts[Math.min(vPts.length-1,i+1)];
-      ctx.bezierCurveTo(p1.x+(p2.x-p0.x)*0.25,p1.y+(p2.y-p0.y)*0.25,p2.x-(p3.x-p1.x)*0.25,p2.y-(p3.y-p1.y)*0.25,p2.x,p2.y);
-    }
-    ctx.strokeStyle=e.hex+'cc';ctx.lineWidth=1;ctx.lineCap='round';ctx.stroke();
-    ctx.restore();
+  // Passe B : câbles — 4 couches par courbe (clip)
+  allSeries.forEach(({e,vPts})=>{
+    ctx.save();ctx.beginPath();ctx.rect(pL,pT,cW,cH);ctx.clip();
 
-    // Point terminal uniquement — micro-dot blanc
+    // Couche 1 — gaine extérieure large, très transparente
+    ctx.beginPath();bzPath(vPts);
+    ctx.strokeStyle=e.hex+'28';ctx.lineWidth=7;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();
+
+    // Couche 2 — gaine intermédiaire
+    ctx.beginPath();bzPath(vPts);
+    ctx.strokeStyle=e.hex+'50';ctx.lineWidth=4;ctx.stroke();
+
+    // Couche 3 — fil central, opaque, précis
+    ctx.beginPath();bzPath(vPts);
+    ctx.strokeStyle=e.hex+'e0';ctx.lineWidth=1.3;ctx.stroke();
+
+    // Couche 4 — micro-reflet blanc (décalé -0.8px vers le haut)
+    ctx.beginPath();bzPath(vPts,-0.8);
+    ctx.strokeStyle='rgba(255,255,255,0.11)';ctx.lineWidth=0.5;ctx.stroke();
+
+    ctx.restore();
+  });
+
+  // Passe C : badges terminaux (hors clip — dans la zone pR)
+  ctx.font='700 7.5px "Space Mono",monospace';
+  allSeries.forEach(({e,vPts})=>{
     const last=vPts[vPts.length-1];
-    ctx.save();
-    ctx.beginPath();ctx.arc(last.x,last.y,2,0,Math.PI*2);
-    ctx.fillStyle='#ffffff';ctx.globalAlpha=0.7;ctx.fill();
-    ctx.restore();
+    if(last.v===null)return;
+    const lbl=last.v+'%';
+    const tw=ctx.measureText(lbl).width;
+    const bx=last.x+9, by=last.y-6, bw=tw+10, bh=12;
 
-    // Label valeur finale — texte seul, sobre
-    if(last.v!==null){
-      ctx.fillStyle=e.hex+'bb';ctx.font='600 7px "Space Mono",monospace';ctx.textAlign='left';
-      ctx.fillText(last.v+'%',Math.min(last.x+5,W-20),last.y+3);
-    }
+    // Trait pointillé de connexion
+    ctx.strokeStyle=e.hex+'50';ctx.lineWidth=0.7;ctx.setLineDash([2,3]);
+    ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(bx,last.y);ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Fond badge
+    ctx.fillStyle='#080808';
+    ctx.strokeStyle=e.hex+'70';ctx.lineWidth=0.8;
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(bx,by,bw,bh,1.5);else ctx.rect(bx,by,bw,bh);
+    ctx.fill();ctx.stroke();
+
+    // Liseré supérieur — reflet métallique
+    ctx.strokeStyle='rgba(255,255,255,0.08)';ctx.lineWidth=0.5;
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(bx+0.5,by+0.5,bw-1,1,1);else ctx.rect(bx+0.5,by+0.5,bw-1,1);
+    ctx.stroke();
+
+    // Texte valeur
+    ctx.fillStyle=e.hex+'dd';ctx.textAlign='left';
+    ctx.fillText(lbl,bx+5,by+bh-3.5);
+
+    // Point de terminaison sur la courbe
+    ctx.beginPath();ctx.arc(last.x,last.y,2.2,0,Math.PI*2);
+    ctx.fillStyle='#fff';ctx.globalAlpha=0.55;ctx.fill();ctx.globalAlpha=1;
   });
 }
 
