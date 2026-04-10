@@ -1410,6 +1410,78 @@ body::before{display:none !important;}
   text-shadow:none !important;
   filter:none !important;
 }
+/* ===== BRONZE INDUSTRIEL — Interface Tactique ===== */
+:root{
+  --bronze:#A87932;--bronze2:#8B6508;
+  --card-bg:#0A0A0A;
+  --card-border:rgba(168,121,50,0.45);
+  --card-shadow:0 0 15px rgba(139,101,8,0.10),inset 0 0 2px rgba(168,121,50,0.20);
+  --card-shadow-hover:0 0 22px rgba(168,121,50,0.20),inset 0 0 3px rgba(168,121,50,0.35);
+}
+
+/* — Cartes : fond opaque, biseau bronze — */
+.kpi-card,.kpi-ring-card,.graph-card,.funnel-card,
+.dash-ent-card,.rev-card-dash,.acc-header,.obj-card-dash,
+.lsum-card,.tasks-wrap{
+  background:#0A0A0A !important;
+  border:1px solid var(--card-border) !important;
+  border-radius:4px !important;
+  box-shadow:var(--card-shadow) !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+.kpi-card:hover,.graph-card:hover,.funnel-card:hover,.dash-ent-card:hover,.rev-card-dash:hover{
+  box-shadow:var(--card-shadow-hover) !important;
+}
+
+/* — Titres modules : Bronze, majuscules, underline dégradé — */
+.graph-title,.funnel-title,.kpi-tasks-lbl,.stitle,.rev-title,.obj-title{
+  color:var(--bronze) !important;
+  text-transform:uppercase !important;
+  letter-spacing:1px !important;
+  text-shadow:none !important;
+  position:relative !important;
+  padding-bottom:6px !important;
+  margin-bottom:10px !important;
+}
+.graph-title::after,.funnel-title::after,.kpi-tasks-lbl::after,
+.stitle::after,.rev-title::after,.obj-title::after{
+  content:'';
+  position:absolute;
+  bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--bronze),transparent);
+  opacity:0.45;
+}
+
+/* — Boutons filtres (funnel) : bronze — */
+.funnel-filter-btn{
+  border:1px solid rgba(168,121,50,0.3) !important;
+  color:rgba(168,121,50,0.55) !important;
+  border-radius:3px !important;
+  background:transparent !important;
+}
+.funnel-filter-btn:hover{
+  border-color:var(--bronze) !important;
+  color:var(--bronze) !important;
+  box-shadow:0 0 6px rgba(168,121,50,0.2) !important;
+}
+.funnel-filter-btn.active{
+  border-color:var(--bronze) !important;
+  color:var(--bronze) !important;
+  font-weight:700;
+}
+
+/* — Boutons ladd : formes usinées — */
+.ladd-btn{border-radius:3px !important;}
+.ladd-btn:hover{box-shadow:0 0 8px rgba(168,121,50,0.2) !important;}
+
+/* — Delete hover : bronze discret — */
+.ldel:hover{color:var(--bronze) !important;}
+
+/* — Tabs actif : bronze — */
+.tab.active .tlbl{color:var(--bronze) !important;}
+.tab::after{background:linear-gradient(90deg,transparent,var(--bronze),transparent) !important;}
+.tab.active .ticon{filter:drop-shadow(0 0 5px rgba(168,121,50,0.7)) !important;}
 </style>
 </head>
 <body>
