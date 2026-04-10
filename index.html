@@ -1413,70 +1413,110 @@ body::before{display:none !important;}
 /* ===== OR VIEILLI MAT — Horlogerie de Luxe ===== */
 :root{
   --or:#C2A87D;--or2:#A87932;
-  /* Rebasculer toute la palette cyan → or vieilli */
   --cyan:#C2A87D;
   --cyan2:#A87932;
   --cyan-glow:rgba(194,168,125,0.2);
-  --glow:0 10px 30px rgba(0,0,0,0.6),0 0 0 1.5px rgba(194,168,125,0.22);
-  --glow-strong:0 10px 40px rgba(0,0,0,0.75),0 0 0 1.5px rgba(194,168,125,0.4),0 0 22px rgba(194,168,125,0.08);
+  --glow:0 10px 30px rgba(0,0,0,0.6),0 0 0 1px rgba(194,168,125,0.2);
+  --glow-strong:0 10px 40px rgba(0,0,0,0.75),0 0 0 1px rgba(194,168,125,0.2);
   --laser:linear-gradient(90deg,transparent,#C2A87D,transparent);
   --metal-border:linear-gradient(135deg,rgba(194,168,125,0.6) 0%,rgba(139,101,50,0.18) 35%,rgba(80,60,20,0.06) 65%,rgba(194,168,125,0.5) 100%);
 }
 
-/* — Cadres or mat, 2.2px, angles vifs — */
+/* — Fond bleu-canard sombre, bordure 1px connectrice — */
 .kpi-card,.kpi-ring-card,.graph-card,.funnel-card,
 .dash-ent-card,.rev-card-dash,.acc-header,.obj-card-dash,
 .lsum-card,.tasks-wrap{
-  background:#0A0A0A !important;
-  border:2.2px solid #C2A87D !important;
-  border-radius:2px !important;
+  background:#060e16 !important;
+  border:1px solid rgba(194,168,125,0.2) !important;
+  border-radius:0 !important;
   clip-path:none !important;
   box-shadow:none !important;
   backdrop-filter:none !important;
   -webkit-backdrop-filter:none !important;
   position:relative !important;
   overflow:hidden !important;
+  isolation:isolate !important;
 }
-/* — Renforts angulaires L aux 4 coins — */
+
+/* — Coins renforcés : TL (haut-gauche) + BR (bas-droite) via ::before — */
 .kpi-card::before,.kpi-ring-card::before,.graph-card::before,.funnel-card::before,
 .dash-ent-card::before,.rev-card-dash::before,.acc-header::before,.obj-card-dash::before,
 .lsum-card::before,.tasks-wrap::before{
   content:'';
   position:absolute;inset:0;
-  pointer-events:none;z-index:0;
+  pointer-events:none;z-index:2;
   background-image:
-    linear-gradient(90deg,#d4ba8a 0,#d4ba8a 14px,transparent 14px),
-    linear-gradient(180deg,#d4ba8a 0,#d4ba8a 14px,transparent 14px),
-    linear-gradient(270deg,#d4ba8a 0,#d4ba8a 14px,transparent 14px),
-    linear-gradient(180deg,#d4ba8a 0,#d4ba8a 14px,transparent 14px),
-    linear-gradient(90deg,#d4ba8a 0,#d4ba8a 14px,transparent 14px),
-    linear-gradient(0deg,#d4ba8a 0,#d4ba8a 14px,transparent 14px),
-    linear-gradient(270deg,#d4ba8a 0,#d4ba8a 14px,transparent 14px),
-    linear-gradient(0deg,#d4ba8a 0,#d4ba8a 14px,transparent 14px);
-  background-size:
-    100% 2.2px,2.2px 100%,100% 2.2px,2.2px 100%,
-    100% 2.2px,2.2px 100%,100% 2.2px,2.2px 100%;
-  background-position:
-    0 0,0 0,100% 0,100% 0,
-    0 100%,0 100%,100% 100%,100% 100%;
+    linear-gradient(#C2A87D,#C2A87D),
+    linear-gradient(#C2A87D,#C2A87D),
+    linear-gradient(#C2A87D,#C2A87D),
+    linear-gradient(#C2A87D,#C2A87D);
+  background-size:20px 3px,3px 20px,20px 3px,3px 20px;
+  background-position:0 0,0 0,100% 100%,100% 100%;
   background-repeat:no-repeat;
   display:block !important;
 }
-/* Podium : style spécial conservé */
-#podiumCard{
-  border:2.2px solid #C2A87D !important;
-  background:#050505 !important;
-  clip-path:none !important;
-  border-radius:2px !important;
+
+/* — Coins renforcés : TR (haut-droite) + BL (bas-gauche) via ::after — */
+.kpi-card::after,.kpi-ring-card::after,.graph-card::after,.funnel-card::after,
+.dash-ent-card::after,.rev-card-dash::after,.acc-header::after,.obj-card-dash::after,
+.lsum-card::after,.tasks-wrap::after{
+  content:'';
+  position:absolute;inset:0;
+  pointer-events:none;z-index:2;
+  background-image:
+    linear-gradient(#C2A87D,#C2A87D),
+    linear-gradient(#C2A87D,#C2A87D),
+    linear-gradient(#C2A87D,#C2A87D),
+    linear-gradient(#C2A87D,#C2A87D);
+  background-size:20px 3px,3px 20px,20px 3px,3px 20px;
+  background-position:100% 0,100% 0,0 100%,0 100%;
+  background-repeat:no-repeat;
+  display:block !important;
 }
 
-/* — KPI card layout fix — */
+/* Podium : style spécial conservé */
+#podiumCard{
+  border:1px solid rgba(194,168,125,0.2) !important;
+  background:#060e16 !important;
+  clip-path:none !important;
+  border-radius:0 !important;
+  position:relative !important;
+  isolation:isolate !important;
+}
+#podiumCard::before{
+  content:'';
+  position:absolute;inset:0;
+  pointer-events:none;z-index:2;
+  background-image:
+    linear-gradient(#C2A87D,#C2A87D),
+    linear-gradient(#C2A87D,#C2A87D),
+    linear-gradient(#C2A87D,#C2A87D),
+    linear-gradient(#C2A87D,#C2A87D);
+  background-size:20px 3px,3px 20px,20px 3px,3px 20px;
+  background-position:0 0,0 0,100% 100%,100% 100%;
+  background-repeat:no-repeat;
+  display:block !important;
+}
+#podiumCard::after{
+  content:'';
+  position:absolute;inset:0;
+  pointer-events:none;z-index:2;
+  background-image:
+    linear-gradient(#C2A87D,#C2A87D),
+    linear-gradient(#C2A87D,#C2A87D),
+    linear-gradient(#C2A87D,#C2A87D),
+    linear-gradient(#C2A87D,#C2A87D);
+  background-size:20px 3px,3px 20px,20px 3px,3px 20px;
+  background-position:100% 0,100% 0,0 100%,0 100%;
+  background-repeat:no-repeat;
+  display:block !important;
+}
+
+/* — KPI card layout : grille 2 lignes — */
 .kpi-card{
-  display:flex !important;
-  flex-direction:column !important;
-  justify-content:flex-start !important;
-  align-items:flex-start !important;
-  gap:3px !important;
+  display:grid !important;
+  grid-template-rows:auto auto !important;
+  gap:5px !important;
 }
 
 /* — Titres + labels : Or vieilli, Space Mono, 0.75rem — */
