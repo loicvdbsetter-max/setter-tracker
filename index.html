@@ -1978,13 +1978,6 @@ function drawHexDash(entData){
   function hexVerts(cx,cy,rad){const v=[];for(let i=0;i<6;i++){const a=Math.PI/6+i*Math.PI/3;v.push({x:cx+Math.cos(a)*rad,y:cy+Math.sin(a)*rad});}return v;}
   function hexPath(cx,cy,rad){const v=hexVerts(cx,cy,rad);ctx.beginPath();ctx.moveTo(v[0].x,v[0].y);for(let i=1;i<6;i++)ctx.lineTo(v[i].x,v[i].y);ctx.closePath();}
 
-  // ── Grid dots ──
-  ctx.save();ctx.fillStyle='#1a1a1a';
-  for(let gx=10;gx<W;gx+=20){for(let gy=10;gy<H;gy+=20){ctx.beginPath();ctx.arc(gx,gy,0.7,0,Math.PI*2);ctx.fill();}}
-  ctx.restore();
-  // ── Rail horizontal ──
-  ctx.save();ctx.beginPath();ctx.moveTo(W*0.08,cy);ctx.lineTo(W*0.92,cy);ctx.strokeStyle='#333';ctx.lineWidth=1;ctx.stroke();ctx.restore();
-
   entData.forEach((d,i)=>{
     const p=positions[i];
     const col=d.e.hex;
@@ -2447,11 +2440,9 @@ async function renderDash(){
           `).join('')}
         </div>
       </div>
-      <div style="background:linear-gradient(135deg,#030a0f,#060e14);border:1px solid rgba(0,212,255,0.2);border-radius:10px;padding:14px;position:relative;overflow:hidden;">
-        <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#00d4ff,transparent)"></div>
-        <div style="position:absolute;inset:0;opacity:0.025;background-image:linear-gradient(#00d4ff 1px,transparent 1px),linear-gradient(90deg,#00d4ff 1px,transparent 1px);background-size:18px 18px;pointer-events:none"></div>
-        <div style="font-size:8px;color:rgba(0,212,255,0.4);letter-spacing:2px;margin-bottom:10px;position:relative">CONVERSION — par entrepreneur</div>
-        <canvas id="hexDash" style="width:100%;display:block;position:relative" height="150"></canvas>
+      <div style="background:radial-gradient(circle at center,#111111 0%,#050505 100%) !important;border:1px solid rgba(0,212,255,0.2);border-radius:10px;padding:14px;position:relative;overflow:hidden;">
+        <div style="font-size:8px;color:rgba(0,212,255,0.4);letter-spacing:2px;margin-bottom:10px">CONVERSION — par entrepreneur</div>
+        <canvas id="hexDash" style="width:100%;display:block;filter:drop-shadow(0 15px 25px rgba(0,0,0,0.9))" height="150"></canvas>
       </div>
     </div>
   </div>`;
