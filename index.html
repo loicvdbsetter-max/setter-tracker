@@ -2837,11 +2837,14 @@ function _drawConvChart(convData,dim){
     })).filter(p=>p.y!==null)
   })).filter(s=>s.vPts.length>=2);
 
+  // Helper rgba depuis hex (#rrggbb)
+  function rga(hex,a){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return 'rgba('+r+','+g+','+b+','+a+')';}
+
   // Passe A : aires sous les courbes (clip)
   allSeries.forEach(({e,vPts})=>{
     ctx.save();ctx.beginPath();ctx.rect(pL,pT,cW,cH);ctx.clip();
     const aG=ctx.createLinearGradient(0,pT,0,pT+cH);
-    aG.addColorStop(0,e.hex+'0f');aG.addColorStop(1,e.hex+'00');
+    aG.addColorStop(0,rga(e.hex,0.18));aG.addColorStop(1,rga(e.hex,0));
     ctx.beginPath();bzPath(vPts);
     ctx.lineTo(vPts[vPts.length-1].x,pT+cH);ctx.lineTo(vPts[0].x,pT+cH);ctx.closePath();
     ctx.fillStyle=aG;ctx.fill();ctx.restore();
@@ -2851,21 +2854,21 @@ function _drawConvChart(convData,dim){
   allSeries.forEach(({e,vPts})=>{
     ctx.save();ctx.beginPath();ctx.rect(pL,pT,cW,cH);ctx.clip();
 
-    // Couche 1 — gaine extérieure large, très transparente
+    // Couche 1 — gaine extérieure (halo de profondeur)
     ctx.beginPath();bzPath(vPts);
-    ctx.strokeStyle=e.hex+'28';ctx.lineWidth=7;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();
+    ctx.strokeStyle=rga(e.hex,0.25);ctx.lineWidth=8;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();
 
-    // Couche 2 — gaine intermédiaire
+    // Couche 2 — corps principal du câble
     ctx.beginPath();bzPath(vPts);
-    ctx.strokeStyle=e.hex+'50';ctx.lineWidth=4;ctx.stroke();
+    ctx.strokeStyle=rga(e.hex,0.65);ctx.lineWidth=4;ctx.stroke();
 
-    // Couche 3 — fil central, opaque, précis
+    // Couche 3 — fil central lumineux
     ctx.beginPath();bzPath(vPts);
-    ctx.strokeStyle=e.hex+'e0';ctx.lineWidth=1.3;ctx.stroke();
+    ctx.strokeStyle=rga(e.hex,0.95);ctx.lineWidth=1.5;ctx.stroke();
 
-    // Couche 4 — micro-reflet blanc (décalé -0.8px vers le haut)
-    ctx.beginPath();bzPath(vPts,-0.8);
-    ctx.strokeStyle='rgba(255,255,255,0.11)';ctx.lineWidth=0.5;ctx.stroke();
+    // Couche 4 — reflet blanc sur le dessus du câble
+    ctx.beginPath();bzPath(vPts,-1);
+    ctx.strokeStyle='rgba(255,255,255,0.22)';ctx.lineWidth=0.7;ctx.stroke();
 
     ctx.restore();
   });
@@ -2880,25 +2883,25 @@ function _drawConvChart(convData,dim){
     const bx=last.x+9, by=last.y-6, bw=tw+10, bh=12;
 
     // Trait pointillé de connexion
-    ctx.strokeStyle=e.hex+'50';ctx.lineWidth=0.7;ctx.setLineDash([2,3]);
+    ctx.strokeStyle=rga(e.hex,0.45);ctx.lineWidth=0.7;ctx.setLineDash([2,3]);
     ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(bx,last.y);ctx.stroke();
     ctx.setLineDash([]);
 
     // Fond badge
     ctx.fillStyle='#080808';
-    ctx.strokeStyle=e.hex+'70';ctx.lineWidth=0.8;
+    ctx.strokeStyle=rga(e.hex,0.55);ctx.lineWidth=0.8;
     ctx.beginPath();
     if(ctx.roundRect)ctx.roundRect(bx,by,bw,bh,1.5);else ctx.rect(bx,by,bw,bh);
     ctx.fill();ctx.stroke();
 
     // Liseré supérieur — reflet métallique
-    ctx.strokeStyle='rgba(255,255,255,0.08)';ctx.lineWidth=0.5;
+    ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=0.5;
     ctx.beginPath();
     if(ctx.roundRect)ctx.roundRect(bx+0.5,by+0.5,bw-1,1,1);else ctx.rect(bx+0.5,by+0.5,bw-1,1);
     ctx.stroke();
 
     // Texte valeur
-    ctx.fillStyle=e.hex+'dd';ctx.textAlign='left';
+    ctx.fillStyle=rga(e.hex,0.95);ctx.textAlign='left';
     ctx.fillText(lbl,bx+5,by+bh-3.5);
 
     // Point de terminaison sur la courbe
