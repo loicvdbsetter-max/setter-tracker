@@ -1410,33 +1410,59 @@ body::before{display:none !important;}
   text-shadow:none !important;
   filter:none !important;
 }
-/* ===== BRONZE INDUSTRIEL — Interface Tactique ===== */
+/* ===== STARK INDUSTRIES — Interface Tactique ===== */
 :root{
-  --bronze:#A87932;--bronze2:#8B6508;
+  --bronze:#A87932;--bronze2:#8B6508;--card-corner:#c89030;
   --card-bg:#0A0A0A;
-  --card-border:rgba(168,121,50,0.45);
-  --card-shadow:0 0 15px rgba(139,101,8,0.10),inset 0 0 2px rgba(168,121,50,0.20);
-  --card-shadow-hover:0 0 22px rgba(168,121,50,0.20),inset 0 0 3px rgba(168,121,50,0.35);
 }
 
-/* — Cartes : fond opaque, biseau bronze — */
+/* — Cartes : fond usiné, coins biseautés, relief interne — */
 .kpi-card,.kpi-ring-card,.graph-card,.funnel-card,
 .dash-ent-card,.rev-card-dash,.acc-header,.obj-card-dash,
 .lsum-card,.tasks-wrap{
   background:#0A0A0A !important;
-  border:1px solid var(--card-border) !important;
-  border-radius:4px !important;
-  box-shadow:var(--card-shadow) !important;
+  border:none !important;
+  border-radius:0 !important;
+  clip-path:polygon(10px 0%,calc(100% - 10px) 0%,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0% calc(100% - 10px),0% 10px) !important;
+  box-shadow:inset 0 0 8px rgba(0,0,0,0.85) !important;
   backdrop-filter:none !important;
   -webkit-backdrop-filter:none !important;
-}
-.kpi-card:hover,.graph-card:hover,.funnel-card:hover,.dash-ent-card:hover,.rev-card-dash:hover{
-  box-shadow:var(--card-shadow-hover) !important;
+  position:relative !important;
+  overflow:hidden !important;
 }
 
-/* — Titres modules : Bronze, majuscules, underline dégradé — */
+/* — Cadre bronze + texture striée métal sur ::before — */
+.kpi-card::before,.kpi-ring-card::before,.graph-card::before,.funnel-card::before,
+.dash-ent-card::before,.rev-card-dash::before,.acc-header::before,.obj-card-dash::before,
+.lsum-card::before,.tasks-wrap::before{
+  content:'';
+  position:absolute;inset:0;
+  pointer-events:none;
+  /* cadre bronze 4 côtés + stripes */
+  background-image:
+    linear-gradient(90deg,#A87932 100%,transparent 0),
+    linear-gradient(90deg,#A87932 100%,transparent 0),
+    linear-gradient(180deg,#A87932 100%,transparent 0),
+    linear-gradient(180deg,#A87932 100%,transparent 0),
+    repeating-linear-gradient(168deg,transparent 0,transparent 2px,rgba(255,255,255,0.009) 2px,rgba(255,255,255,0.009) 3px);
+  background-size:100% 1px,100% 1px,1px 100%,1px 100%,100% 100%;
+  background-position:0 0,0 100%,0 0,100% 0,0 0;
+  background-repeat:no-repeat,no-repeat,no-repeat,no-repeat,repeat;
+  opacity:0.6;
+}
+
+/* Hover : légère lueur bronze — */
+.kpi-card:hover,.graph-card:hover,.funnel-card:hover,.dash-ent-card:hover,.rev-card-dash:hover{
+  box-shadow:inset 0 0 8px rgba(0,0,0,0.85),0 0 14px rgba(168,121,50,0.12) !important;
+}
+
+/* — Titres modules : gravure laser cyan — */
 .graph-title,.funnel-title,.kpi-tasks-lbl,.stitle,.rev-title,.obj-title{
-  color:var(--bronze) !important;
+  background:linear-gradient(135deg,#00b8d4 0%,#00e5ff 40%,#e0f8ff 50%,#00e5ff 60%,#0099b8 100%) !important;
+  -webkit-background-clip:text !important;
+  background-clip:text !important;
+  -webkit-text-fill-color:transparent !important;
+  color:transparent !important;
   text-transform:uppercase !important;
   letter-spacing:1px !important;
   text-shadow:none !important;
@@ -1449,21 +1475,20 @@ body::before{display:none !important;}
   content:'';
   position:absolute;
   bottom:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,var(--bronze),transparent);
-  opacity:0.45;
+  background:linear-gradient(90deg,transparent,#A87932,transparent);
+  opacity:0.5;
 }
 
-/* — Boutons filtres (funnel) : bronze — */
+/* — Boutons filtres funnel — */
 .funnel-filter-btn{
   border:1px solid rgba(168,121,50,0.3) !important;
-  color:rgba(168,121,50,0.55) !important;
-  border-radius:3px !important;
+  color:rgba(168,121,50,0.6) !important;
+  border-radius:2px !important;
   background:transparent !important;
 }
 .funnel-filter-btn:hover{
   border-color:var(--bronze) !important;
   color:var(--bronze) !important;
-  box-shadow:0 0 6px rgba(168,121,50,0.2) !important;
 }
 .funnel-filter-btn.active{
   border-color:var(--bronze) !important;
@@ -1472,16 +1497,13 @@ body::before{display:none !important;}
 }
 
 /* — Boutons ladd : formes usinées — */
-.ladd-btn{border-radius:3px !important;}
-.ladd-btn:hover{box-shadow:0 0 8px rgba(168,121,50,0.2) !important;}
-
-/* — Delete hover : bronze discret — */
+.ladd-btn{border-radius:2px !important;}
 .ldel:hover{color:var(--bronze) !important;}
 
 /* — Tabs actif : bronze — */
 .tab.active .tlbl{color:var(--bronze) !important;}
 .tab::after{background:linear-gradient(90deg,transparent,var(--bronze),transparent) !important;}
-.tab.active .ticon{filter:drop-shadow(0 0 5px rgba(168,121,50,0.7)) !important;}
+.tab.active .ticon{filter:drop-shadow(0 0 4px rgba(168,121,50,0.6)) !important;}
 </style>
 </head>
 <body>
