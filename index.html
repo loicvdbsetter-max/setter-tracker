@@ -1410,113 +1410,128 @@ body::before{display:none !important;}
   text-shadow:none !important;
   filter:none !important;
 }
-/* ===== PREMIUM GOLD — Art Déco ===== */
+/* ===== STARK INDUSTRIES — Masquage & Composants ===== */
 :root{
   --or:#c8a050;--or2:#8a6a2a;
-  --cyan:#c8a050;
-  --cyan2:#8a6a2a;
-  --cyan-glow:rgba(200,160,80,0.15);
+  --cyan:#00d4ff;
+  --cyan2:#00b8e8;
+  --cyan-glow:rgba(0,212,255,0.2);
   --gold:#c8a050;
-  --gold2:#8a6a2a;
-  --gold-glow:rgba(200,160,80,0.15);
-  --glow:0 8px 28px rgba(0,255,247,0.08),0 4px 12px rgba(0,180,200,0.06),0 2px 6px rgba(0,0,0,0.6),inset 0 1px 0 rgba(200,160,80,0.06);
-  --glow-strong:0 10px 40px rgba(0,0,0,0.75),0 0 0 1px rgba(200,160,80,0.2);
-  --laser:linear-gradient(90deg,transparent,#c8a050,transparent);
-  --metal-border:linear-gradient(135deg,rgba(200,160,80,0.85) 0%,rgba(122,80,32,0.67) 35%,rgba(184,134,42,0.8) 65%,rgba(74,48,16,0.67) 100%);
+  --gold2:#6a4810;
+  --gold-glow:rgba(200,160,80,0.1);
+  --glow:inset 0 0 5px rgba(0,0,0,0.8);
+  --glow-strong:inset 0 0 8px rgba(0,0,0,0.9);
+  --laser:linear-gradient(90deg,transparent,#00d4ff,transparent);
+  --metal-border:repeating-linear-gradient(180deg,#1a0e04 0px,#1a0e04 1px,#7a5618 1px,#7a5618 2px,#0e0804 2px,#0e0804 3px,#4a3010 3px,#4a3010 4px);
 }
 
-/* — Bordure dégradée or + fond noir mat — */
+/* — Nettoyage total : blocs opaques + clip-path biseauté 8px + striures métal — */
 .kpi-card,.kpi-ring-card,.graph-card,.funnel-card,
 .dash-ent-card,.rev-card-dash,.acc-header,.obj-card-dash,
 .lsum-card,.tasks-wrap{
   background:
-    #050505 padding-box,
-    linear-gradient(135deg,#c8a050dd,#7a5020aa,#b8862acc,#4a3010aa,#c8a050dd) border-box !important;
-  border:1.5px solid transparent !important;
+    repeating-linear-gradient(180deg,
+      #1a0e04 0px,#1a0e04 1px,
+      #7a5618 1px,#7a5618 2px,
+      #0e0804 2px,#0e0804 3px,
+      #4a3010 3px,#4a3010 4px
+    ) 0 0 / 3px 100% no-repeat,
+    repeating-linear-gradient(180deg,
+      #1a0e04 0px,#1a0e04 1px,
+      #7a5618 1px,#7a5618 2px,
+      #0e0804 2px,#0e0804 3px,
+      #4a3010 3px,#4a3010 4px
+    ) 100% 0 / 3px 100% no-repeat,
+    linear-gradient(90deg,transparent 16px,#5a3c0c 16px,#c8a050 40%,#c8a050 60%,#5a3c0c calc(100% - 16px),transparent calc(100% - 16px)) 0 0 / 100% 1px no-repeat,
+    linear-gradient(90deg,transparent 16px,#5a3c0c 16px,#c8a050 40%,#c8a050 60%,#5a3c0c calc(100% - 16px),transparent calc(100% - 16px)) 0 100% / 100% 1px no-repeat,
+    #050505 !important;
+  border:none !important;
+  clip-path:polygon(8px 0%,calc(100% - 8px) 0%,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0% calc(100% - 8px),0% 8px) !important;
   border-radius:0 !important;
-  clip-path:none !important;
-  box-shadow:0 8px 28px rgba(0,255,247,0.08),0 4px 12px rgba(0,180,200,0.06),0 2px 6px rgba(0,0,0,0.6),inset 0 1px 0 rgba(200,160,80,0.06) !important;
+  box-shadow:inset 0 0 5px rgba(0,0,0,0.8) !important;
   backdrop-filter:none !important;
   -webkit-backdrop-filter:none !important;
   position:relative !important;
   overflow:hidden !important;
   isolation:isolate !important;
 }
-/* dash-ent-card : gradient simplifié sur 3 stops */
-.dash-ent-card{
-  background:
-    #050505 padding-box,
-    linear-gradient(135deg,#c8a050bb,#5a3810aa,#c8a050bb) border-box !important;
-}
 
-/* — Coins Art Déco dorés (TL=::before, TR=::after, BL/BR=child divs) — */
+/* — Coins usinés bronze brossé (16×16px, L-shape) — */
 .gold-corner::before,.gold-corner::after,
 .gold-corner .gc-bl,.gold-corner .gc-br{
   content:'';
   position:absolute;
-  width:8px;height:8px;
-  border-color:#c8a050;
-  border-style:solid;
-  z-index:3;
   pointer-events:none;
+  z-index:4;
 }
-/* Override complet du ::before filament pour les gold-corner */
+/* TL */
 .gold-corner::before{
   inset:unset !important;
-  top:-1px !important;left:-1px !important;
+  top:0 !important;left:0 !important;
   right:unset !important;bottom:unset !important;
-  width:8px !important;height:8px !important;
-  background:none !important;
-  border-width:2px 0 0 2px;
+  width:16px !important;height:16px !important;
+  background:linear-gradient(135deg,#e8c870 0%,#9a7020 18%,#d4aa48 34%,#7a5518 52%,#c09038 68%,#5a3c08 84%,#a07828 100%) !important;
+  clip-path:polygon(0 0,100% 0,100% 30%,30% 30%,30% 100%,0 100%);
+  border:none !important;border-width:0 !important;
 }
+/* TR */
 .gold-corner::after{
   inset:unset !important;
-  top:-1px !important;right:-1px !important;
+  top:0 !important;right:0 !important;
   left:unset !important;bottom:unset !important;
-  width:8px !important;height:8px !important;
-  background:none !important;
-  border-width:2px 2px 0 0;
+  width:16px !important;height:16px !important;
+  background:linear-gradient(225deg,#e8c870 0%,#9a7020 18%,#d4aa48 34%,#7a5518 52%,#c09038 68%,#5a3c08 84%,#a07828 100%) !important;
+  clip-path:polygon(0 0,100% 0,100% 100%,70% 100%,70% 30%,0 30%);
+  border:none !important;border-width:0 !important;
 }
-.gold-corner .gc-bl{bottom:-1px;left:-1px;border-width:0 0 2px 2px;}
-.gold-corner .gc-br{bottom:-1px;right:-1px;border-width:0 2px 2px 0;}
+/* BL */
+.gold-corner .gc-bl{
+  bottom:0;left:0;width:16px;height:16px;
+  background:linear-gradient(45deg,#e8c870 0%,#9a7020 18%,#d4aa48 34%,#7a5518 52%,#c09038 68%,#5a3c08 84%,#a07828 100%);
+  clip-path:polygon(0 0,30% 0,30% 70%,100% 70%,100% 100%,0 100%);
+}
+/* BR */
+.gold-corner .gc-br{
+  bottom:0;right:0;width:16px;height:16px;
+  background:linear-gradient(315deg,#e8c870 0%,#9a7020 18%,#d4aa48 34%,#7a5518 52%,#c09038 68%,#5a3c08 84%,#a07828 100%);
+  clip-path:polygon(70% 0,100% 0,100% 100%,0 100%,0 70%,70% 70%);
+}
 
-/* Podium : fond spécial conservé */
+/* Podium : fond + structure */
 #podiumCard{
   background:
-    #050505 padding-box,
-    linear-gradient(135deg,#c8a050dd,#7a5020aa,#b8862acc,#4a3010aa,#c8a050dd) border-box !important;
-  border:1.5px solid transparent !important;
-  clip-path:none !important;
+    repeating-linear-gradient(180deg,#1a0e04 0px,#1a0e04 1px,#7a5618 1px,#7a5618 2px,#0e0804 2px,#0e0804 3px,#4a3010 3px,#4a3010 4px) 0 0 / 3px 100% no-repeat,
+    repeating-linear-gradient(180deg,#1a0e04 0px,#1a0e04 1px,#7a5618 1px,#7a5618 2px,#0e0804 2px,#0e0804 3px,#4a3010 3px,#4a3010 4px) 100% 0 / 3px 100% no-repeat,
+    #050505 !important;
+  border:none !important;
+  clip-path:polygon(8px 0%,calc(100% - 8px) 0%,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0% calc(100% - 8px),0% 8px) !important;
   border-radius:0 !important;
+  box-shadow:inset 0 0 5px rgba(0,0,0,0.8) !important;
   position:relative !important;
   isolation:isolate !important;
 }
 
-/* — Filet supérieur → or (pour les cartes sans gold-corner) — */
-.kpi-card::before,.graph-card::before,.funnel-card::before{
-  background:linear-gradient(90deg,transparent,#c8a050,transparent) !important;
-}
-
-/* — KPI card layout : grille 2 lignes — */
+/* — KPI card layout — */
 .kpi-card{
   display:grid !important;
   grid-template-rows:auto auto !important;
   gap:5px !important;
 }
 
-/* — Labels/titres : or foncé, Space Mono — */
+/* — Gravure Laser Cyan : titres — */
 .graph-title,.funnel-title,.kpi-tasks-lbl,.stitle,.rev-title,.obj-title,.kpi-label{
-  background:none !important;
-  -webkit-background-clip:unset !important;
-  background-clip:unset !important;
-  -webkit-text-fill-color:#8a6a2a !important;
-  color:#8a6a2a !important;
+  background:linear-gradient(90deg,#00c8ff,#00ffee 40%,#00d4ff 60%,#00b8e8) !important;
+  -webkit-background-clip:text !important;
+  background-clip:text !important;
+  -webkit-text-fill-color:transparent !important;
+  color:transparent !important;
   font-family:'Space Mono',monospace !important;
   font-size:0.75rem !important;
   font-weight:700 !important;
   text-transform:uppercase !important;
   letter-spacing:2px !important;
   text-shadow:none !important;
+  filter:drop-shadow(0 0 3px rgba(0,212,255,0.3));
 }
 .graph-title,.funnel-title,.kpi-tasks-lbl,.stitle,.rev-title,.obj-title{
   position:relative !important;
@@ -1527,38 +1542,47 @@ body::before{display:none !important;}
 .stitle::after,.rev-title::after,.obj-title::after{
   content:'';position:absolute;
   bottom:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,#c8a050,transparent);
-  opacity:0.4;
+  background:linear-gradient(90deg,transparent,#00d4ff,transparent);
+  opacity:0.3;
 }
 
-/* — Valeurs KPI — */
-.kpi-val{color:#00F2FF !important;text-shadow:none !important;}
-.funnel-row-pct{color:#00F2FF !important;text-shadow:none !important;}
+/* — Valeurs KPI : gravure cyan intense — */
+.kpi-val{
+  background:linear-gradient(90deg,#00d4ff,#00ffee 50%,#00d4ff) !important;
+  -webkit-background-clip:text !important;
+  background-clip:text !important;
+  -webkit-text-fill-color:transparent !important;
+  color:transparent !important;
+  text-shadow:none !important;
+  filter:drop-shadow(0 0 4px rgba(0,212,255,0.45));
+}
+.funnel-row-pct{color:#00d4ff !important;text-shadow:none !important;}
 
-/* — Filtres funnel — */
+/* — Filtres funnel : biseautés + cyan — */
 .funnel-filter-btn{
-  border:1px solid rgba(200,160,80,0.35) !important;
-  color:rgba(200,160,80,0.6) !important;
-  border-radius:2px !important;
+  border:1px solid rgba(0,212,255,0.2) !important;
+  color:rgba(0,212,255,0.5) !important;
+  border-radius:0 !important;
+  clip-path:polygon(4px 0%,calc(100% - 4px) 0%,100% 4px,100% calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,0% calc(100% - 4px),0% 4px) !important;
   background:transparent !important;
 }
 .funnel-filter-btn.active{
-  background:rgba(184,134,42,0.15) !important;
-  border-color:#c8a050 !important;
-  color:#c8a050 !important;
+  background:rgba(0,212,255,0.08) !important;
+  border-color:#00d4ff !important;
+  color:#00d4ff !important;
   font-weight:700 !important;
 }
 .funnel-filter-btn:hover{
-  border-color:#c8a050 !important;
-  color:#c8a050 !important;
+  border-color:rgba(0,212,255,0.4) !important;
+  color:rgba(0,212,255,0.8) !important;
 }
 
-/* — Tabs actif : or — */
-.tab.active .tlbl{color:#c8a050 !important;}
-.tab::after{background:linear-gradient(90deg,transparent,#c8a050,transparent) !important;}
-.tab.active .ticon{filter:drop-shadow(0 0 4px rgba(200,160,80,0.5)) !important;}
-.ladd-btn{border-radius:2px !important;}
-.ldel:hover{color:#c8a050 !important;}
+/* — Tabs : cyan — */
+.tab.active .tlbl{color:#00d4ff !important;}
+.tab::after{background:linear-gradient(90deg,transparent,#00d4ff,transparent) !important;}
+.tab.active .ticon{filter:drop-shadow(0 0 4px rgba(0,212,255,0.5)) !important;}
+.ladd-btn{border-radius:0 !important;}
+.ldel:hover{color:#00d4ff !important;}
 </style>
 
 </head>
