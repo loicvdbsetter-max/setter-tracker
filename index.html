@@ -1411,7 +1411,17 @@ body::before{display:none !important;}
   filter:none !important;
 }
 /* ===== OR VIEILLI MAT — Horlogerie de Luxe ===== */
-:root{--or:#C2A87D;--or2:#A87932;}
+:root{
+  --or:#C2A87D;--or2:#A87932;
+  /* Rebasculer toute la palette cyan → or vieilli */
+  --cyan:#C2A87D;
+  --cyan2:#A87932;
+  --cyan-glow:rgba(194,168,125,0.2);
+  --glow:0 10px 30px rgba(0,0,0,0.6),0 0 0 1.5px rgba(194,168,125,0.22);
+  --glow-strong:0 10px 40px rgba(0,0,0,0.75),0 0 0 1.5px rgba(194,168,125,0.4),0 0 22px rgba(194,168,125,0.08);
+  --laser:linear-gradient(90deg,transparent,#C2A87D,transparent);
+  --metal-border:linear-gradient(135deg,rgba(194,168,125,0.6) 0%,rgba(139,101,50,0.18) 35%,rgba(80,60,20,0.06) 65%,rgba(194,168,125,0.5) 100%);
+}
 
 /* — Cadres or mat, 2.2px, angles vifs — */
 .kpi-card,.kpi-ring-card,.graph-card,.funnel-card,
