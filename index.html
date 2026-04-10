@@ -201,8 +201,8 @@ body{
 .funnel-title{font-size:8px;color:rgba(0,170,255,0.4);letter-spacing:2px;margin-bottom:12px;}
 .funnel-row{margin-bottom:7px;}
 .funnel-row-head{display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px;}
-.funnel-row-lbl{color:rgba(0,170,255,0.5);}
-.funnel-row-pct{font-weight:700;color:#ffffff;}
+.funnel-row-lbl{color:#E0E0E0 !important;font-weight:600;text-shadow:none !important;}
+.funnel-row-pct{font-weight:700;color:#00F2FF !important;text-shadow:none !important;}
 .funnel-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
 .funnel-bar-fill{height:100%;border-radius:2px;}
 .funnel-ents{padding-top:8px;border-top:1px solid var(--border);margin-top:6px;}
@@ -1319,7 +1319,7 @@ body::before{display:none !important;}
 
 /* 5. Textes secondaires : gris technique #a0b0b5 */
 :root{--muted2:#a0b0b5;}
-.kpi-sub,.kpi-label,.funnel-row-lbl,.graph-title,.funnel-title,
+.kpi-sub,.kpi-label,.graph-title,.funnel-title,
 .obj-title,.rev-title,.kpi-tasks-lbl,.stitle,.kpi-ring-lbl,.ring-cnt,
 .tasks-sub,.tasks-status,.tasks-reset,.plabel,.lsum-comm,
 .dash-ent-lbl,.cal-dh,.cal-label,.acc-chevron,.live-lbl,
@@ -2043,9 +2043,9 @@ function drawHexDash(entData){
     }
 
     // ── 6. LABELS ──
-    ctx.fillStyle=col;ctx.font='bold 7px monospace';ctx.textAlign='center';ctx.fillText(d.e.name,p.x,p.y-5);
-    ctx.fillStyle='#e8f4ff';ctx.font='bold 10px monospace';ctx.fillText(d.conv+'%',p.x,p.y+4);
-    ctx.fillStyle=col+'99';ctx.font='6px monospace';ctx.fillText(d.calls+' calls',p.x,p.y+13);
+    ctx.fillStyle=col;ctx.font='700 7px monospace';ctx.textAlign='center';ctx.fillText(d.e.name,p.x,p.y-5);
+    ctx.fillStyle='#ffffff';ctx.font='800 12px monospace';ctx.fillText(d.conv+'%',p.x,p.y+4);
+    ctx.fillStyle=col;ctx.font='700 6px monospace';ctx.fillText(d.calls+' calls',p.x,p.y+13);
   });
   ctx.restore();
 }
@@ -2331,7 +2331,6 @@ async function renderDash(){
         </div>
         ${[
           {l:'Msgs → Réponses',v:pct(trep,tfm),c:'#00d4ff'},
-          {l:'Msgs → Follow ups',v:pct(tfu,tfm),c:'#a78bfa'},
           {l:'FU → Réponses FU',v:pct(trfu,tfu),c:'#34d399'},
           {l:'Msgs → Lien',v:pct(tln,tfm),c:'#00ff88'},
           {l:'Msgs → Call',v:pct(tc,tfm),c:'#fb923c'},
