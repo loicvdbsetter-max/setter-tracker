@@ -2754,15 +2754,12 @@ function drawSparkIron(canvasId, data, color){
 function drawConvChart(convData,dim){
   const canvas=document.getElementById('convChart');
   if(!canvas)return;
-  // Resolve dimensions robustly — on mobile Safari getBCR can return 0 before layout settles
   const wrap=canvas.parentElement;
   const W=canvas.getBoundingClientRect().width||canvas.offsetWidth||wrap&&wrap.getBoundingClientRect().width||wrap&&wrap.offsetWidth||(window.innerWidth-32)||300;
   const H=canvas.getBoundingClientRect().height||canvas.offsetHeight||wrap&&wrap.getBoundingClientRect().height||wrap&&wrap.offsetHeight||200;
   if(W<10||H<10)return;
-  // Force canvas element dimensions so getBCR works on subsequent frames
   if(!canvas.style.width||canvas.style.width==='100%'){canvas.style.width=W+'px';}
   if(!canvas.style.height||canvas.style.height==='100%'){canvas.style.height=H+'px';}
-  // Reset particle cache if canvas size changed significantly (ex: rotation, resize mobile)
   if(drawConvChart._lastW&&(Math.abs(drawConvChart._lastW-W)>20||Math.abs(drawConvChart._lastH-H)>20)){
     drawConvChart._p=null;drawConvChart._r=null;drawConvChart._s=undefined;
   }
@@ -2773,94 +2770,41 @@ function drawConvChart(convData,dim){
   const ctx=canvas.getContext('2d');
   ctx.scale(dpr,dpr);
 
-  // Padding
   const pL=30,pR=52,pT=10,pB=4;
   const cW=W-pL-pR, cH=H-pT-pB;
 
-  // Trouver maxV à partir des vraies données
   const allVals=convData.flatMap(d=>d.pts.filter(v=>v!==null&&v>0));
   const dataMax=allVals.length>0?Math.max(...allVals):30;
   const maxV=dataMax<=30?40:dataMax<=60?70:dataMax<=90?100:110;
 
-  // === FOND IRON MAN ===
-  // Grille
+  // Fond — grille fine
   const gs=20;
-  ctx.strokeStyle='#1a1a1a';ctx.lineWidth=0.5;
+  ctx.strokeStyle='#111';ctx.lineWidth=0.5;
   for(let x=0;x<W;x+=gs){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
   for(let y=0;y<H;y+=gs){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
 
-  // Particules
-  if(!drawConvChart._p){
-    drawConvChart._p=[];
-    for(let i=0;i<12;i++)drawConvChart._p.push({
-      x:Math.random()*W,y:Math.random()*H,
-      vx:(Math.random()-0.5)*0.15,vy:-Math.random()*0.35-0.1,
-      s:Math.random()*1.1+0.3,op:Math.random()*0.25+0.05,
-      pulse:Math.random()*Math.PI*2
-    });
-  }
-  drawConvChart._p.forEach(p=>{
-    p.x+=p.vx;p.y+=p.vy;p.pulse+=0.05;
-    if(p.y<-2)p.y=H+2;
-    if(p.x<0)p.x=W;if(p.x>W)p.x=0;
-    const op=p.op*(0.6+Math.sin(p.pulse)*0.4);
-    ctx.save();ctx.shadowColor='#00d4ff';ctx.shadowBlur=4;
-    ctx.beginPath();ctx.arc(p.x,p.y,p.s,0,Math.PI*2);
-    ctx.fillStyle='#00d4ff';ctx.globalAlpha=op;ctx.fill();
-    ctx.restore();
-  });
-
-  // Rain columns
-  if(!drawConvChart._r){
-    drawConvChart._r=[];
-    for(let i=0;i<8;i++)drawConvChart._r.push({
-      x:Math.random()*W,y:Math.random()*H,
-      speed:0.4+Math.random()*0.6,len:15+Math.random()*25,op:0.03+Math.random()*0.04
-    });
-  }
-  drawConvChart._r.forEach(c=>{
-    c.y+=c.speed;if(c.y>H+c.len)c.y=-c.len;
-    const y0=Math.max(0,c.y-c.len),y1=Math.min(H,c.y);
-    if(y1>y0){
-      const g=ctx.createLinearGradient(0,y0,0,y1);
-      g.addColorStop(0,'rgba(0,212,255,0)');
-      g.addColorStop(0.5,'rgba(0,212,255,'+c.op+')');
-      g.addColorStop(1,'rgba(0,212,255,0)');
-      ctx.fillStyle=g;ctx.fillRect(c.x-0.5,y0,1,y1-y0);
-    }
-  });
-
-  // Scan line
-  if(drawConvChart._s===undefined)drawConvChart._s=0;
-  drawConvChart._s=(drawConvChart._s+0.5)%H;
-  const sg=ctx.createLinearGradient(0,drawConvChart._s-10,0,drawConvChart._s+10);
-  sg.addColorStop(0,'rgba(0,212,255,0)');
-  sg.addColorStop(0.5,'rgba(0,212,255,0.07)');
-  sg.addColorStop(1,'rgba(0,212,255,0)');
-  ctx.fillStyle=sg;ctx.fillRect(0,drawConvChart._s-10,W,20);
-
-  // === GRILLE DATA ===
+  // Lignes horizontales de référence + labels Y
   const gridSteps=maxV<=40?[0,10,20,30,40]:maxV<=70?[0,20,40,60]:maxV<=100?[0,25,50,75,100]:[0,25,50,75,100];
   gridSteps.forEach(v=>{
     const y=pT+cH-v/maxV*cH;
-    ctx.beginPath();ctx.strokeStyle='rgba(255,255,255,0.03)';ctx.lineWidth=0.4;
-    ctx.setLineDash([3,5]);ctx.moveTo(pL,y);ctx.lineTo(pL+cW,y);ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle='#E0E0E0';ctx.font='700 7px "Space Mono",monospace';ctx.textAlign='right';
+    ctx.beginPath();ctx.strokeStyle='rgba(200,160,80,0.07)';ctx.lineWidth=0.4;
+    ctx.setLineDash([2,6]);ctx.moveTo(pL,y);ctx.lineTo(pL+cW,y);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='rgba(180,180,180,0.35)';ctx.font='700 7px "Space Mono",monospace';ctx.textAlign='right';
     ctx.fillText(v+'%',pL-4,y+2.5);
   });
 
-  // Today line
+  // Ligne "aujourd'hui"
   const n=new Date();
   if(n.getFullYear()===cY&&n.getMonth()===cM&&dim>1){
     const todayD=Math.min(n.getDate(),dim);
     const tx=pL+(todayD-1)/(dim-1)*cW;
-    ctx.strokeStyle='rgba(0,212,255,0.25)';ctx.lineWidth=0.7;ctx.setLineDash([2,4]);
+    ctx.strokeStyle='rgba(200,160,80,0.15)';ctx.lineWidth=0.6;ctx.setLineDash([2,4]);
     ctx.beginPath();ctx.moveTo(tx,pT);ctx.lineTo(tx,pT+cH);ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle='rgba(0,212,255,0.35)';ctx.font='7px monospace';ctx.textAlign='center';
+    ctx.fillStyle='rgba(200,160,80,0.3)';ctx.font='7px "Space Mono",monospace';ctx.textAlign='center';
     ctx.fillText('auj.',tx,pT+cH+9);
   }
 
-  // === COURBES ===
+  // Courbes
   convData.forEach(({e,pts})=>{
     const vPts=pts.map((v,i)=>({
       x:pL+i/(dim-1||1)*cW,
@@ -2869,16 +2813,11 @@ function drawConvChart(convData,dim){
     })).filter(p=>p.y!==null);
     if(vPts.length<2)return;
 
-    // Clip area to chart bounds
+    // Aire légère
     ctx.save();
-    ctx.beginPath();
-    ctx.rect(pL,pT,cW,cH);
-    ctx.clip();
-
-    // Aire dégradée très légère
+    ctx.beginPath();ctx.rect(pL,pT,cW,cH);ctx.clip();
     const aG=ctx.createLinearGradient(0,pT,0,pT+cH);
-    aG.addColorStop(0,e.hex+'26');
-    aG.addColorStop(0.6,e.hex+'0a');
+    aG.addColorStop(0,e.hex+'14');
     aG.addColorStop(1,e.hex+'00');
     ctx.beginPath();
     ctx.moveTo(vPts[0].x,vPts[0].y);
@@ -2888,46 +2827,32 @@ function drawConvChart(convData,dim){
     }
     ctx.lineTo(vPts[vPts.length-1].x,pT+cH);
     ctx.lineTo(vPts[0].x,pT+cH);
-    ctx.closePath();
-    ctx.fillStyle=aG;ctx.fill();
+    ctx.closePath();ctx.fillStyle=aG;ctx.fill();
     ctx.restore();
 
-    // Ligne
-    ctx.save();ctx.shadowColor=e.hex;ctx.shadowBlur=6;
+    // Ligne fine — aucun glow
+    ctx.save();
+    ctx.beginPath();ctx.rect(pL,pT,cW,cH);ctx.clip();
     ctx.beginPath();
     ctx.moveTo(vPts[0].x,vPts[0].y);
     for(let i=1;i<vPts.length;i++){
       const p0=vPts[Math.max(0,i-2)],p1=vPts[i-1],p2=vPts[i],p3=vPts[Math.min(vPts.length-1,i+1)];
       ctx.bezierCurveTo(p1.x+(p2.x-p0.x)*0.25,p1.y+(p2.y-p0.y)*0.25,p2.x-(p3.x-p1.x)*0.25,p2.y-(p3.y-p1.y)*0.25,p2.x,p2.y);
     }
-    ctx.strokeStyle=e.hex;ctx.lineWidth=2.5;ctx.lineCap='round';ctx.stroke();
+    ctx.strokeStyle=e.hex+'cc';ctx.lineWidth=1;ctx.lineCap='round';ctx.stroke();
     ctx.restore();
 
-    // Points sur chaque donnée
-    ctx.save();
-    ctx.beginPath();ctx.rect(pL,pT,cW,cH);ctx.clip();
-    vPts.forEach(pt=>{
-      ctx.beginPath();ctx.arc(pt.x,pt.y,2.5,0,Math.PI*2);
-      ctx.fillStyle=e.hex;ctx.fill();
-      ctx.strokeStyle='#ffffff';ctx.lineWidth=1;ctx.stroke();
-    });
-    ctx.restore();
-
-    // Dernier point + badge
+    // Point terminal uniquement — micro-dot blanc
     const last=vPts[vPts.length-1];
-    ctx.save();ctx.shadowColor=e.hex;ctx.shadowBlur=10;
-    ctx.beginPath();ctx.arc(last.x,last.y,4.5,0,Math.PI*2);ctx.strokeStyle=e.hex+'44';ctx.lineWidth=1;ctx.stroke();
-    ctx.beginPath();ctx.arc(last.x,last.y,2,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
+    ctx.save();
+    ctx.beginPath();ctx.arc(last.x,last.y,2,0,Math.PI*2);
+    ctx.fillStyle='#ffffff';ctx.globalAlpha=0.7;ctx.fill();
     ctx.restore();
+
+    // Label valeur finale — texte seul, sobre
     if(last.v!==null){
-      const lbl=last.v+'%';
-      const tw=ctx.measureText(lbl).width+8;
-      const bx=Math.min(last.x+5,W-tw-4),by=last.y-8;
-      ctx.fillStyle=e.hex+'20';ctx.strokeStyle=e.hex+'55';ctx.lineWidth=0.5;
-      ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,by,tw,11,2);else ctx.rect(bx,by,tw,11);
-      ctx.fill();ctx.stroke();
-      ctx.fillStyle=e.hex;ctx.font='bold 7px monospace';ctx.textAlign='left';
-      ctx.fillText(lbl,bx+4,by+8);
+      ctx.fillStyle=e.hex+'bb';ctx.font='600 7px "Space Mono",monospace';ctx.textAlign='left';
+      ctx.fillText(last.v+'%',Math.min(last.x+5,W-20),last.y+3);
     }
   });
 }
