@@ -2023,8 +2023,9 @@ function drawHexDash(entData){
     hexPath(p.x,p.y,RS);
     ctx.save();ctx.clip();
     hexPath(p.x,p.y,RS);
-    const sg=ctx.createRadialGradient(p.x,p.y-RS*0.2,0,p.x,p.y,RS);
-    sg.addColorStop(0,'#0c1014');sg.addColorStop(1,'#040404');
+    const crgb=hex2rgb(col);
+    const sg=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,RS);
+    sg.addColorStop(0,`rgba(${crgb},0.15)`);sg.addColorStop(1,'#080808');
     ctx.fillStyle=sg;ctx.fill();
     ctx.strokeStyle='rgba(255,255,255,0.016)';ctx.lineWidth=0.5;
     for(let ly=p.y-RS;ly<p.y+RS;ly+=1.8){ctx.beginPath();ctx.moveTo(p.x-RS,ly);ctx.lineTo(p.x+RS,ly);ctx.stroke();}
@@ -2043,9 +2044,9 @@ function drawHexDash(entData){
     }
 
     // ── 6. LABELS ──
-    ctx.fillStyle=col;ctx.font='700 7px monospace';ctx.textAlign='center';ctx.fillText(d.e.name,p.x,p.y-5);
+    ctx.fillStyle='#cccccc';ctx.font='700 7px monospace';ctx.textAlign='center';ctx.fillText(d.e.name,p.x,p.y-8);
     ctx.fillStyle='#ffffff';ctx.font='800 12px monospace';ctx.fillText(d.conv+'%',p.x,p.y+4);
-    ctx.fillStyle=col;ctx.font='700 6px monospace';ctx.fillText(d.calls+' calls',p.x,p.y+13);
+    ctx.fillStyle='#cccccc';ctx.font='700 6px monospace';ctx.fillText(d.calls+' calls',p.x,p.y+14);
   });
   ctx.restore();
 }
