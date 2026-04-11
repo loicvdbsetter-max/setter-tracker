@@ -2759,19 +2759,21 @@ function drawConvChart(convData,dim){
   const H=canvas.getBoundingClientRect().height||canvas.offsetHeight||wrap&&wrap.getBoundingClientRect().height||wrap&&wrap.offsetHeight||200;
   if(W<10||H<10)return;
   if(!canvas.style.width||canvas.style.width==='100%')canvas.style.width=W+'px';
-  if(drawConvChart._lastW&&(Math.abs(drawConvChart._lastW-W)>20||Math.abs(drawConvChart._lastH-H)>20))drawConvChart._lastW=null;
-  drawConvChart._lastW=W;drawConvChart._lastH=H;
+  if(drawConvChart._lW&&(Math.abs(drawConvChart._lW-W)>20||Math.abs(drawConvChart._lH-H)>20))drawConvChart._lW=null;
+  drawConvChart._lW=W;drawConvChart._lH=H;
   const dpr=window.devicePixelRatio||1;
   canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);
-  const ctx=canvas.getContext('2d');
-  ctx.scale(dpr,dpr);
+  const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
 
-  // Palette cohérente avec le dashboard (or mat + acier)
-  const GOLD='rgba(200,160,80,';
-  const pL=36,pR=56,pT=14,pB=16;
+  // ── Constantes palette ───────────────────────────────────────────
+  const GOLD='#C2A87D'; // Or Vieilli technique
+  const GR=194,GG=168,GB=125;
+  const pL=36,pR=60,pT=20,pB=16;
   const cW=W-pL-pR,cH=H-pT-pB;
 
-  // Helper bezier lissé
+  // ── Helpers ──────────────────────────────────────────────────────
+  function rgb(h){return[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
+  function steel(h,m=0.38){const[r,g,b]=rgb(h);return[Math.round(r*(1-m)+138*m),Math.round(g*(1-m)+154*m),Math.round(b*(1-m)+170*m)];}
   function bz(pts,dy=0){
     if(!pts.length)return;
     ctx.moveTo(pts[0].x,pts[0].y+dy);
@@ -2781,123 +2783,179 @@ function drawConvChart(convData,dim){
     }
   }
 
-  // Helper rgb depuis hex
-  function rgb(hex){return [parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)];}
-  function rga(hex,a){const[r,g,b]=rgb(hex);return `rgba(${r},${g},${b},${a})`;}
-  // Couleur "acier froid" — mélange la couleur entrepreneur avec #8a9aaa (acier)
-  function steel(hex,blend=0.45){
-    const[r,g,b]=rgb(hex);
-    return[Math.round(r*(1-blend)+138*blend),Math.round(g*(1-blend)+154*blend),Math.round(b*(1-blend)+170*blend)];
+  // ── Générateur de textures ───────────────────────────────────────
+  function mkTex(type,sr,sg,sb){
+    const pc=document.createElement('canvas'),pctx=pc.getContext('2d');
+    if(type==='braid'){
+      // Acier bruni tressé — diagonales croisées
+      pc.width=8;pc.height=8;
+      pctx.fillStyle=`rgba(${sr},${sg},${sb},0.07)`;pctx.fillRect(0,0,8,8);
+      // Diagonale dominante NW→SE
+      pctx.strokeStyle=`rgba(${sr},${sg},${sb},0.9)`;pctx.lineWidth=1.4;pctx.lineCap='square';
+      for(let o=-8;o<=16;o+=4){pctx.beginPath();pctx.moveTo(o,0);pctx.lineTo(o+8,8);pctx.stroke();}
+      // Contre-diagonale NE→SW (plus fine)
+      pctx.strokeStyle=`rgba(${sr},${sg},${sb},0.32)`;pctx.lineWidth=0.7;
+      for(let o=-8;o<=16;o+=4){pctx.beginPath();pctx.moveTo(o+8,0);pctx.lineTo(o,8);pctx.stroke();}
+      // Reflet de tresse — horizontal central fin
+      pctx.strokeStyle=`rgba(255,255,255,0.08)`;pctx.lineWidth=0.4;
+      pctx.beginPath();pctx.moveTo(0,4);pctx.lineTo(8,4);pctx.stroke();
+    } else if(type==='dots'){
+      // Micro-dots matrix condensés
+      pc.width=4;pc.height=4;
+      pctx.clearRect(0,0,4,4);
+      // Dot central
+      pctx.beginPath();pctx.arc(2,2,0.95,0,Math.PI*2);
+      pctx.fillStyle=`rgba(${sr},${sg},${sb},0.88)`;pctx.fill();
+      // Micro-dot coin (demi-intensité)
+      [[0,0],[4,0],[0,4],[4,4]].forEach(([x,y])=>{
+        pctx.beginPath();pctx.arc(x,y,0.4,0,Math.PI*2);
+        pctx.fillStyle=`rgba(${sr},${sg},${sb},0.28)`;pctx.fill();
+      });
+    } else if(type==='coil'){
+      // Micro-coils — fil spiralé
+      pc.width=14;pc.height=7;
+      pctx.clearRect(0,0,14,7);
+      // Fil principal spirale
+      pctx.strokeStyle=`rgba(${sr},${sg},${sb},0.92)`;pctx.lineWidth=1.1;pctx.lineCap='round';
+      pctx.beginPath();
+      for(let x=0;x<=14;x+=0.25){const y=3.5+Math.sin(x/14*Math.PI*2)*2.1;x===0?pctx.moveTo(x,y):pctx.lineTo(x,y);}
+      pctx.stroke();
+      // Ombre du dessous du fil
+      pctx.strokeStyle=`rgba(${sr},${sg},${sb},0.28)`;pctx.lineWidth=0.6;
+      pctx.beginPath();
+      for(let x=0;x<=14;x+=0.25){const y=3.5+Math.sin(x/14*Math.PI*2+Math.PI)*2.1;x===0?pctx.moveTo(x,y):pctx.lineTo(x,y);}
+      pctx.stroke();
+      // Reflet blanc sur la partie haute du coil
+      pctx.strokeStyle='rgba(255,255,255,0.1)';pctx.lineWidth=0.4;
+      pctx.beginPath();
+      for(let x=0;x<=14;x+=0.25){const y=3.5+Math.sin(x/14*Math.PI*2)*2.1-0.6;x===0?pctx.moveTo(x,y):pctx.lineTo(x,y);}
+      pctx.stroke();
+    } else {
+      // Hatch — tirets horizontaux (Jorann)
+      pc.width=7;pc.height=5;
+      pctx.clearRect(0,0,7,5);
+      pctx.strokeStyle=`rgba(${sr},${sg},${sb},0.85)`;pctx.lineWidth=0.9;
+      pctx.beginPath();pctx.moveTo(0,1.5);pctx.lineTo(7,1.5);pctx.stroke();
+      pctx.strokeStyle=`rgba(${sr},${sg},${sb},0.28)`;pctx.lineWidth=0.5;
+      pctx.beginPath();pctx.moveTo(0,4);pctx.lineTo(7,4);pctx.stroke();
+    }
+    return ctx.createPattern(pc,'repeat');
   }
 
-  // Données
+  // ── Données ──────────────────────────────────────────────────────
   const allVals=convData.flatMap(d=>d.pts.filter(v=>v!==null&&v>0));
   const dataMax=allVals.length>0?Math.max(...allVals):30;
   const maxV=dataMax<=30?40:dataMax<=60?70:dataMax<=90?100:110;
+  const TMAP={'G':'braid','O':'dots','M':'coil','J':'hatch'};
+  const series=convData.map(({e,pts})=>{
+    const sc=steel(e.hex,0.35);
+    return{e,sc,tex:mkTex(TMAP[e.key]||'hatch',sc[0],sc[1],sc[2]),
+      vPts:pts.map((v,i)=>({x:pL+i/(dim-1||1)*cW,y:v!==null?pT+cH-Math.min(v,maxV)/maxV*cH:null,v})).filter(p=>p.y!==null)};
+  }).filter(s=>s.vPts.length>=2);
 
-  const series=convData.map(({e,pts})=>({
-    e,
-    sc:steel(e.hex,0.38),
-    vPts:pts.map((v,i)=>({x:pL+i/(dim-1||1)*cW,y:v!==null?pT+cH-Math.min(v,maxV)/maxV*cH:null,v})).filter(p=>p.y!==null)
-  })).filter(s=>s.vPts.length>=2);
-
-  // === FOND ===
+  // ── FOND #050505 ─────────────────────────────────────────────────
   ctx.fillStyle='#050505';ctx.fillRect(0,0,W,H);
 
-  // === GRILLE ===
-  const gs=22;
-  ctx.strokeStyle=GOLD+'0.045)';ctx.lineWidth=0.5;
-  for(let x=pL;x<=pL+cW;x+=gs){ctx.beginPath();ctx.moveTo(x,pT);ctx.lineTo(x,pT+cH);ctx.stroke();}
-  for(let y=pT;y<=pT+cH;y+=gs){ctx.beginPath();ctx.moveTo(pL,y);ctx.lineTo(pL+cW,y);ctx.stroke();}
+  // ── QUADRILLAGE TACTIQUE #111111 ─────────────────────────────────
+  ctx.strokeStyle='#111111';ctx.lineWidth=0.5;
+  const gs=18;
+  for(let x=0;x<W;x+=gs){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=gs){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
 
-  // === LIGNES DE RÉFÉRENCE + LABELS Y ===
+  // ── LIGNES DE RÉFÉRENCE HORIZONTALES + LABELS Y ─────────────────
   const steps=maxV<=40?[0,10,20,30,40]:maxV<=70?[0,20,40,60]:maxV<=100?[0,25,50,75,100]:[0,25,50,75,100];
-  ctx.font='600 6.5px "Space Mono",monospace';ctx.textAlign='right';
+  ctx.font=`700 6.5px "Space Mono",monospace`;
   steps.forEach(v=>{
     const y=pT+cH-v/maxV*cH;
-    if(v>0){
-      ctx.beginPath();ctx.strokeStyle=GOLD+'0.08)';ctx.lineWidth=0.4;ctx.setLineDash([1,6]);
-      ctx.moveTo(pL,y);ctx.lineTo(pL+cW,y);ctx.stroke();ctx.setLineDash([]);
-    }
-    ctx.fillStyle=GOLD+'0.38)';ctx.fillText(v+'%',pL-5,y+2.5);
+    if(v>0){ctx.beginPath();ctx.strokeStyle=`rgba(${GR},${GG},${GB},0.08)`;ctx.lineWidth=0.4;ctx.setLineDash([1,7]);ctx.moveTo(pL,y);ctx.lineTo(pL+cW,y);ctx.stroke();ctx.setLineDash([]);}
+    ctx.fillStyle=`rgba(${GR},${GG},${GB},0.42)`;ctx.textAlign='right';ctx.fillText(v+'%',pL-4,y+2.5);
   });
 
-  // Axe X — numéros de jours
-  ctx.font='600 6px "Space Mono",monospace';ctx.textAlign='center';ctx.fillStyle=GOLD+'0.25)';
+  // Axe X — jours
+  ctx.font=`600 6px "Space Mono",monospace`;ctx.fillStyle=`rgba(${GR},${GG},${GB},0.22)`;ctx.textAlign='center';
   const xStep=Math.ceil(dim/6);
-  for(let d=1;d<=dim;d+=xStep){
-    const x=pL+(d-1)/(dim-1||1)*cW;
-    ctx.fillText(d,x,pT+cH+11);
-  }
+  for(let d=1;d<=dim;d+=xStep){ctx.fillText(d,pL+(d-1)/(dim-1||1)*cW,pT+cH+11);}
 
-  // Ligne "aujourd'hui"
-  const now=new Date();
-  if(now.getFullYear()===cY&&now.getMonth()===cM&&dim>1){
-    const tx=pL+(Math.min(now.getDate(),dim)-1)/(dim-1)*cW;
-    ctx.strokeStyle=GOLD+'0.2)';ctx.lineWidth=0.6;ctx.setLineDash([2,5]);
+  // Ligne aujourd'hui
+  const dn=new Date();
+  if(dn.getFullYear()===cY&&dn.getMonth()===cM&&dim>1){
+    const tx=pL+(Math.min(dn.getDate(),dim)-1)/(dim-1)*cW;
+    ctx.strokeStyle=`rgba(${GR},${GG},${GB},0.16)`;ctx.lineWidth=0.6;ctx.setLineDash([2,5]);
     ctx.beginPath();ctx.moveTo(tx,pT);ctx.lineTo(tx,pT+cH);ctx.stroke();ctx.setLineDash([]);
-    ctx.font='600 6px "Space Mono",monospace';ctx.textAlign='center';
-    ctx.fillStyle=GOLD+'0.28)';ctx.fillText('auj.',tx,pT+cH+11);
   }
 
-  // === COURBES ===
-  series.forEach(({e,sc,vPts})=>{
+  // ── COURBES TEXTURÉES ────────────────────────────────────────────
+  series.forEach(({e,sc,tex,vPts})=>{
     const[sr,sg,sb]=sc;
-
-    // Aire très légère
     ctx.save();ctx.beginPath();ctx.rect(pL,pT,cW,cH);ctx.clip();
-    const ag=ctx.createLinearGradient(0,pT,0,pT+cH);
-    ag.addColorStop(0,`rgba(${sr},${sg},${sb},0.12)`);
-    ag.addColorStop(1,`rgba(${sr},${sg},${sb},0)`);
-    ctx.beginPath();bz(vPts);
-    ctx.lineTo(vPts[vPts.length-1].x,pT+cH);ctx.lineTo(vPts[0].x,pT+cH);ctx.closePath();
-    ctx.fillStyle=ag;ctx.fill();ctx.restore();
 
-    // Ligne principale — fine et précise
-    ctx.save();ctx.beginPath();ctx.rect(pL,pT,cW,cH);ctx.clip();
+    // Couche 1 : ombre dure (profondeur)
     ctx.beginPath();bz(vPts);
-    ctx.strokeStyle=`rgba(${sr},${sg},${sb},0.85)`;ctx.lineWidth=1.5;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();
-    // Micro-reflet : ligne décalée plus claire
-    ctx.beginPath();bz(vPts,-0.7);
-    ctx.strokeStyle=`rgba(255,255,255,0.12)`;ctx.lineWidth=0.5;ctx.stroke();
+    ctx.strokeStyle='rgba(0,0,0,0.75)';ctx.lineWidth=9;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();
+
+    // Couche 2 : texture principale
+    ctx.beginPath();bz(vPts);
+    ctx.strokeStyle=tex;ctx.lineWidth=7;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();
+
+    // Couche 3 : fil central laser — trait dur et net, ZÉRO glow
+    ctx.beginPath();bz(vPts);
+    ctx.strokeStyle=`rgba(${sr},${sg},${sb},0.55)`;ctx.lineWidth=0.8;ctx.stroke();
+
     ctx.restore();
+  });
 
-    // Point terminal
-    const last=vPts[vPts.length-1];
-    ctx.beginPath();ctx.arc(last.x,last.y,2.5,0,Math.PI*2);
-    ctx.fillStyle=`rgba(${sr},${sg},${sb},1)`;ctx.fill();
-    ctx.beginPath();ctx.arc(last.x,last.y,1,0,Math.PI*2);
-    ctx.fillStyle='rgba(255,255,255,0.7)';ctx.fill();
-
-    // Badge terminal — sobre
-    if(last.v!==null){
-      ctx.font='700 7px "Space Mono",monospace';
-      const lbl=last.v+'%';
+  // ── BADGES TERMINAUX STAGGERÉS ───────────────────────────────────
+  ctx.font=`700 7px "Space Mono",monospace`;
+  const placed=[];
+  series
+    .filter(s=>s.vPts.length&&s.vPts[s.vPts.length-1].v!==null)
+    .sort((a,b)=>a.vPts[a.vPts.length-1].y-b.vPts[b.vPts.length-1].y)
+    .forEach(({e,sc,vPts})=>{
+      const[sr,sg,sb]=sc;
+      const last=vPts[vPts.length-1];
+      const lbl=(last.v+'%').toUpperCase();
       const tw=ctx.measureText(lbl).width;
-      const bx=last.x+7,by=last.y-5.5,bw=tw+8,bh=11;
-      ctx.fillStyle='rgba(8,8,8,0.92)';
-      ctx.strokeStyle=`rgba(${sr},${sg},${sb},0.45)`;ctx.lineWidth=0.7;
+      const bw=tw+10,bh=11;
+      const bx=Math.min(last.x+8,W-bw-3);
+      let by=last.y-5;
+      // Stagger : éviter chevauchement
+      let tries=12;
+      while(tries-->0&&placed.some(p=>Math.abs(p-by)<bh+2))by-=bh+3;
+      placed.push(by);
+      // Dot de terminaison
+      ctx.beginPath();ctx.arc(last.x,last.y,2.5,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${sr},${sg},${sb},0.95)`;ctx.fill();
+      ctx.beginPath();ctx.arc(last.x,last.y,0.9,0,Math.PI*2);
+      ctx.fillStyle='rgba(220,220,220,0.8)';ctx.fill();
+      // Tiret de connexion si décalé
+      if(Math.abs(by+bh/2-last.y)>4){
+        ctx.strokeStyle=`rgba(${sr},${sg},${sb},0.25)`;ctx.lineWidth=0.5;ctx.setLineDash([1,3]);
+        ctx.beginPath();ctx.moveTo(last.x+4,last.y);ctx.lineTo(bx,by+bh/2);ctx.stroke();ctx.setLineDash([]);
+      }
+      // Badge fond
+      ctx.fillStyle='rgba(8,8,8,0.94)';
+      ctx.strokeStyle=`rgba(${sr},${sg},${sb},0.5)`;ctx.lineWidth=0.8;
       ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,by,bw,bh,1.5);else ctx.rect(bx,by,bw,bh);
       ctx.fill();ctx.stroke();
-      ctx.fillStyle=`rgba(${sr},${sg},${sb},0.9)`;ctx.textAlign='left';
-      ctx.fillText(lbl,bx+4,by+bh-3);
-    }
-  });
+      // Texte Or Vieilli UPPERCASE
+      ctx.fillStyle=GOLD;ctx.textAlign='left';
+      ctx.fillText(lbl,bx+5,by+bh-3);
+    });
 
-  // === LÉGENDE ===
-  ctx.font='600 6.5px "Space Mono",monospace';
+  // ── LÉGENDE ──────────────────────────────────────────────────────
+  ctx.font=`700 6.5px "Space Mono",monospace`;
   let lx=pL+cW;
   [...series].reverse().forEach(({e,sc})=>{
     const[sr,sg,sb]=sc;
-    const tw=ctx.measureText(e.name).width+14;
+    const name=e.name.toUpperCase();
+    const tw=ctx.measureText(name).width+16;
     lx-=tw;
-    ctx.beginPath();ctx.arc(lx+4,pT-4,2.5,0,Math.PI*2);
+    ctx.beginPath();ctx.arc(lx+4,pT-6,2.5,0,Math.PI*2);
     ctx.fillStyle=`rgba(${sr},${sg},${sb},0.9)`;ctx.fill();
-    ctx.fillStyle=GOLD+'0.45)';ctx.textAlign='left';
-    ctx.fillText(e.name,lx+10,pT-1.5);
+    ctx.fillStyle=GOLD;ctx.textAlign='left';
+    ctx.fillText(name,lx+11,pT-3);
   });
 }
-
 
 // ===== JOURNALIER =====
 async function renderJour(){
