@@ -2927,6 +2927,8 @@ function drawConvChart(convData,dim){
   const dpr=window.devicePixelRatio||1;
   canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);
   const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
+  // ── Zéro shadow résiduel ─────────────────────────────────────────
+  ctx.shadowBlur=0;ctx.shadowColor='transparent';
 
   // ── Constantes palette ───────────────────────────────────────────
   const GOLD='#C2A87D'; // Or Vieilli technique
@@ -3027,15 +3029,16 @@ function drawConvChart(convData,dim){
 
   // ── LIGNES DE RÉFÉRENCE HORIZONTALES + LABELS Y ─────────────────
   const steps=maxV<=40?[0,10,20,30,40]:maxV<=70?[0,20,40,60]:maxV<=100?[0,25,50,75,100]:[0,25,50,75,100];
-  ctx.font=`700 6.5px "Space Mono",monospace`;
+  ctx.font=`700 8px "Space Mono",monospace`;
   steps.forEach(v=>{
     const y=pT+cH-v/maxV*cH;
-    if(v>0){ctx.beginPath();ctx.strokeStyle=`rgba(${GR},${GG},${GB},0.08)`;ctx.lineWidth=0.4;ctx.setLineDash([1,7]);ctx.moveTo(pL,y);ctx.lineTo(pL+cW,y);ctx.stroke();ctx.setLineDash([]);}
-    ctx.fillStyle=`rgba(${GR},${GG},${GB},0.42)`;ctx.textAlign='right';ctx.fillText(v+'%',pL-4,y+2.5);
+    if(v>0){ctx.beginPath();ctx.strokeStyle=`rgba(${GR},${GG},${GB},0.1)`;ctx.lineWidth=0.5;ctx.setLineDash([2,6]);ctx.moveTo(pL,y);ctx.lineTo(pL+cW,y);ctx.stroke();ctx.setLineDash([]);}
+    ctx.shadowBlur=0;
+    ctx.fillStyle=`rgba(${GR},${GG},${GB},0.65)`;ctx.textAlign='right';ctx.fillText(v+'%',pL-4,y+3);
   });
 
   // Axe X — jours
-  ctx.font=`600 6px "Space Mono",monospace`;ctx.fillStyle=`rgba(${GR},${GG},${GB},0.22)`;ctx.textAlign='center';
+  ctx.font=`600 7px "Space Mono",monospace`;ctx.fillStyle=`rgba(${GR},${GG},${GB},0.35)`;ctx.textAlign='center';
   const xStep=Math.ceil(dim/6);
   for(let d=1;d<=dim;d+=xStep){ctx.fillText(d,pL+(d-1)/(dim-1||1)*cW,pT+cH+11);}
 
@@ -3047,71 +3050,78 @@ function drawConvChart(convData,dim){
     ctx.beginPath();ctx.moveTo(tx,pT);ctx.lineTo(tx,pT+cH);ctx.stroke();ctx.setLineDash([]);
   }
 
-  // ── COURBES TEXTURÉES ────────────────────────────────────────────
-  series.forEach(({e,sc,tex,vPts})=>{
-    const[sr,sg,sb]=sc;
+  // ── COURBES LASER — 2px solide, zéro texture, zéro glow ─────────
+  series.forEach(({e,vPts})=>{
+    const[cr,cg,cb]=rgb(e.hex); // couleur réelle entrepreneur, vive
     ctx.save();ctx.beginPath();ctx.rect(pL,pT,cW,cH);ctx.clip();
+    ctx.shadowBlur=0;ctx.shadowColor='transparent';
 
-    // Couche 1 : texture — net, aucun halo
+    // Trait principal 2px — net comme une gravure laser
     ctx.beginPath();bz(vPts);
-    ctx.strokeStyle=tex;ctx.lineWidth=6;ctx.lineCap='butt';ctx.lineJoin='miter';ctx.stroke();
+    ctx.strokeStyle=`rgba(${cr},${cg},${cb},0.92)`;
+    ctx.lineWidth=2;ctx.lineCap='butt';ctx.lineJoin='bevel';
+    ctx.stroke();
 
-    // Couche 2 : fil central gravé laser — 0.8px dur
-    ctx.beginPath();bz(vPts);
-    ctx.strokeStyle=`rgba(${sr},${sg},${sb},0.6)`;ctx.lineWidth=0.8;ctx.lineCap='butt';ctx.stroke();
+    // Reflet central ultra-fin 0.5px blanc — donne du relief sans glow
+    ctx.beginPath();bz(vPts,-0.5);
+    ctx.strokeStyle='rgba(255,255,255,0.18)';
+    ctx.lineWidth=0.5;ctx.lineCap='butt';
+    ctx.stroke();
 
     ctx.restore();
   });
 
-  // ── BADGES TERMINAUX STAGGERÉS ───────────────────────────────────
-  ctx.font=`700 7px "Space Mono",monospace`;
+  // ── BADGES TERMINAUX STAGGERÉS — lisibles, nets ──────────────────
+  ctx.font=`700 8.5px "Space Mono",monospace`;
   const placed=[];
   series
     .filter(s=>s.vPts.length&&s.vPts[s.vPts.length-1].v!==null)
     .sort((a,b)=>a.vPts[a.vPts.length-1].y-b.vPts[b.vPts.length-1].y)
-    .forEach(({e,sc,vPts})=>{
-      const[sr,sg,sb]=sc;
+    .forEach(({e,vPts})=>{
+      const[cr,cg,cb]=rgb(e.hex);
       const last=vPts[vPts.length-1];
-      const lbl=(last.v+'%').toUpperCase();
+      const lbl=(last.v+'%');
+      ctx.font=`700 8.5px "Space Mono",monospace`;
       const tw=ctx.measureText(lbl).width;
-      const bw=tw+10,bh=11;
+      const bw=tw+10,bh=13;
       const bx=Math.min(last.x+8,W-bw-3);
-      let by=last.y-5;
-      // Stagger : éviter chevauchement
-      let tries=12;
-      while(tries-->0&&placed.some(p=>Math.abs(p-by)<bh+2))by-=bh+3;
+      let by=last.y-6;
+      let tries=14;
+      while(tries-->0&&placed.some(p=>Math.abs(p-by)<bh+3))by-=bh+4;
       placed.push(by);
-      // Dot de terminaison
-      ctx.beginPath();ctx.arc(last.x,last.y,2.5,0,Math.PI*2);
-      ctx.fillStyle=`rgba(${sr},${sg},${sb},0.95)`;ctx.fill();
-      ctx.beginPath();ctx.arc(last.x,last.y,0.9,0,Math.PI*2);
-      ctx.fillStyle='rgba(220,220,220,0.8)';ctx.fill();
+      // Dot de terminaison net
+      ctx.shadowBlur=0;
+      ctx.beginPath();ctx.arc(last.x,last.y,3,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${cr},${cg},${cb},1)`;ctx.fill();
+      ctx.beginPath();ctx.arc(last.x,last.y,1.2,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,0.9)';ctx.fill();
       // Tiret de connexion si décalé
-      if(Math.abs(by+bh/2-last.y)>4){
-        ctx.strokeStyle=`rgba(${sr},${sg},${sb},0.25)`;ctx.lineWidth=0.5;ctx.setLineDash([1,3]);
+      if(Math.abs(by+bh/2-last.y)>6){
+        ctx.strokeStyle=`rgba(${cr},${cg},${cb},0.3)`;ctx.lineWidth=0.6;ctx.setLineDash([1,3]);
         ctx.beginPath();ctx.moveTo(last.x+4,last.y);ctx.lineTo(bx,by+bh/2);ctx.stroke();ctx.setLineDash([]);
       }
-      // Badge fond
-      ctx.fillStyle='rgba(8,8,8,0.94)';
-      ctx.strokeStyle=`rgba(${sr},${sg},${sb},0.5)`;ctx.lineWidth=0.8;
-      ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,by,bw,bh,1.5);else ctx.rect(bx,by,bw,bh);
+      // Badge fond sombre net
+      ctx.fillStyle='rgba(6,6,10,0.96)';
+      ctx.strokeStyle=`rgba(${cr},${cg},${cb},0.7)`;ctx.lineWidth=1;
+      ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,by,bw,bh,2);else ctx.rect(bx,by,bw,bh);
       ctx.fill();ctx.stroke();
-      // Texte Or Vieilli UPPERCASE
-      ctx.fillStyle=GOLD;ctx.textAlign='left';
+      // Texte blanc net
+      ctx.fillStyle='rgba(220,230,240,0.95)';ctx.textAlign='left';
       ctx.fillText(lbl,bx+5,by+bh-3);
     });
 
-  // ── LÉGENDE ──────────────────────────────────────────────────────
-  ctx.font=`700 6.5px "Space Mono",monospace`;
+  // ── LÉGENDE — noms lisibles ───────────────────────────────────────
+  ctx.font=`700 8px "Space Mono",monospace`;
   let lx=pL+cW;
-  [...series].reverse().forEach(({e,sc})=>{
-    const[sr,sg,sb]=sc;
+  [...series].reverse().forEach(({e})=>{
+    const[cr,cg,cb]=rgb(e.hex);
     const name=e.name.toUpperCase();
     const tw=ctx.measureText(name).width+16;
     lx-=tw;
-    ctx.beginPath();ctx.arc(lx+4,pT-6,2.5,0,Math.PI*2);
-    ctx.fillStyle=`rgba(${sr},${sg},${sb},0.9)`;ctx.fill();
-    ctx.fillStyle=GOLD;ctx.textAlign='left';
+    ctx.shadowBlur=0;
+    ctx.beginPath();ctx.arc(lx+4,pT-6,3,0,Math.PI*2);
+    ctx.fillStyle=`rgba(${cr},${cg},${cb},1)`;ctx.fill();
+    ctx.fillStyle='rgba(200,215,230,0.9)';ctx.textAlign='left';
     ctx.fillText(name,lx+11,pT-3);
   });
 }
