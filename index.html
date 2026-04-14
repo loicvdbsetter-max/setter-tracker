@@ -1665,137 +1665,138 @@ body::before{display:none !important;}
   -webkit-backdrop-filter:none !important;
 }
 
-/* ===== NANO BANANA — DESIGN PREMIUM ===== */
+/* ===== RELIEF MONOLITHIQUE — USINAGE CHIRURGICAL ===== */
 
-/* Corps : texture métal brossé directionnel */
+/* Métal brossé noir : stries verticales fines */
 body{
   background:
-    repeating-linear-gradient(88deg,transparent 0,transparent 3px,rgba(255,255,255,0.007) 3px,rgba(255,255,255,0.007) 4px),
-    repeating-linear-gradient(0deg,transparent 0,transparent 38px,rgba(194,168,125,0.02) 38px,rgba(194,168,125,0.02) 39px),
-    linear-gradient(168deg,#111720 0%,#080c14 42%,#050709 100%) !important;
+    repeating-linear-gradient(90deg,
+      transparent 0,transparent 2px,
+      rgba(255,255,255,0.013) 2px,rgba(255,255,255,0.013) 3px),
+    #07080c !important;
   background-attachment:fixed !important;
 }
 
-/* Espacement original — pas d'élargissement */
+/* Aération tactique : 20px entre tous les blocs */
 .dash-page{padding:20px !important;}
-.kpi-row{gap:10px !important;margin-bottom:12px !important;}
-.mid-row{gap:10px !important;margin-bottom:12px !important;}
-.ents-row{gap:12px !important;margin-bottom:12px !important;}
-.bottom-row{gap:10px !important;}
+.kpi-row{gap:20px !important;margin-bottom:20px !important;}
+.mid-row{gap:20px !important;margin-bottom:20px !important;}
+.ents-row{gap:20px !important;margin-bottom:20px !important;}
+.bottom-row{gap:20px !important;}
 
-/* Cartes smoked glass : fond sombre dégradé + bord or + inset */
+/* Encastrement monolithique : verre fumé dans métal massif */
 .kpi-card,.kpi-ring-card,.graph-card,.funnel-card,
-.obj-card-dash,.rev-card-dash,.lsum-card,.tasks-wrap{
-  background:linear-gradient(150deg,#090e1a 0%,#060a12 55%,#050709 100%) !important;
-  border:1px solid rgba(194,168,125,0.32) !important;
-  border-radius:8px !important;
+.dash-ent-card,.obj-card-dash,.rev-card-dash,.lsum-card,.tasks-wrap{
+  background:
+    repeating-linear-gradient(90deg,
+      transparent 0,transparent 2px,
+      rgba(255,255,255,0.008) 2px,rgba(255,255,255,0.008) 3px),
+    #050709 !important;
+  border:1px solid rgba(255,255,255,0.05) !important;
+  border-radius:4px !important;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.055),
-    inset 0 -1px 0 rgba(0,0,0,0.45),
-    inset 1px 0 0 rgba(255,255,255,0.015),
-    0 8px 32px rgba(0,0,0,0.6),
-    0 0 0 1px rgba(194,168,125,0.07) !important;
+    inset 0 0 10px rgba(0,0,0,1),
+    inset 0 3px 8px rgba(0,0,0,0.9),
+    inset -1px -1px 2px rgba(255,255,255,0.025),
+    0 1px 0 rgba(255,255,255,0.07) !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  clip-path:none !important;
+  filter:none !important;
+  overflow:hidden !important;
 }
 
-/* ═══ VRAI HEXAGONE — compact + glow fort ═══ */
+/* dash-ent-card : rectangulaire, relief, pas de bord plat coloré */
 .dash-ent-card{
-  clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%) !important;
-  background:var(--c) !important;
-  border:none !important;
-  border-radius:0 !important;
-  height:230px !important;
-  padding:0 !important;
+  padding:12px !important;
+  height:auto !important;
   position:relative !important;
-  overflow:hidden !important;
-  box-shadow:none !important;
-  filter:
-    drop-shadow(0 0 6px rgba(var(--cr),1))
-    drop-shadow(0 0 18px rgba(var(--cr),0.65))
-    drop-shadow(0 0 38px rgba(var(--cr),0.3)) !important;
-  isolation:auto !important;
 }
 .dash-ent-card:hover{
-  filter:
-    drop-shadow(0 0 8px rgba(var(--cr),1))
-    drop-shadow(0 0 28px rgba(var(--cr),0.85))
-    drop-shadow(0 0 55px rgba(var(--cr),0.45)) !important;
+  box-shadow:
+    inset 0 0 10px rgba(0,0,0,1),
+    inset 0 2px 6px rgba(0,0,0,0.85),
+    0 0 0 1px rgba(var(--cr),0.45),
+    0 0 14px rgba(var(--cr),0.2) !important;
 }
 
-/* Fond sombre intérieur — bord coloré de 10px */
+/* Bandeau LED laser : accent concentré EN HAUT uniquement */
 .dash-ent-card.gold-corner::before{
   content:'' !important;
   position:absolute !important;
-  inset:10px !important;
-  clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%) !important;
-  background:radial-gradient(ellipse at 50% 38%,#0e1828 0%,#060a14 55%,#040709 100%) !important;
-  z-index:0 !important;
-  width:unset !important;height:unset !important;
+  top:0 !important;
+  left:10% !important;
+  right:10% !important;
+  bottom:unset !important;
+  width:unset !important;
+  height:2px !important;
+  background:var(--c) !important;
+  box-shadow:
+    0 0 6px var(--c),
+    0 0 18px var(--c),
+    0 0 35px rgba(var(--cr),0.5) !important;
   opacity:1 !important;
+  z-index:5 !important;
+  clip-path:none !important;
+  border-radius:0 !important;
 }
 .dash-ent-card.gold-corner::after{display:none !important;}
 
-/* Wrapper contenu dans la zone large du hex */
+/* Neutraliser hex-content-wrap */
 .hex-content-wrap{
-  position:relative !important;
-  z-index:1 !important;
-  display:flex !important;
-  flex-direction:column !important;
-  align-items:center !important;
-  width:100% !important;
-  height:100% !important;
-  padding:23% 17% 20% !important;
-}
-
-/* Nom entrepreneur */
-.dash-ent-name{
-  text-align:center !important;
-  padding:0 0 5px 0 !important;
-  margin:0 0 6px 0 !important;
-  font-size:0.75rem !important;
-  letter-spacing:2px !important;
-  border-bottom:1px solid rgba(var(--cr),0.3) !important;
-  width:100% !important;
-}
-.dash-ent-body{
+  position:static !important;
+  display:block !important;
+  width:auto !important;
+  height:auto !important;
   padding:0 !important;
-  width:100% !important;
 }
 
-/* Lignes données — compact hex */
+/* Nom : couleur entrepreneur, pas or */
+.dash-ent-name{
+  color:var(--c) !important;
+  -webkit-text-fill-color:var(--c) !important;
+  text-align:left !important;
+  font-size:0.88rem !important;
+  letter-spacing:2px !important;
+  padding:8px 0 6px !important;
+  margin:0 0 8px !important;
+  border-bottom:1px solid rgba(255,255,255,0.06) !important;
+  width:auto !important;
+}
+.dash-ent-body{padding:0 !important;width:auto !important;}
+
+/* Données dures et nettes — 10px lisibles */
 .dash-ent-row{
   display:flex !important;
   justify-content:space-between !important;
-  font-size:7.5px !important;
-  padding:2.5px 0 !important;
-  border-bottom:1px solid rgba(255,255,255,0.05) !important;
+  font-size:10px !important;
+  padding:3.5px 0 !important;
+  border-bottom:1px solid rgba(255,255,255,0.04) !important;
 }
 .dash-ent-lbl{
-  color:rgba(160,185,210,0.55) !important;
-  font-size:7.5px !important;
+  color:rgba(150,178,205,0.55) !important;
+  font-size:10px !important;
   font-family:'Space Mono',monospace !important;
 }
 .dash-ent-val{
-  color:#cdd8e8 !important;
+  color:#dce8f0 !important;
   font-family:'Space Mono',monospace !important;
-  font-size:7.5px !important;
+  font-size:10px !important;
   font-weight:700 !important;
 }
-.dash-ent-call{
-  font-size:7.5px !important;
-  font-weight:700 !important;
-}
+.dash-ent-call{font-size:10px !important;font-weight:700 !important;}
 .dash-ent-bar{
-  margin-top:5px !important;
+  margin-top:6px !important;
   height:2px !important;
-  background:rgba(255,255,255,0.07) !important;
+  background:rgba(255,255,255,0.06) !important;
   border-radius:1px !important;
 }
 .dash-ent-conv{
-  font-size:7.5px !important;
+  font-size:9px !important;
   font-family:'Space Mono',monospace !important;
   font-weight:700 !important;
   margin-top:3px !important;
-  text-align:center !important;
+  text-align:right !important;
   color:rgba(var(--cr),0.8) !important;
 }
 </style>
