@@ -1898,54 +1898,50 @@ body{
   font-family:'Space Mono',monospace !important;
 }
 
-/* Touches de bord militaire : incrustes, discrètes, gravées */
+/* Touches laser : zéro inset shadow, zéro doublage, couleur entrepreneur pure */
 .mbtn-wrap{
   background:transparent !important;
   border:none !important;
   border-radius:0 !important;
   overflow:visible !important;
-  gap:4px !important;
+  gap:5px !important;
   margin-left:8px !important;
 }
-/* Base commune : petit rectangle noir incruste */
 .mminus,
 .mplus{
   width:28px !important;
   height:28px !important;
   border-radius:2px !important;
-  background:#060809 !important;
-  border:1px solid rgba(255,255,255,0.07) !important;
-  border-top-color:rgba(255,255,255,0.13) !important;
-  border-bottom-color:rgba(0,0,0,0.9) !important;
-  box-shadow:
-    inset 0 2px 4px rgba(0,0,0,0.95),
-    inset 0 1px 2px rgba(0,0,0,0.8),
-    0 1px 0 rgba(255,255,255,0.04) !important;
-  color:rgba(194,168,125,0.65) !important;
-  font-size:13px !important;
-  font-weight:300 !important;
+  background:#040404 !important;
+  border:1px solid rgba(255,255,255,0.09) !important;
+  box-shadow:none !important;
+  text-shadow:none !important;
+  -webkit-text-stroke:0 !important;
+  color:var(--c) !important;
+  font-size:16px !important;
+  font-weight:400 !important;
   font-family:'Space Mono',monospace !important;
   line-height:1 !important;
   letter-spacing:0 !important;
-  transition:color 0.1s, box-shadow 0.1s !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  transition:border-color 0.1s, opacity 0.1s !important;
   opacity:1 !important;
 }
-/* Survol : micro-glow couleur entrepreneur, symbole plus net */
 .mminus:hover,
 .mplus:hover{
-  color:rgba(194,168,125,0.95) !important;
-  background:#060809 !important;
-  box-shadow:
-    inset 0 1px 3px rgba(0,0,0,0.8),
-    0 0 0 1px rgba(var(--cr),0.28),
-    0 0 6px rgba(var(--cr),0.1) !important;
-  opacity:1 !important;
+  border-color:rgba(var(--cr),0.55) !important;
+  box-shadow:none !important;
+  background:#040404 !important;
+  color:var(--c) !important;
+  opacity:0.8 !important;
 }
-/* Pression */
 .mminus:active,
 .mplus:active{
-  box-shadow:inset 0 3px 6px rgba(0,0,0,1) !important;
-  transform:scale(0.93) !important;
+  opacity:0.5 !important;
+  transform:scale(0.94) !important;
+  box-shadow:none !important;
 }
 </style>
 
