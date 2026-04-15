@@ -1898,7 +1898,7 @@ body{
   font-family:'Space Mono',monospace !important;
 }
 
-/* Touches laser : zéro inset shadow, zéro doublage, couleur entrepreneur pure */
+/* Touches laser : symbole CSS pur, zéro rendu typographique */
 .mbtn-wrap{
   background:transparent !important;
   border:none !important;
@@ -1916,32 +1916,54 @@ body{
   border:1px solid rgba(255,255,255,0.09) !important;
   box-shadow:none !important;
   text-shadow:none !important;
-  -webkit-text-stroke:0 !important;
-  color:var(--c) !important;
-  font-size:16px !important;
-  font-weight:400 !important;
-  font-family:'Space Mono',monospace !important;
-  line-height:1 !important;
-  letter-spacing:0 !important;
   display:flex !important;
   align-items:center !important;
   justify-content:center !important;
   transition:border-color 0.1s, opacity 0.1s !important;
   opacity:1 !important;
+  position:relative !important;
+  overflow:hidden !important;
+}
+/* Neutralise les anciens pseudo-éléments CSS-drawn des versions précédentes */
+.mminus::before,
+.mplus::before,
+.mplus::after{
+  display:none !important;
+  content:none !important;
+}
+/* + en texte : rendu stable */
+.mplus{
+  color:var(--c) !important;
+  font-size:16px !important;
+  font-weight:400 !important;
+  font-family:'Space Mono',monospace !important;
+  line-height:1 !important;
+}
+/* − tracé CSS pur : ZÉRO dépendance typographique, UN SEUL trait */
+.mminus{
+  color:transparent !important;
+  font-size:0 !important;
+}
+.mminus::after{
+  content:'' !important;
+  display:block !important;
+  width:10px !important;
+  height:1.5px !important;
+  background:var(--c) !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  flex-shrink:0 !important;
 }
 .mminus:hover,
 .mplus:hover{
   border-color:rgba(var(--cr),0.55) !important;
-  box-shadow:none !important;
   background:#040404 !important;
-  color:var(--c) !important;
   opacity:0.8 !important;
 }
 .mminus:active,
 .mplus:active{
   opacity:0.5 !important;
   transform:scale(0.94) !important;
-  box-shadow:none !important;
 }
 </style>
 
