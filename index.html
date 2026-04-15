@@ -1965,6 +1965,87 @@ body{
   opacity:0.5 !important;
   transform:scale(0.94) !important;
 }
+
+/* ===== CAISSONS HEX — ÉTAPE 1 : FORME, MÉTAL, NÉON ===== */
+
+/* Body : métal brossé vertical — stries plus marquées */
+body{
+  background:
+    repeating-linear-gradient(90deg,
+      transparent 0,transparent 1px,
+      rgba(255,255,255,0.022) 1px,rgba(255,255,255,0.022) 2px,
+      transparent 2px,transparent 4px),
+    #04050a !important;
+}
+
+/* Row : espace généreux, hexagones centrés et aérés */
+.ents-row{
+  display:flex !important;
+  flex-wrap:wrap !important;
+  gap:36px !important;
+  justify-content:center !important;
+  align-items:flex-start !important;
+  margin-bottom:24px !important;
+  padding:4px 0 !important;
+}
+
+/* Hexagone caisson — pointy-top, métal noir, relief interne */
+.dash-ent-card{
+  clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%) !important;
+  width:228px !important;
+  height:278px !important;
+  padding:72px 32px 70px !important;
+  background:
+    linear-gradient(to bottom,
+      rgba(var(--cr),0.18) 0%,rgba(var(--cr),0.05) 22%,
+      #030406 38%,#030406 62%,
+      rgba(var(--cr),0.04) 78%,rgba(var(--cr),0.12) 100%),
+    repeating-linear-gradient(90deg,
+      transparent 0,transparent 2px,
+      rgba(255,255,255,0.009) 2px,rgba(255,255,255,0.009) 3px),
+    #030406 !important;
+  border:none !important;
+  border-radius:0 !important;
+  overflow:hidden !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  box-shadow:
+    inset 0 0 50px rgba(0,0,0,1),
+    inset 0 20px 40px rgba(0,0,0,0.97),
+    inset 0 -20px 35px rgba(0,0,0,0.85) !important;
+  filter:
+    drop-shadow(0 0 2px var(--c))
+    drop-shadow(0 0 8px rgba(var(--cr),0.85))
+    drop-shadow(0 0 22px rgba(var(--cr),0.45)) !important;
+  position:relative !important;
+  height:278px !important;
+}
+
+/* Supprime le bandeau LED linéaire : le glow hex le remplace */
+.dash-ent-card.gold-corner::before{
+  display:none !important;
+  content:none !important;
+}
+
+/* Hover : néon amplifié */
+.dash-ent-card:hover{
+  filter:
+    drop-shadow(0 0 4px var(--c))
+    drop-shadow(0 0 14px rgba(var(--cr),1))
+    drop-shadow(0 0 32px rgba(var(--cr),0.6)) !important;
+  box-shadow:
+    inset 0 0 45px rgba(0,0,0,1),
+    inset 0 18px 35px rgba(0,0,0,0.95),
+    inset 0 -18px 30px rgba(0,0,0,0.8) !important;
+}
+
+/* Wrap contenu : z-index au dessus du fond */
+.hex-content-wrap{
+  position:relative !important;
+  display:block !important;
+  padding:0 !important;
+  z-index:1 !important;
+}
 </style>
 
 </head>
