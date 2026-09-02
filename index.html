@@ -676,6 +676,30 @@ body{
     margin: 2px 0 6px !important;
   }
 
+  /* === Sections repliables (mobile uniquement) === */
+  .mobile-fold-summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(0, 212, 255, 0.75);
+    padding: 12px 2px;
+    border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+    margin-bottom: 10px;
+  }
+  .mobile-fold-summary::-webkit-details-marker { display: none; }
+  .mobile-fold-summary::before {
+    content: '▸';
+    font-size: 9px;
+    transition: transform 0.2s;
+  }
+  .mobile-fold[open] > .mobile-fold-summary::before { transform: rotate(90deg); }
+
   /* === Mid row : 1 colonne empilée === */
   .mid-row {
     display: flex !important;
@@ -792,6 +816,12 @@ body{
     grid-template-columns: 1fr;
     gap: 10px;
   }
+}
+
+/* === Sections repliables : toujours ouvertes sur PC, aucun changement visuel === */
+@media(min-width:769px){
+  .mobile-fold-summary{display:none !important;}
+  .mobile-fold .fold-body{display:block !important;}
 }
 
 @media (max-width: 480px) {
@@ -2441,8 +2471,19 @@ body {
 }
 
 @media(max-width:768px) {
-  .ents-row { flex-wrap: wrap !important; gap: 8px !important; }
-  .ent-hex-card { flex: 0 0 calc(50% - 4px) !important; }
+  /* Carrousel swipable : une carte à la fois, aperçu de la suivante */
+  .ents-row {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory !important;
+    gap: 10px !important;
+    padding-bottom: 6px !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ent-hex-card {
+    flex: 0 0 82% !important;
+    scroll-snap-align: center !important;
+  }
 }
 
 /* ════════════════════════════════════════════════════════
@@ -4432,6 +4473,9 @@ async function renderDash(){
     </div>
 
     <!-- GRAPH + FUNNEL -->
+    <details class="mobile-fold" open>
+      <summary class="mobile-fold-summary">Funnel &amp; conversion</summary>
+      <div class="fold-body">
     <div class="mid-row">
       <div class="graph-card gold-corner">
         <div class="gc-bl"></div><div class="gc-br"></div>
@@ -4475,6 +4519,8 @@ async function renderDash(){
         })()}</div>
       </div>
     </div>
+      </div>
+    </details>
 
     <!-- ENT CARDS HEX -->
     <div class="ents-row">
@@ -4501,6 +4547,9 @@ async function renderDash(){
     </div>
 
     <!-- REVENUS + OBJECTIFS -->
+    <details class="mobile-fold" open>
+      <summary class="mobile-fold-summary">Revenus &amp; conversion par entrepreneur</summary>
+      <div class="fold-body">
     <div class="bottom-row">
       <div class="rev-card-dash gold-corner">
         <div class="gc-bl"></div><div class="gc-br"></div>
@@ -4584,6 +4633,8 @@ async function renderDash(){
         <canvas id="hexDash" style="width:100%;display:block;filter:drop-shadow(0 15px 25px rgba(0,0,0,0.9))" height="150"></canvas>
       </div>
     </div>
+      </div>
+    </details>
   </div>`;
 
   const svg=document.getElementById('chameoSvg');if(svg)drawChameo(svg);
