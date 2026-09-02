@@ -3253,6 +3253,10 @@ body::after {
   border-left: 3px solid var(--c) !important;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45) !important;
 }
+@media(max-width:768px){
+  /* Carrousel : reprend le dessus sur la règle flex:1 1 0 ci-dessus */
+  .ent-hex-card { flex: 0 0 82% !important; }
+}
 .ent-hex-card:hover {
   transform: translateY(-3px) !important;
   box-shadow:
