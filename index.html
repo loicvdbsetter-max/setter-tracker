@@ -659,6 +659,23 @@ body{
   .kpi-val { font-size: 1.4rem; }
   .kpi-label { font-size: 8px; }
 
+  /* === Podium : cadres réduits pour tenir dans la moitié de largeur === */
+  .pm-slots { gap: 2px !important; }
+  .pm-p1 { width: 56px !important; height: 68px !important; }
+  .pm-p2 { width: 44px !important; height: 54px !important; }
+  .pm-p3 { width: 44px !important; height: 44px !important; }
+  .pm-name { font-size: 6px !important; }
+  .pm-val { font-size: 10px !important; }
+  .pm-p2 .pm-val, .pm-p3 .pm-val { font-size: 8px !important; }
+
+  /* === Habitudes / Daily Tasks : titres empilés au lieu de superposés === */
+  .kpi-merged .dtasks-lbl {
+    position: static !important;
+    width: auto !important;
+    text-align: left !important;
+    margin: 2px 0 6px !important;
+  }
+
   /* === Mid row : 1 colonne empilée === */
   .mid-row {
     display: flex !important;
@@ -4004,6 +4021,10 @@ function setTabIconActive(tab,active){
 function switchTab(tab,el){
   if(rafId){cancelAnimationFrame(rafId);rafId=null;}
   if(_uRaf){cancelAnimationFrame(_uRaf);_uRaf=null;}
+  if(tab!=='dash'){
+    if(window._podiumSparkleRAF){cancelAnimationFrame(window._podiumSparkleRAF);window._podiumSparkleRAF=null;}
+    if(window._activityParticleRAF){cancelAnimationFrame(window._activityParticleRAF);window._activityParticleRAF=null;}
+  }
   curTab=tab;
   document.querySelectorAll('.tab').forEach(t=>{
     t.classList.remove('active');
@@ -4383,7 +4404,7 @@ async function renderDash(){
         <!-- HABITUDES : direct child comme les autres KPI cards -->
         <div class="kpi-label" style="margin-bottom:6px">HABITUDES</div>
         <!-- DAILY TASKS : positionné en absolu au-dessus du ring -->
-        <div class="kpi-label" style="position:absolute;top:14px;right:14px;width:140px;text-align:center;color:rgba(167,139,250,0.55);white-space:nowrap">DAILY TASKS</div>
+        <div class="kpi-label dtasks-lbl" style="position:absolute;top:14px;right:14px;width:140px;text-align:center;color:rgba(167,139,250,0.55);white-space:nowrap">DAILY TASKS</div>
         <div style="display:flex;align-items:center;gap:10px;flex:1;overflow:hidden">
           <!-- Pie chart — plus grand pour utiliser l'espace -->
           <canvas id="tasksPie" style="flex-shrink:0;width:280px;height:140px;display:block"></canvas>
@@ -4979,9 +5000,11 @@ function drawConvChart(){
 
   function rgb(h){return[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
 
-  const pTop=28,pBot=38,BR=17;
+  const pTop=28,pBot=38;
   const chartH=H-pTop-pBot;
   const secW=W/data.length;
+  const nWk=(data[0]&&data[0].weeks.length)||4;
+  const BR=Math.max(6,Math.min(17,(secW-20)/(2*nWk)));
   const sPad=BR+10;
 
   const allPcts=data.flatMap(d=>d.weeks.filter(w=>w.pct!==null).map(w=>w.pct));
@@ -5075,7 +5098,7 @@ function drawConvChart(){
 
       // Texte %
       const txt=w.pct!==null?(w.pct+'%'):'—';
-      ctx.font=`700 9px "Orbitron",monospace`;
+      ctx.font=`700 ${Math.max(6,Math.round(BR*0.55))}px "Orbitron",monospace`;
       ctx.shadowBlur=4;ctx.shadowColor='rgba(0,0,10,0.95)';
       ctx.fillStyle=has?'rgba(255,255,255,0.97)':'rgba(255,255,255,0.25)';
       ctx.textAlign='center';ctx.textBaseline='middle';
