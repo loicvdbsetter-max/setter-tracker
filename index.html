@@ -481,7 +481,6 @@ body{
 .tasks-footer{margin-top:12px;padding-top:8px;border-top:1px solid rgba(0,212,255,0.06);display:flex;justify-content:space-between;position:relative;}
 .tasks-reset{font-size:9px;color:rgba(0,212,255,0.15);}
 .tasks-status{font-size:9px;color:rgba(0,212,255,0.35);}
-.scan-line{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.15),transparent);pointer-events:none;}
 
 /* LEADS */
 .leads-page{padding:20px;}
@@ -5357,19 +5356,10 @@ async function renderJour(){
         <span class="tasks-reset">RESET 00:00 ↺</span>
         <span class="tasks-status" id="taskStatusEl">${tDone===TASKS.length?'COMPLÉTÉ ✓':'EN COURS...'}</span>
       </div>
-      <div class="scan-line" id="scanLine"></div>
     </div>
   </div>`;
 
   startRingAnim('jourRing',()=>TASKS.filter(t=>t.done).length/TASKS.length,70);
-  animateScan();
-}
-
-function animateScan(){
-  const s=document.getElementById('scanLine');if(!s)return;
-  const wrap=s.parentElement;if(!wrap)return;
-  let pos=0;clearInterval(window._scanInt);
-  window._scanInt=setInterval(()=>{pos+=1;if(pos>wrap.offsetHeight||0)pos=0;s.style.top=pos+'px';},16);
 }
 
 function toggleTask(id){
