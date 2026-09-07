@@ -4637,8 +4637,7 @@ async function renderDash(){
   const svg=document.getElementById('chameoSvg');if(svg)drawChameo(svg);
   updateClock();
   // Force canvas dimensions immediately after DOM injection — don't rely on CSS % resolution
-  const _cv=document.getElementById('convChart');
-  if(_cv){const _pw=_cv.parentElement;const _fw=(_pw&&_pw.offsetWidth)||(_pw&&_pw.parentElement&&_pw.parentElement.offsetWidth)||(window.innerWidth-28);_cv.style.width=_fw+'px';_cv.style.height='200px';}
+  syncConvChartWidth();
 
   // Draw conversion chart on canvas
   // Sparklines once
@@ -5028,6 +5027,16 @@ function draw3DActivity(md, dim){
   }
   _tickParts();
 }
+
+function syncConvChartWidth(){
+  const cv=document.getElementById('convChart');
+  if(!cv)return;
+  const pw=cv.parentElement;
+  const fw=(pw&&pw.offsetWidth)||(pw&&pw.parentElement&&pw.parentElement.offsetWidth)||(window.innerWidth-28);
+  cv.style.width=fw+'px';cv.style.height='200px';
+  drawConvChart();
+}
+addEventListener('resize',()=>{if(curTab==='dash')syncConvChartWidth();},{passive:true});
 
 function drawConvChart(){
   const canvas=document.getElementById('convChart');
