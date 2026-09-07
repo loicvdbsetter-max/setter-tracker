@@ -658,14 +658,7 @@ body{
   .kpi-val { font-size: 1.4rem; }
   .kpi-label { font-size: 8px; }
 
-  /* === Podium : cadres réduits pour tenir dans la moitié de largeur === */
-  .pm-slots { gap: 2px !important; }
-  .pm-p1 { width: 56px !important; height: 68px !important; }
-  .pm-p2 { width: 44px !important; height: 54px !important; }
-  .pm-p3 { width: 44px !important; height: 44px !important; }
-  .pm-name { font-size: 6px !important; }
-  .pm-val { font-size: 10px !important; }
-  .pm-p2 .pm-val, .pm-p3 .pm-val { font-size: 8px !important; }
+  /* Podium : tailles désormais proportionnelles (cqi) — voir règles de base .pm-p1/.pm-p2/.pm-p3 */
 
   /* === Habitudes / Daily Tasks : titres empilés au lieu de superposés === */
   .kpi-merged .dtasks-lbl {
@@ -3000,7 +2993,7 @@ body::before {
   position: relative;
 }
 .pm-p1 {
-  width: 80px; height: 95px;
+  width: clamp(50px, 34cqi, 80px); height: clamp(60px, 40cqi, 95px);
   border: 1px solid rgba(255,225,80,0.9);
   box-shadow:
     0 0 10px rgba(255,215,0,0.22),
@@ -3009,7 +3002,7 @@ body::before {
   z-index: 1;
 }
 .pm-p2 {
-  width: 62px; height: 75px;
+  width: clamp(40px, 27cqi, 62px); height: clamp(48px, 32cqi, 75px);
   border: 1px solid rgba(210,210,210,0.9);
   box-shadow:
     0 0 8px rgba(192,192,192,0.20),
@@ -3018,7 +3011,7 @@ body::before {
   z-index: 1;
 }
 .pm-p3 {
-  width: 62px; height: 62px;
+  width: clamp(40px, 27cqi, 62px); height: clamp(40px, 27cqi, 62px);
   border: 1px solid rgba(215,140,60,0.9);
   box-shadow:
     0 0 8px rgba(205,127,50,0.20),
@@ -3054,18 +3047,18 @@ body::before {
 }
 .pm-name {
   font-family: 'Orbitron', monospace;
-  font-size: 7px; font-weight: 700; letter-spacing: 1px;
+  font-size: clamp(5.5px, 3.4cqi, 7px); font-weight: 700; letter-spacing: 1px;
   text-align: center; text-transform: uppercase;
   text-shadow: 0 0 8px currentColor;
 }
 .pm-val {
   font-family: 'Orbitron', monospace;
-  font-size: 13px; font-weight: 900; color: #fff;
+  font-size: clamp(9px, 6cqi, 13px); font-weight: 900; color: #fff;
   text-shadow: 0 0 8px rgba(255,255,255,0.3);
   text-align: center; letter-spacing: 0.5px;
   margin-top: 1px;
 }
-.pm-p2 .pm-val, .pm-p3 .pm-val { font-size: 10px; }
+.pm-p2 .pm-val, .pm-p3 .pm-val { font-size: clamp(7px, 5cqi, 10px); }
 .pm-sub {
   font-size: 6px; color: rgba(255,215,0,0.4);
   font-family: 'Space Mono', monospace; letter-spacing: 1px;
@@ -3419,6 +3412,7 @@ body::after {
   background-color: #000000 !important;
   box-shadow: none !important;
   border: 1px solid rgba(0,212,255,0.15) !important;
+  container-type: inline-size;
 }
 #podiumCard::before,
 #podiumCard::after {
@@ -4449,7 +4443,7 @@ async function renderDash(){
         <div class="kpi-label" style="margin-bottom:6px">HABITUDES</div>
         <!-- DAILY TASKS : positionné en absolu au-dessus du ring -->
         <div class="kpi-label dtasks-lbl" style="position:absolute;top:14px;right:14px;width:140px;text-align:center;color:rgba(167,139,250,0.55);white-space:nowrap">DAILY TASKS</div>
-        <div style="display:flex;align-items:center;gap:10px;flex:1;overflow:hidden">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;flex:1;overflow:hidden">
           <!-- Pie chart — plus grand pour utiliser l'espace -->
           <canvas id="tasksPie" style="flex-shrink:0;width:280px;height:140px;display:block"></canvas>
           <!-- Spacer fixe -->
@@ -4689,7 +4683,8 @@ function splinePath(ctx, pts, tension=0.25){
 function drawTasksPie(taskStats, daysElapsed){
   const canvas=document.getElementById('tasksPie');
   if(!canvas)return;
-  const CW=280, CH=140;
+  const avail=(canvas.parentElement&&canvas.parentElement.offsetWidth)||280;
+  const CW=Math.max(150,Math.min(280,avail-230)), CH=CW/2;
   const W=CW*2, H=CH*2;
   canvas.width=W; canvas.height=H;
   canvas.style.width=CW+'px'; canvas.style.height=CH+'px';
