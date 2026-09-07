@@ -4446,11 +4446,9 @@ async function renderDash(){
         <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;flex:1;overflow:hidden">
           <!-- Pie chart — plus grand pour utiliser l'espace -->
           <canvas id="tasksPie" style="flex-shrink:0;width:280px;height:140px;display:block"></canvas>
-          <!-- Spacer fixe -->
-          <div style="flex:0 0 40px"></div>
           <!-- Légende -->
-          <div style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:0;overflow:hidden">
-            ${taskStats.map((s,i)=>{const c=['#7df4ff','#d09cff','#6effc0','#ffe06a','#ff8fa3','#ffaee4','#a5c8ff'][i%7];return`<div style="display:flex;align-items:center;gap:5px;font-family:'Space Mono',monospace;font-size:8.5px;line-height:1.2;white-space:nowrap"><span style="color:${c};flex-shrink:0;font-size:9px">●</span><span style="color:rgba(200,220,240,0.72)">${s.t.label}</span><span style="color:${c};font-weight:700;margin-left:5px">${s.pct}%</span></div>`}).join('')}
+          <div style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:90px;overflow:hidden">
+            ${taskStats.map((s,i)=>{const c=['#7df4ff','#d09cff','#6effc0','#ffe06a','#ff8fa3','#ffaee4','#a5c8ff'][i%7];return`<div style="display:flex;align-items:center;gap:5px;font-family:'Space Mono',monospace;font-size:8.5px;line-height:1.2;min-width:0"><span style="color:${c};flex-shrink:0;font-size:9px">●</span><span style="color:rgba(200,220,240,0.72);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">${s.t.label}</span><span style="color:${c};font-weight:700;margin-left:5px;flex-shrink:0">${s.pct}%</span></div>`}).join('')}
           </div>
           <!-- Séparateur + Ring en un seul bloc aligné sous DAILY TASKS -->
           <div style="flex:0 0 140px;display:flex;align-items:center;flex-shrink:0">
@@ -4683,7 +4681,7 @@ function drawTasksPie(taskStats, daysElapsed){
   const canvas=document.getElementById('tasksPie');
   if(!canvas)return;
   const avail=(canvas.parentElement&&canvas.parentElement.offsetWidth)||280;
-  const CW=Math.max(150,Math.min(280,avail-230)), CH=CW/2;
+  const CW=Math.max(150,Math.min(280,avail-250)), CH=CW/2;
   const W=CW*2, H=CH*2;
   canvas.width=W; canvas.height=H;
   canvas.style.width=CW+'px'; canvas.style.height=CH+'px';
