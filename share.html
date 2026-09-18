@@ -414,11 +414,12 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
   function attachMonthListeners(vm){
     if(dayListeners[vm])return; // déjà attaché
     var y=vm.slice(0,4),m=+vm.slice(5,7);
+    var mIdx=m-1; // l'app principale indexe les mois à partir de 0 (0=janvier)
     var n=daysInMonth(vm);
     var list=[];
     for(var d=1;d<=n;d++){
       (function(day){
-        var r=ref(db,'v2/'+y+'/'+m+'/'+day+'/'+ENT_KEY);
+        var r=ref(db,'v2/'+y+'/'+mIdx+'/'+day+'/'+ENT_KEY);
         var dateStr=y+"-"+p2(m)+"-"+p2(day);
         onValue(r,function(snap){
           var v=snap.val()||{};
@@ -448,7 +449,8 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
     var snap={};Object.keys(patch).forEach(function(k){snap[k]=patch[k];});
     writing[date]=true;setStatus("busy");
     var a=date.split("-");var y=a[0],m=+a[1],d=+a[2];
-    var proms=Object.keys(snap).map(function(k){return set(ref(db,'v2/'+y+'/'+m+'/'+d+'/'+ENT_KEY+'/'+k),snap[k]);});
+    var mIdx=m-1; // l'app principale indexe les mois à partir de 0 (0=janvier)
+    var proms=Object.keys(snap).map(function(k){return set(ref(db,'v2/'+y+'/'+mIdx+'/'+d+'/'+ENT_KEY+'/'+k),snap[k]);});
     Promise.all(proms).catch(function(e){
       alert('Erreur de sauvegarde : '+e.message);
     }).then(function(){delete writing[date];if(redo[date]){delete redo[date];scheduleFlush(date);}else setStatus("ok");});
