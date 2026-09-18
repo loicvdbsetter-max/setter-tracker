@@ -694,6 +694,7 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
       return;
     }
     document.getElementById("brand-title").textContent="Suivi — "+ENT_NAME;
+    el.rootwrap.classList.add("wide");
     buildEncode();buildLeadsHead();renderSetting();setStatus("boot");
 
     authReady.then(function(){
