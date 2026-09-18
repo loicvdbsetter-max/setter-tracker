@@ -3567,14 +3567,17 @@ const MFR=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','S
 const PRESET_TAGS=['Full','2x','3x','Acompte','Formation'];
 const DEF_ENTS=[{key:'O',name:'Ozcan',hex:'#1E90FF',rate:5},{key:'J',name:'Jorann',hex:'#8B0000',rate:5},{key:'G',name:'Gaël',hex:'#FF8C00',rate:10},{key:'M',name:'Mika',hex:'#2E8B57',rate:5}];
 const formatAmount = v => (v === undefined || v === null || isNaN(v)) ? '0' : v.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+const fmtPct = n => (n === undefined || n === null || isNaN(n)) ? '—' : n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
 const UNIFIED_METRICS=[
   {k:'firstmsg',  l:'Premiers msgs'},
   {k:'replies',   l:'Réponses'},
   {k:'followup',  l:'Follow ups'},
   {k:'repliesfu', l:'Réponses FU'},
+  {k:'callprop',  l:'Call proposé'},
   {k:'lien',      l:'Lien envoyé'},
-  {k:'callrelance',l:'Call relance'},
-  {k:'call',      l:'Call pris'},
+  {k:'r1',        l:'R1 booké'},
+  {k:'present',   l:'Call présent'},
+  {k:'r2',        l:'R2 booké'},
 ];
 const DEF_MET={O:UNIFIED_METRICS,J:UNIFIED_METRICS,G:UNIFIED_METRICS,M:UNIFIED_METRICS};
 
@@ -3627,7 +3630,7 @@ function hex2hueRot(h){
   return hue-200; // décalage depuis le cyan ~200° de card-frame.jpg
 }
 const getMet=()=>[...UNIFIED_METRICS];
-function getTotalCalls(ek,dd){if(!dd||!dd[ek])return 0;const d=dd[ek];return(d.call||0)+(d.callrelance||0);}
+function getTotalCalls(ek,dd){if(!dd||!dd[ek])return 0;const d=dd[ek];return d.r1||0;}
 function gv(md,day,ek,mk){if(!md[day]||!md[day][ek])return 0;return md[day][ek][mk]||0;}
 
 // Live dot
@@ -4181,7 +4184,7 @@ function drawHexDash(entData){
 
     // ── 6. LABELS ──
     ctx.fillStyle='#cccccc';ctx.font='700 7px monospace';ctx.textAlign='center';ctx.fillText(d.e.name,p.x,p.y-8);
-    ctx.fillStyle='#ffffff';ctx.font='800 12px monospace';ctx.fillText(d.conv+'%',p.x,p.y+4);
+    ctx.fillStyle='#ffffff';ctx.font='800 12px monospace';ctx.fillText(Math.round(d.conv)+'%',p.x,p.y+4);
     ctx.fillStyle='#cccccc';ctx.font='700 6px monospace';ctx.fillText(d.calls+' calls',p.x,p.y+14);
   });
   ctx.restore();
@@ -4311,13 +4314,15 @@ async function renderDash(){
 
   // Funnel
   const funnelEnts=ENTS.filter(e=>e.key===(window.dashFunnelFilter||'gael'));
-  let tfm=0,trep=0,tfu=0,trfu=0,tln=0,tc=0;
+  let tfm=0,trep=0,tfu=0,trfu=0,tcp=0,tln=0,tc=0,tpres=0,tr2=0;
   for(let d=1;d<=dim;d++)funnelEnts.forEach(e=>{
     tfm+=gv(md,d,e.key,'firstmsg');trep+=gv(md,d,e.key,'replies');
     tfu+=gv(md,d,e.key,'followup');trfu+=gv(md,d,e.key,'repliesfu');
-    tln+=gv(md,d,e.key,'lien');tc+=getTotalCalls(e.key,md[d]);
+    tcp+=gv(md,d,e.key,'callprop');tln+=gv(md,d,e.key,'lien');
+    tc+=getTotalCalls(e.key,md[d]);
+    tpres+=gv(md,d,e.key,'present');tr2+=gv(md,d,e.key,'r2');
   });
-  const pct=(a,b)=>b>0?Math.round(a/b*100):0;
+  const pct=(a,b)=>b>0?a/b*100:0;
 
   // Ventes from leads (with installment deduplication)
   const _installTags=['x2','x3','à compte'];
@@ -4361,7 +4366,7 @@ async function renderDash(){
     const weeks=_wkDefs.map(({label,s,e:end})=>{
       let fm=0,calls=0;
       for(let d=s;d<=end;d++){fm+=gv(md,d,e.key,'firstmsg');calls+=getTotalCalls(e.key,md[d]);}
-      return{label,msgs:fm,pct:fm>0?Math.round(calls/fm*100):null};
+      return{label,msgs:fm,pct:fm>0?calls/fm*100:null};
     });
     return{e,weeks};
   });
@@ -4370,7 +4375,7 @@ async function renderDash(){
   const entData=ENTS.map(e=>{
     let calls=0,fm=0,rep=0,ln=0,fu=0,rfu=0;
     for(let d=1;d<=dim;d++){calls+=getTotalCalls(e.key,md[d]);fm+=gv(md,d,e.key,'firstmsg');rep+=gv(md,d,e.key,'replies');ln+=gv(md,d,e.key,'lien');fu+=gv(md,d,e.key,'followup');rfu+=gv(md,d,e.key,'repliesfu');}
-    const conv=fm>0?Math.round(calls/fm*100):0;
+    const conv=fm>0?calls/fm*100:0;
     const oc=obj[e.key]?.call||0;
     const op=oc>0?Math.min(Math.round(calls/oc*100),100):0;
     const rMan=parseFloat(rev[e.key]?.montant||0);
@@ -4489,11 +4494,14 @@ async function renderDash(){
         </div>
         <div class="funnel-3d">${(()=>{
           const fs=[
-            {l:'MSG → RÉP',         v:pct(trep,tfm),        c:'#00d4ff'},
-            {l:'F/U → RÉP F/U',     v:pct(trfu,tfu),        c:'#3b82f6'},
-            {l:'MSG+F/U → LIEN',    v:pct(tln,tfm+tfu),     c:'#34d399'},
-            {l:'LIEN → CALL',       v:pct(tc,tln),          c:'#a78bfa'},
-            {l:'CALL → VENTE',      v:pct(tventes,tc),      c:'#fb923c'},
+            {l:'MSG → RÉP',              v:pct(trep,tfm),     c:'#00d4ff'},
+            {l:'F/U → RÉP F/U',          v:pct(trfu,tfu),     c:'#3b82f6'},
+            {l:'MSG+F/U → CALL PROPOSÉ', v:pct(tcp,tfm+tfu),  c:'#818cf8'},
+            {l:'CALL PROPOSÉ → LIEN',    v:pct(tln,tcp),      c:'#34d399'},
+            {l:'LIEN → R1 BOOKÉ',        v:pct(tc,tln),       c:'#a78bfa'},
+            {l:'R1 BOOKÉ → PRÉSENT',     v:pct(tpres,tc),     c:'#22d3ee'},
+            {l:'PRÉSENT → R2 BOOKÉ',     v:pct(tr2,tpres),    c:'#fb923c'},
+            {l:'R2 BOOKÉ → VENTE',       v:pct(tventes,tr2),  c:'#f472b6'},
           ];
           const rows=fs.map((f,i)=>{
             const w=Math.min(Math.max(f.v,0),100);
@@ -4502,7 +4510,7 @@ async function renderDash(){
               +'<div class="fstat-header">'
               +'<span class="fstat-num" style="color:'+f.c+'">0'+(i+1)+'</span>'
               +'<span class="fstat-lbl">'+f.l+'</span>'
-              +'<span class="fstat-pct" style="color:'+f.c+'">'+f.v+'%</span>'
+              +'<span class="fstat-pct" style="color:'+f.c+'">'+fmtPct(f.v)+'</span>'
               +'</div>'
               +'<div class="fstat-track">'
               +'<div class="fstat-fill" style="width:'+w+'%;background:linear-gradient(90deg,'+f.c+','+f.c+'77);box-shadow:0 0 8px '+f.c+'55,0 0 2px '+f.c+'"></div>'
@@ -4534,7 +4542,7 @@ async function renderDash(){
               <div class="hrow"><span class="hcall-lbl">CALLS</span><span class="hcall-val" style="color:${d.e.hex}">${d.calls}</span></div>
             </div>
             <div class="hconv-row" style="border-top-color:${d.e.hex}">
-              <div class="hbar-label-row"><span class="hbar-lbl">CONV</span><span class="hconv" style="color:${d.e.hex}">${d.conv}%</span></div>
+              <div class="hbar-label-row"><span class="hbar-lbl">CONV</span><span class="hconv" style="color:${d.e.hex}">${fmtPct(d.conv)}</span></div>
               <div class="hbar"><div class="hbar-fill" style="width:${Math.min(d.conv,100)}%;background:${d.e.hex}"></div></div>
             </div>
           </div>
@@ -5153,7 +5161,7 @@ function drawConvChart(){
       }
 
       // Texte %
-      const txt=w.pct!==null?(w.pct+'%'):'—';
+      const txt=w.pct!==null?(Math.round(w.pct)+'%'):'—';
       ctx.font=`700 ${Math.max(6,Math.round(BR*0.55))}px "Orbitron",monospace`;
       ctx.shadowBlur=4;ctx.shadowColor='rgba(0,0,10,0.95)';
       ctx.fillStyle=has?'rgba(255,255,255,0.97)':'rgba(255,255,255,0.25)';
@@ -5231,7 +5239,7 @@ async function renderJour(){
     let total=0;metrics.forEach(m=>total+=gv(md,selDay,e.key,m.k));
     const rows=metrics.map(m=>{
       const val=gv(md,selDay,e.key,m.k);
-      const isCall=m.k==='call'||m.k==='callrelance';
+      const isCall=m.k==='r1';
       return `<div class="mrow${isCall?' sep':''}">
         <span class="mlbl${isCall?' call':''}">${m.l}</span>
         <div class="mbtn-wrap">
@@ -5305,21 +5313,19 @@ async function renderJour(){
         const rep=gv(md,selDay,e.key,'replies');
         const fu=gv(md,selDay,e.key,'followup');
         const rfu=gv(md,selDay,e.key,'repliesfu');
-        const cr=gv(md,selDay,e.key,'callrelance');
-        const call=gv(md,selDay,e.key,'call');
         const totalCalls=getTotalCalls(e.key,md[selDay]);
         // Leads closés ce jour par cet entrepreneur
         const todayLeads=Object.values(leadsDay).filter(l=>l.entKey===e.key&&l.date===new Date().toLocaleDateString('fr-BE')).length;
         // Ratios
-        const pctMsgRep=fm>0?Math.round(rep/fm*100):null;
-        const pctFuRfu=fu>0?Math.round(rfu/fu*100):null;
-        const pctMsgCall=(fm+fu)>0?Math.round(totalCalls/(fm+fu)*100):null;
-        const pctCallVente=totalCalls>0?Math.round(todayLeads/totalCalls*100):null;
+        const pctMsgRep=fm>0?rep/fm*100:null;
+        const pctFuRfu=fu>0?rfu/fu*100:null;
+        const pctMsgCall=(fm+fu)>0?totalCalls/(fm+fu)*100:null;
+        const pctCallVente=totalCalls>0?todayLeads/totalCalls*100:null;
         function statRow(label,val,color){
           const hasData=val!==null;
           return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba('+rgb+',0.08);">'
             +'<span style="font-size:13px;font-weight:500;color:#B0B0B0 !important;text-shadow:none !important;filter:none !important">'+label+'</span>'
-            +'<span style="font-size:11px;font-weight:700;color:'+(hasData?color:'rgba('+rgb+',0.25)')+'">'+( hasData?val+'%':'—')+'</span>'
+            +'<span style="font-size:11px;font-weight:700;color:'+(hasData?color:'rgba('+rgb+',0.25)')+'">'+( hasData?fmtPct(val):'—')+'</span>'
             +'</div>';
         }
         return '<div style="background:var(--surface);border-radius:12px;overflow:hidden;border-top:2px solid '+e.hex+';border:1px solid rgba('+rgb+',0.12);border-top:2px solid '+e.hex+';">'
@@ -5380,13 +5386,15 @@ function rebuildFunnel(ff){
   if(!card||!window._dashCache)return;
   const {md,leads,dim}=window._dashCache;
   const funnelEnts=ENTS.filter(e=>e.key===ff);
-  let tfm=0,trep=0,tfu=0,trfu=0,tln=0,tc=0;
+  let tfm=0,trep=0,tfu=0,trfu=0,tcp=0,tln=0,tc=0,tpres=0,tr2=0;
   for(let d=1;d<=dim;d++)funnelEnts.forEach(e=>{
     tfm+=gv(md,d,e.key,'firstmsg');trep+=gv(md,d,e.key,'replies');
     tfu+=gv(md,d,e.key,'followup');trfu+=gv(md,d,e.key,'repliesfu');
-    tln+=gv(md,d,e.key,'lien');tc+=getTotalCalls(e.key,md[d]);
+    tcp+=gv(md,d,e.key,'callprop');tln+=gv(md,d,e.key,'lien');
+    tc+=getTotalCalls(e.key,md[d]);
+    tpres+=gv(md,d,e.key,'present');tr2+=gv(md,d,e.key,'r2');
   });
-  const pct=(a,b)=>b>0?Math.round(a/b*100):0;
+  const pct=(a,b)=>b>0?a/b*100:0;
   const _installTags=['x2','x3','à compte'];
   const _fLeads=Object.values(leads).filter(l=>funnelEnts.some(e=>e.key===l.entKey));
   const _isInst=l=>Array.isArray(l.tags)&&l.tags.some(t=>_installTags.includes(t));
@@ -5395,11 +5403,14 @@ function rebuildFunnel(ff){
   const _uniqueInstNames=new Set(_instLeads.map(l=>(l.name||'').trim().toLowerCase()));
   const tventes=_normLeads.length+_uniqueInstNames.size;
   const fs=[
-    {l:'MSG → RÉP',      v:pct(trep,tfm),       c:'#00d4ff'},
-    {l:'F/U → RÉP F/U',  v:pct(trfu,tfu),       c:'#3b82f6'},
-    {l:'MSG+F/U → LIEN', v:pct(tln,tfm+tfu),    c:'#34d399'},
-    {l:'LIEN → CALL',    v:pct(tc,tln),          c:'#a78bfa'},
-    {l:'CALL → VENTE',   v:pct(tventes,tc),      c:'#fb923c'},
+    {l:'MSG → RÉP',              v:pct(trep,tfm),     c:'#00d4ff'},
+    {l:'F/U → RÉP F/U',          v:pct(trfu,tfu),     c:'#3b82f6'},
+    {l:'MSG+F/U → CALL PROPOSÉ', v:pct(tcp,tfm+tfu),  c:'#818cf8'},
+    {l:'CALL PROPOSÉ → LIEN',    v:pct(tln,tcp),      c:'#34d399'},
+    {l:'LIEN → R1 BOOKÉ',        v:pct(tc,tln),       c:'#a78bfa'},
+    {l:'R1 BOOKÉ → PRÉSENT',     v:pct(tpres,tc),     c:'#22d3ee'},
+    {l:'PRÉSENT → R2 BOOKÉ',     v:pct(tr2,tpres),    c:'#fb923c'},
+    {l:'R2 BOOKÉ → VENTE',       v:pct(tventes,tr2),  c:'#f472b6'},
   ];
   const rows=fs.map((f,i)=>{
     const w=Math.min(Math.max(f.v,0),100);
@@ -5407,7 +5418,7 @@ function rebuildFunnel(ff){
     return'<div class="fstat-step"><div class="fstat-header">'
       +'<span class="fstat-num" style="color:'+f.c+'">0'+(i+1)+'</span>'
       +'<span class="fstat-lbl">'+f.l+'</span>'
-      +'<span class="fstat-pct" style="color:'+f.c+'">'+f.v+'%</span>'
+      +'<span class="fstat-pct" style="color:'+f.c+'">'+fmtPct(f.v)+'</span>'
       +'</div><div class="fstat-track">'
       +'<div class="fstat-fill" style="width:'+w+'%;background:linear-gradient(90deg,'+f.c+','+f.c+'77);box-shadow:0 0 8px '+f.c+'55,0 0 2px '+f.c+'"></div>'
       +'</div></div>'+conn;
