@@ -148,7 +148,6 @@ const UNIFIED_METRICS=[
   {k:'present',   l:'Call présent'},
   {k:'r2',        l:'R2 booké'},
 ];
-const ENT_NAMES={O:{name:'Ozcan',hex:'#1E90FF'},J:{name:'Jorann',hex:'#8B0000'},G:{name:'Gaël',hex:'#FF8C00'},M:{name:'Mika',hex:'#2E8B57'}};
 const TAGS=[
   {v:'tiktok Setting',bg:'#3b3bdb',fg:'#fff'},
   {v:'Instagram Setting',bg:'#7c3aed',fg:'#fff'},
@@ -171,6 +170,8 @@ const params=new URLSearchParams(location.search);
 const entKey=params.get('ent');
 const shareEmail=params.get('u');
 const sharePassword=params.get('k');
+const entName=params.get('name')||entKey||'—';
+const entHex=params.get('hex')||'#00d4ff';
 
 const fmtAmount=v=>(v==null||isNaN(v))?'0,00':Number(v).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtPct=n=>(n==null||isNaN(n))?'—':n.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
@@ -187,10 +188,9 @@ async function boot(){
     document.getElementById('statusMsg').textContent="Lien invalide.";
     return;
   }
-  const ent=ENT_NAMES[entKey]||{name:entKey,hex:'#00d4ff'};
-  document.getElementById('entName').textContent=ent.name;
-  document.documentElement.style.setProperty('--c',ent.hex);
-  const rgb=hexToRgb(ent.hex);
+  document.getElementById('entName').textContent=entName;
+  document.documentElement.style.setProperty('--c',entHex);
+  const rgb=hexToRgb(entHex);
   document.documentElement.style.setProperty('--cr',rgb);
 
   try{
@@ -294,11 +294,19 @@ function renderSetting(){
 }
 
 window.adjustMetric=async function(key,delta){
-  const cur=gv(selDay,key);
-  await setMetric(key,cur+delta);
+  try{
+    const cur=gv(selDay,key);
+    await setMetric(key,cur+delta);
+  }catch(e){
+    alert('Erreur : impossible de sauvegarder ('+e.message+')');
+  }
 };
 window.setMetricFromInput=async function(key,val){
-  await setMetric(key,parseInt(val)||0);
+  try{
+    await setMetric(key,parseInt(val)||0);
+  }catch(e){
+    alert('Erreur : impossible de sauvegarder ('+e.message+')');
+  }
 };
 
 // ===== CLOSING =====
@@ -349,17 +357,29 @@ function tagSelect(id,field,current,options){
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 window.addLead=async function(){
-  const id='l'+Date.now();
-  const today=new Date();
-  const dateStr=String(today.getDate()).padStart(2,'0')+'/'+String(today.getMonth()+1).padStart(2,'0')+'/'+today.getFullYear();
-  await set(ref(db,`shareClosing/${entKey}/${id}`),{date:dateStr,order:Date.now()});
+  try{
+    const id='l'+Date.now();
+    const today=new Date();
+    const dateStr=String(today.getDate()).padStart(2,'0')+'/'+String(today.getMonth()+1).padStart(2,'0')+'/'+today.getFullYear();
+    await set(ref(db,`shareClosing/${entKey}/${id}`),{date:dateStr,order:Date.now()});
+  }catch(e){
+    alert('Erreur : impossible d\'ajouter le lead ('+e.message+')');
+  }
 };
 window.updLead=async function(id,field,val){
-  await set(ref(db,`shareClosing/${entKey}/${id}/${field}`),val);
+  try{
+    await set(ref(db,`shareClosing/${entKey}/${id}/${field}`),val);
+  }catch(e){
+    alert('Erreur : impossible de sauvegarder ('+e.message+')');
+  }
 };
 window.delLead=async function(id){
   if(!confirm('Supprimer ce lead ?'))return;
-  await remove(ref(db,`shareClosing/${entKey}/${id}`));
+  try{
+    await remove(ref(db,`shareClosing/${entKey}/${id}`));
+  }catch(e){
+    alert('Erreur : impossible de supprimer ('+e.message+')');
+  }
 };
 
 boot();

@@ -4097,6 +4097,10 @@ window.shareEntrepreneur=async function(entKey,btn){
     const credRef=ref(db,'shareCredentials/'+entKey);
     const snap=await get(credRef);
     let cred=snap.exists()?snap.val():null;
+    if(cred&&cred.uid){
+      const check=await get(ref(db,'shareAccounts/'+cred.uid+'/entKey'));
+      if(!check.exists()||check.val()!==entKey)cred=null; // mapping incohérente, on régénère
+    }
     if(!cred){
       const email='share-'+entKey.toLowerCase()+'-'+Math.random().toString(36).slice(2,8)+'@settertracker.local';
       const password=Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);
@@ -4110,15 +4114,17 @@ window.shareEntrepreneur=async function(entKey,btn){
       try{await signOut(secondaryAuth);}catch(e){}
       try{await deleteApp(secondaryApp);}catch(e){}
     }
+    const entObj=ENTS.find(e=>e.key===entKey)||{name:entKey,hex:'#00d4ff'};
     const base=location.origin+location.pathname.replace(/[^/]*$/,'');
     const url=new URL('share.html',base);
     url.searchParams.set('ent',entKey);
     url.searchParams.set('u',cred.email);
     url.searchParams.set('k',cred.password);
+    url.searchParams.set('name',entObj.name);
+    url.searchParams.set('hex',entObj.hex);
     const link=url.toString();
     await navigator.clipboard.writeText(link);
-    const entName=(ENTS.find(e=>e.key===entKey)||{}).name||entKey;
-    alert('Lien copié — tu peux l\'envoyer à '+entName+'.');
+    alert('Lien copié — tu peux l\'envoyer à '+entObj.name+'.');
   }catch(e){
     alert('Erreur lors de la création du lien : '+e.message);
   }finally{
