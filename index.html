@@ -379,6 +379,8 @@ body{
 .ent-card-head-inner{display:flex;justify-content:space-between;align-items:center;}
 .ent-card-name{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:3px;color:var(--c);}
 .ent-card-total{font-size:11px;color:var(--c);background:var(--surface2);border:1px solid rgba(var(--cr),0.2);padding:4px 10px;border-radius:4px;}
+.ent-share-btn{display:flex;align-items:center;justify-content:center;width:24px;height:24px;margin-left:10px;background:transparent;border:1px solid;border-radius:4px;cursor:pointer;opacity:0.75;transition:opacity 0.2s;flex-shrink:0;}
+.ent-share-btn:hover{opacity:1;}
 .ent-card-body{padding:4px 20px 18px;}
 
 /* METRIC ROWS — parfaitement droites */
@@ -3537,9 +3539,9 @@ body::after {
 <div class="page" id="page_params"></div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, set, get, push, remove, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const FB={apiKey:"AIzaSyA9s3pyDNcIKkb2bewa_xW80lQeajwe1PU",authDomain:"setter-tracker-8ef58.firebaseapp.com",databaseURL:"https://setter-tracker-8ef58-default-rtdb.europe-west1.firebasedatabase.app",projectId:"setter-tracker-8ef58",storageBucket:"setter-tracker-8ef58.firebasestorage.app",messagingSenderId:"800999132152",appId:"1:800999132152:web:0914fa2b08e0e9eb13a40d"};
 const app=initializeApp(FB);
@@ -4088,6 +4090,41 @@ function changeMonth(dir){
 window.changeMonth=changeMonth;
 function selectDay(d){selDay=d;renderJour();}
 window.selectDay=selectDay;
+
+window.shareEntrepreneur=async function(entKey,btn){
+  if(btn)btn.disabled=true;
+  try{
+    const credRef=ref(db,'shareCredentials/'+entKey);
+    const snap=await get(credRef);
+    let cred=snap.exists()?snap.val():null;
+    if(!cred){
+      const email='share-'+entKey.toLowerCase()+'-'+Math.random().toString(36).slice(2,8)+'@settertracker.local';
+      const password=Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);
+      const secondaryApp=initializeApp(FB,'share_'+Date.now());
+      const secondaryAuth=getAuth(secondaryApp);
+      const userCred=await createUserWithEmailAndPassword(secondaryAuth,email,password);
+      const uid=userCred.user.uid;
+      await set(ref(db,'shareAccounts/'+uid),{entKey});
+      cred={email,password,uid};
+      await set(credRef,cred);
+      try{await signOut(secondaryAuth);}catch(e){}
+      try{await deleteApp(secondaryApp);}catch(e){}
+    }
+    const base=location.origin+location.pathname.replace(/[^/]*$/,'');
+    const url=new URL('share.html',base);
+    url.searchParams.set('ent',entKey);
+    url.searchParams.set('u',cred.email);
+    url.searchParams.set('k',cred.password);
+    const link=url.toString();
+    await navigator.clipboard.writeText(link);
+    const entName=(ENTS.find(e=>e.key===entKey)||{}).name||entKey;
+    alert('Lien copié — tu peux l\'envoyer à '+entName+'.');
+  }catch(e){
+    alert('Erreur lors de la création du lien : '+e.message);
+  }finally{
+    if(btn)btn.disabled=false;
+  }
+};
 
 async function render(){
   if(curTab==='dash')await renderDash();
@@ -5255,7 +5292,12 @@ async function renderJour(){
     return `<div class="ent-card" style="--c:${e.hex};--cr:${rgb}">
       <div class="ent-card-head" style="background:linear-gradient(180deg,rgba(${rgb},0.05),transparent)">
         <div class="ent-card-head-inner">
-          <span class="ent-card-name">${e.name}</span>
+          <div style="display:flex;align-items:center;">
+            <span class="ent-card-name">${e.name}</span>
+            <button class="ent-share-btn" title="Partager la fiche de ${e.name}" onclick="window.shareEntrepreneur('${e.key}',this)" style="color:${e.hex};border-color:rgba(${rgb},0.35)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.6" x2="15.4" y2="6.4"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.6"/></svg>
+            </button>
+          </div>
           <span class="ent-card-total" id="etot_${e.key}" style="color:${e.hex};border-color:rgba(${rgb},0.2)">${total}</span>
         </div>
       </div>

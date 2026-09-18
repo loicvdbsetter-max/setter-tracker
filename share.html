@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Fiche partagée</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Orbitron:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#05070a;--surface:rgba(15,23,42,0.62);--surface2:rgba(4,10,18,0.9);
+  --border:rgba(255,255,255,0.08);--muted:rgba(255,255,255,0.45);--muted2:rgba(255,255,255,0.6);
+  --cyan:#00d4ff;--c:#00d4ff;--cr:0,212,255;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;background:var(--bg);color:#fff;font-family:'Inter',sans-serif;
+  min-height:100vh;padding:24px 16px 60px;
+}
+.wrap{max-width:760px;margin:0 auto;}
+.hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+.hdr h1{font-family:'Orbitron',monospace;font-size:1.1rem;letter-spacing:2px;margin:0;color:var(--c);text-shadow:0 0 12px rgba(var(--cr),0.4);}
+.hdr .sub{font-size:11px;color:var(--muted);margin-top:4px;}
+.sync-chip{display:flex;align-items:center;gap:6px;font-size:10px;color:rgba(52,211,153,0.9);font-family:'Space Mono',monospace;}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 6px #34d399;}
+.tabs{display:flex;gap:8px;margin-bottom:20px;}
+.tab-btn{flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted2);
+  font-family:'Space Mono',monospace;font-size:12px;letter-spacing:1px;cursor:pointer;text-align:center;}
+.tab-btn.active{border-color:var(--c);color:var(--c);background:rgba(var(--cr),0.08);}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px;backdrop-filter:blur(10px);}
+.card-title{font-family:'Orbitron',monospace;font-size:11px;letter-spacing:2px;color:var(--c);margin-bottom:14px;text-transform:uppercase;}
+.day-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.day-nav button{background:var(--surface2);border:1px solid var(--border);color:#fff;width:30px;height:30px;border-radius:6px;cursor:pointer;font-size:14px;}
+.day-nav .lbl{font-family:'Space Mono',monospace;font-size:13px;}
+.mrow{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+.mrow:last-child{border-bottom:none;}
+.mlbl{font-size:13px;color:var(--muted2);}
+.mctrl{display:flex;align-items:center;gap:8px;}
+.mbtn{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:#fff;cursor:pointer;font-size:15px;line-height:1;}
+.mval{width:42px;text-align:center;font-family:'Space Mono',monospace;font-size:14px;font-weight:700;background:transparent;border:none;color:#fff;}
+.kpi-row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;}
+.kpi-tile{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+.kpi-tile .l{font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
+.kpi-tile .v{font-family:'Space Mono',monospace;font-size:1.3rem;font-weight:700;color:#fff;}
+.conv-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:12px;}
+.conv-row:last-child{border-bottom:none;}
+.conv-row .v{font-family:'Space Mono',monospace;font-weight:700;color:#34d399;}
+
+/* CLOSING */
+.leads-table-wrap{overflow-x:auto;}
+table.leads{width:100%;border-collapse:collapse;font-size:12px;min-width:900px;}
+table.leads th{text-align:left;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--border);white-space:nowrap;}
+table.leads td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:top;}
+table.leads input[type=text],table.leads input[type=number],table.leads textarea,table.leads select{
+  background:var(--surface2);border:1px solid var(--border);color:#fff;border-radius:6px;padding:5px 7px;font-size:12px;
+  font-family:inherit;width:100%;min-width:90px;
+}
+table.leads textarea{resize:vertical;min-height:32px;}
+.pill{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;border:none;cursor:pointer;font-family:inherit;}
+.add-lead-btn{background:#34d399;color:#04140c;border:none;padding:9px 16px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;}
+.del-lead-btn{background:transparent;border:none;color:rgba(255,80,80,0.7);cursor:pointer;font-size:16px;}
+.cash-summary{display:flex;gap:14px;margin-bottom:14px;}
+.cash-summary .tile{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;}
+.cash-summary .tile .l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.cash-summary .tile .v{font-family:'Space Mono',monospace;font-size:1.1rem;font-weight:700;}
+
+.status-msg{text-align:center;padding:60px 20px;color:var(--muted);font-family:'Space Mono',monospace;font-size:13px;}
+[hidden]{display:none!important;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <div>
+      <h1 id="entName">—</h1>
+      <div class="sub">Fiche de suivi — accès partagé</div>
+    </div>
+    <div class="sync-chip"><span class="sync-dot"></span><span id="syncLbl">Connexion…</span></div>
+  </div>
+
+  <div id="app" hidden>
+    <div class="tabs">
+      <button class="tab-btn active" id="tabBtnSetting" onclick="switchShareTab('setting')">SETTING</button>
+      <button class="tab-btn" id="tabBtnClosing" onclick="switchShareTab('closing')">CLOSING</button>
+    </div>
+
+    <div id="paneSetting">
+      <div class="card">
+        <div class="kpi-row" id="kpiRow"></div>
+      </div>
+      <div class="card">
+        <div class="day-nav">
+          <button onclick="shiftDay(-1)">‹</button>
+          <span class="lbl" id="dayLbl">—</span>
+          <button onclick="shiftDay(1)">›</button>
+        </div>
+        <div id="metricsList"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Conversion du jour</div>
+        <div id="convList"></div>
+      </div>
+    </div>
+
+    <div id="paneClosing" hidden>
+      <div class="card">
+        <div class="cash-summary">
+          <div class="tile"><div class="l">Cash contracté</div><div class="v" id="cashContracteTotal" style="color:#fbbf24">0,00 €</div></div>
+          <div class="tile"><div class="l">Cash collecté</div><div class="v" id="cashCollecteTotal" style="color:#34d399">0,00 €</div></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+          <button class="add-lead-btn" onclick="addLead()">+ Ajouter un lead</button>
+        </div>
+        <div class="leads-table-wrap">
+          <table class="leads">
+            <thead><tr>
+              <th>#</th><th>Date</th><th>Prénom</th><th>Réseau</th><th>Tag</th><th>État</th>
+              <th>Objections</th><th>Cash contracté (€)</th><th>Cash collecté (€)</th>
+              <th>Commentaire</th><th>To do</th><th>Closer</th><th>Setter</th><th></th>
+            </tr></thead>
+            <tbody id="leadsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="statusMsg" class="status-msg">Ouverture de la fiche…</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, set, get, push, remove, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+const FB={apiKey:"AIzaSyA9s3pyDNcIKkb2bewa_xW80lQeajwe1PU",authDomain:"setter-tracker-8ef58.firebaseapp.com",databaseURL:"https://setter-tracker-8ef58-default-rtdb.europe-west1.firebasedatabase.app",projectId:"setter-tracker-8ef58",storageBucket:"setter-tracker-8ef58.firebasestorage.app",messagingSenderId:"800999132152",appId:"1:800999132152:web:0914fa2b08e0e9eb13a40d"};
+const app=initializeApp(FB);
+const db=getDatabase(app);
+const auth=getAuth(app);
+
+const UNIFIED_METRICS=[
+  {k:'firstmsg',  l:'Premiers msgs'},
+  {k:'replies',   l:'Réponses'},
+  {k:'followup',  l:'Follow ups'},
+  {k:'repliesfu', l:'Réponses FU'},
+  {k:'callprop',  l:'Call proposé'},
+  {k:'lien',      l:'Lien envoyé'},
+  {k:'r1',        l:'R1 booké'},
+  {k:'present',   l:'Call présent'},
+  {k:'r2',        l:'R2 booké'},
+];
+const ENT_NAMES={O:{name:'Ozcan',hex:'#1E90FF'},J:{name:'Jorann',hex:'#8B0000'},G:{name:'Gaël',hex:'#FF8C00'},M:{name:'Mika',hex:'#2E8B57'}};
+const TAGS=[
+  {v:'tiktok Setting',bg:'#3b3bdb',fg:'#fff'},
+  {v:'Instagram Setting',bg:'#7c3aed',fg:'#fff'},
+  {v:'Meta Ads',bg:'#c7d2fe',fg:'#1e1b4b'},
+  {v:'Setting CRM',bg:'#ddd6fe',fg:'#3b0764'},
+  {v:'Bouche à oreille',bg:'#fde68a',fg:'#713f12'},
+  {v:'UPSELL',bg:'#4f46e5',fg:'#fff'},
+  {v:'Youtube et inst',bg:'#5eead4',fg:'#134e4a'},
+];
+const ETATS=[
+  {v:'Closé',bg:'#bbf7d0',fg:'#052e16'},
+  {v:'No close',bg:'#7f1d1d',fg:'#fff'},
+  {v:'Follow up',bg:'#fed7aa',fg:'#7c2d12'},
+  {v:'R2 placé',bg:'#bfdbfe',fg:'#1e3a8a'},
+  {v:'No show',bg:'#374151',fg:'#fff'},
+  {v:'A book',bg:'#e5e7eb',fg:'#111827'},
+];
+
+const params=new URLSearchParams(location.search);
+const entKey=params.get('ent');
+const shareEmail=params.get('u');
+const sharePassword=params.get('k');
+
+const fmtAmount=v=>(v==null||isNaN(v))?'0,00':Number(v).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtPct=n=>(n==null||isNaN(n))?'—':n.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
+
+let selDay=new Date().getDate();
+let cY=new Date().getFullYear(), cM=new Date().getMonth();
+let monthData={};
+let leads={};
+
+function dayKey(){return `${cY}-${String(cM+1).padStart(2,'0')}-${String(selDay).padStart(2,'0')}`;}
+
+async function boot(){
+  if(!entKey||!shareEmail||!sharePassword){
+    document.getElementById('statusMsg').textContent="Lien invalide.";
+    return;
+  }
+  const ent=ENT_NAMES[entKey]||{name:entKey,hex:'#00d4ff'};
+  document.getElementById('entName').textContent=ent.name;
+  document.documentElement.style.setProperty('--c',ent.hex);
+  const rgb=hexToRgb(ent.hex);
+  document.documentElement.style.setProperty('--cr',rgb);
+
+  try{
+    await signInWithEmailAndPassword(auth,shareEmail,sharePassword);
+  }catch(e){
+    document.getElementById('statusMsg').textContent="Accès refusé ou lien expiré.";
+    document.getElementById('syncLbl').textContent='Erreur';
+    return;
+  }
+
+  document.getElementById('statusMsg').hidden=true;
+  document.getElementById('app').hidden=false;
+  document.getElementById('syncLbl').textContent='Synchronisé';
+
+  listenMonth();
+  listenLeads();
+}
+
+function hexToRgb(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return `${r},${g},${b}`;
+}
+
+function listenMonth(){
+  const monthRef=ref(db,`metrics/${cY}/${cM+1}`);
+  onValue(monthRef,snap=>{
+    monthData=snap.val()||{};
+    renderSetting();
+  });
+}
+
+window.switchShareTab=function(tab){
+  document.getElementById('paneSetting').hidden=tab!=='setting';
+  document.getElementById('paneClosing').hidden=tab!=='closing';
+  document.getElementById('tabBtnSetting').classList.toggle('active',tab==='setting');
+  document.getElementById('tabBtnClosing').classList.toggle('active',tab==='closing');
+};
+
+window.shiftDay=function(dir){
+  const dim=new Date(cY,cM+1,0).getDate();
+  selDay+=dir;
+  if(selDay<1){cM--;if(cM<0){cM=11;cY--;}selDay=new Date(cY,cM+1,0).getDate();listenMonth();}
+  else if(selDay>dim){cM++;if(cM>11){cM=0;cY++;}selDay=1;listenMonth();}
+  renderSetting();
+};
+
+function gv(day,key){
+  const d=monthData[day];
+  return (d&&d[entKey]&&d[entKey][key])||0;
+}
+
+async function setMetric(key,val){
+  val=Math.max(0,val);
+  await set(ref(db,`metrics/${cY}/${cM+1}/${selDay}/${entKey}/${key}`),val);
+}
+
+function renderSetting(){
+  const dim=new Date(cY,cM+1,0).getDate();
+  document.getElementById('dayLbl').textContent=`${selDay}/${cM+1}/${cY}`;
+
+  // Metrics list for selected day
+  const list=document.getElementById('metricsList');
+  list.innerHTML=UNIFIED_METRICS.map(m=>{
+    const val=gv(selDay,m.k);
+    return `<div class="mrow">
+      <span class="mlbl">${m.l}</span>
+      <div class="mctrl">
+        <button class="mbtn" onclick="adjustMetric('${m.k}',-1)">−</button>
+        <input class="mval" type="number" min="0" value="${val}" onchange="setMetricFromInput('${m.k}',this.value)">
+        <button class="mbtn" onclick="adjustMetric('${m.k}',1)">+</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Month totals
+  let tfm=0,trep=0,tr1=0;
+  for(let d=1;d<=dim;d++){
+    tfm+=gv(d,'firstmsg');trep+=gv(d,'replies');tr1+=gv(d,'r1');
+  }
+  const kpiRow=document.getElementById('kpiRow');
+  kpiRow.innerHTML=`
+    <div class="kpi-tile"><div class="l">Messages envoyés (mois)</div><div class="v">${tfm}</div></div>
+    <div class="kpi-tile"><div class="l">R1 bookés (mois)</div><div class="v">${tr1}</div></div>
+  `;
+
+  // Conversion du jour
+  const fm=gv(selDay,'firstmsg'),rep=gv(selDay,'replies'),fu=gv(selDay,'followup'),rfu=gv(selDay,'repliesfu'),
+        cp=gv(selDay,'callprop'),ln=gv(selDay,'lien'),r1=gv(selDay,'r1'),pr=gv(selDay,'present'),r2=gv(selDay,'r2');
+  const rows=[
+    ['Message → Réponse',fm>0?rep/fm*100:null],
+    ['F/U → Réponse F/U',fu>0?rfu/fu*100:null],
+    ['Msg+F/U → Call proposé',(fm+fu)>0?cp/(fm+fu)*100:null],
+    ['Call proposé → Lien',cp>0?ln/cp*100:null],
+    ['Lien → R1 booké',ln>0?r1/ln*100:null],
+    ['R1 booké → Présent',r1>0?pr/r1*100:null],
+    ['Présent → R2 booké',pr>0?r2/pr*100:null],
+  ];
+  document.getElementById('convList').innerHTML=rows.map(([l,v])=>
+    `<div class="conv-row"><span>${l}</span><span class="v">${fmtPct(v)}</span></div>`
+  ).join('');
+}
+
+window.adjustMetric=async function(key,delta){
+  const cur=gv(selDay,key);
+  await setMetric(key,cur+delta);
+};
+window.setMetricFromInput=async function(key,val){
+  await setMetric(key,parseInt(val)||0);
+};
+
+// ===== CLOSING =====
+function listenLeads(){
+  const leadsRef=ref(db,`shareClosing/${entKey}`);
+  onValue(leadsRef,snap=>{
+    leads=snap.val()||{};
+    renderClosing();
+  });
+}
+
+function renderClosing(){
+  const rows=Object.entries(leads).sort((a,b)=>(a[1].order||0)-(b[1].order||0));
+  let cc=0,cl=0;
+  rows.forEach(([,l])=>{cc+=parseFloat(l.cashContracte)||0;cl+=parseFloat(l.cashCollecte)||0;});
+  document.getElementById('cashContracteTotal').textContent=fmtAmount(cc)+' €';
+  document.getElementById('cashCollecteTotal').textContent=fmtAmount(cl)+' €';
+
+  document.getElementById('leadsBody').innerHTML=rows.map(([id,l],i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td><input type="text" value="${esc(l.date||'')}" onchange="updLead('${id}','date',this.value)" style="min-width:80px"></td>
+      <td><input type="text" value="${esc(l.prenom||'')}" onchange="updLead('${id}','prenom',this.value)"></td>
+      <td><input type="text" value="${esc(l.reseau||'')}" onchange="updLead('${id}','reseau',this.value)"></td>
+      <td>${tagSelect(id,'tag',l.tag,TAGS)}</td>
+      <td>${tagSelect(id,'etat',l.etat,ETATS)}</td>
+      <td><textarea onchange="updLead('${id}','objections',this.value)">${esc(l.objections||'')}</textarea></td>
+      <td><input type="number" value="${l.cashContracte||''}" onchange="updLead('${id}','cashContracte',this.value)" style="min-width:70px"></td>
+      <td><input type="number" value="${l.cashCollecte||''}" onchange="updLead('${id}','cashCollecte',this.value)" style="min-width:70px"></td>
+      <td><textarea onchange="updLead('${id}','commentaire',this.value)">${esc(l.commentaire||'')}</textarea></td>
+      <td><textarea onchange="updLead('${id}','todo',this.value)">${esc(l.todo||'')}</textarea></td>
+      <td><input type="text" value="${esc(l.closer||'')}" onchange="updLead('${id}','closer',this.value)"></td>
+      <td><input type="text" value="${esc(l.setter||'')}" onchange="updLead('${id}','setter',this.value)"></td>
+      <td><button class="del-lead-btn" onclick="delLead('${id}')">✕</button></td>
+    </tr>
+  `).join('');
+}
+
+function tagSelect(id,field,current,options){
+  const cur=options.find(o=>o.v===current);
+  const bg=cur?cur.bg:'#1e293b', fg=cur?cur.fg:'#94a3b8';
+  return `<select class="pill" style="background:${bg};color:${fg}" onchange="updLead('${id}','${field}',this.value)">
+    <option value="" ${!current?'selected':''}>—</option>
+    ${options.map(o=>`<option value="${o.v}" ${o.v===current?'selected':''}>${o.v}</option>`).join('')}
+  </select>`;
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+window.addLead=async function(){
+  const id='l'+Date.now();
+  const today=new Date();
+  const dateStr=String(today.getDate()).padStart(2,'0')+'/'+String(today.getMonth()+1).padStart(2,'0')+'/'+today.getFullYear();
+  await set(ref(db,`shareClosing/${entKey}/${id}`),{date:dateStr,order:Date.now()});
+};
+window.updLead=async function(id,field,val){
+  await set(ref(db,`shareClosing/${entKey}/${id}/${field}`),val);
+};
+window.delLead=async function(id){
+  if(!confirm('Supprimer ce lead ?'))return;
+  await remove(ref(db,`shareClosing/${entKey}/${id}`));
+};
+
+boot();
+</script>
+</body>
+</html>
