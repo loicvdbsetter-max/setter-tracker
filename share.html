@@ -822,16 +822,21 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
 
   /* ---------------- data / graphique d'évolution ---------------- */
   function chartMetricById(id){for(var i=0;i<CHART_METRICS.length;i++){if(CHART_METRICS[i].id===id)return CHART_METRICS[i];}return CHART_METRICS[0];}
+  // Même garde-fou que l'Analyse par semaine : un ratio calculé sur trop peu
+  // de données (<3) ou dépassant 100% (étapes du funnel qui ne concernent pas
+  // le même groupe de leads cette semaine-là) n'est pas affiché.
   function weekValueForMetric(m,week,weekTotal){
     if(m.kind==="closing"){
       var ids=leadIdsInRange(week.start,week.end);
-      if(!ids.length)return null;
+      if(ids.length<3)return null;
       var closed=ids.filter(function(id){return effLead(id).etat==="Closé";}).length;
-      return closed/ids.length*100;
+      var vc=closed/ids.length*100;
+      return vc<=100?vc:null;
     }
     var d=weekTotal[m.den];
-    if(!d)return null;
-    return weekTotal[m.num]/d*100;
+    if(!d||d<3)return null;
+    var v=weekTotal[m.num]/d*100;
+    return v<=100?v:null;
   }
   function smoothPath(pts){
     if(pts.length<2)return '';
