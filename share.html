@@ -67,11 +67,10 @@
   .insight.good{background:var(--accent-soft); color:var(--accent);}
   .insight.bad{background:var(--amber-soft); color:var(--amber);}
   .insight b{font-weight:700;}
-  .synth-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}
-  @media (max-width:820px){ .synth-grid{grid-template-columns:1fr;} }
-  .synth-card{background:var(--surface-2); border:1px solid var(--line-soft); border-radius:12px; padding:14px 16px;}
-  .synth-card .cl{font-size:12px; color:var(--text-2); margin-bottom:6px;}
-  .synth-card .cv{font-size:15px; font-weight:600;}
+  .synth-card-inline{border-color:var(--line);}
+  .synth-card-inline .cl{font-size:11px; color:var(--text-2); margin-bottom:4px;}
+  .synth-card-inline .cv{font-size:14px; font-weight:600; line-height:1.35;}
+  .synth-card-inline .cv+.cv{margin-top:4px;}
   .closing-stats{display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}
   @media (max-width:820px){ .closing-stats{grid-template-columns:1fr;} }
   .closing-stat{background:var(--surface-2); border:1px solid var(--line-soft); border-radius:12px; padding:14px 16px; text-align:center;}
@@ -368,13 +367,6 @@
       </div>
     </section>
 
-    <section class="panel" style="margin-bottom:16px">
-      <div class="head"><h2>Synthèse du mois</h2></div>
-      <div class="body">
-        <div class="synth-grid" id="month-synth"></div>
-      </div>
-    </section>
-
     <section class="panel">
       <div class="head"><h2>Closing — répartition des leads du mois</h2></div>
       <div class="body">
@@ -507,18 +499,18 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
     });
     return items;
   }
-  function pickInsight(t){
+  function pickInsight(t,maxWeak){
+    maxWeak=maxWeak||1;
     var items=analyzeItems(t);
     if(!items.length)return null;
     items.sort(function(a,b){return b.margin-a.margin;});
     var best=items[0];
     var strong={label:(best.v>=best.b.exc?best.b.great:best.b.good),v:best.v};
-    var weak=null;
-    if(items.length>1){
-      var worst=items[items.length-1];
-      weak={label:worst.b.bad,v:worst.v};
-    }
-    return {strong:strong,weak:weak};
+    // "à retravailler" = les étapes sous leur seuil minimum, la pire en premier
+    var weakList=items.slice(1).filter(function(it){return it.margin<0;})
+      .sort(function(a,b){return a.margin-b.margin;}).slice(0,maxWeak)
+      .map(function(it){return {label:it.b.bad,v:it.v};});
+    return {strong:strong,weak:weakList[0]||null,weakList:weakList};
   }
   function weeksOfMonth(vm){
     var y=+vm.slice(0,4),m=+vm.slice(5,7)-1;
@@ -670,7 +662,7 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
     rootwrap:document.getElementById("rootwrap"),
     cmLbl:document.getElementById("cm-lbl"),cmNext:document.getElementById("cm-next"),cmNow:document.getElementById("cm-now"),
     dmLbl:document.getElementById("dm-lbl"),dmNext:document.getElementById("dm-next"),dmNow:document.getElementById("dm-now"),
-    weeksGrid:document.getElementById("weeks-grid"),monthSynth:document.getElementById("month-synth"),closingStats:document.getElementById("closing-stats"),
+    weeksGrid:document.getElementById("weeks-grid"),closingStats:document.getElementById("closing-stats"),
     chartPills:document.getElementById("chart-pills"),chartWrap:document.getElementById("chart-wrap")
   };
   var encInputs={}, encRovals={}, leadRows={};
@@ -954,7 +946,7 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
 
     renderEvolutionChart(weeks,weekTotals);
 
-    el.weeksGrid.innerHTML=weeks.map(function(w,i){
+    var weekCardsHTML=weeks.map(function(w,i){
       var t=weekTotals[i];
       var hasData=FIELDS.some(function(f){return t[f.k]>0;});
       if(!hasData){
@@ -978,14 +970,20 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
     }).join("");
 
     var monthTotals=totalsOf(datesIn(dataMonth));
-    var monthIns=pickInsight(monthTotals);
+    var monthIns=pickInsight(monthTotals,3);
     var bestWeekIdx=-1,bestWeekR1=-1;
     weekTotals.forEach(function(t,i){if(t.r1>bestWeekR1){bestWeekR1=t.r1;bestWeekIdx=i;}});
     var bestWeekTxt=(bestWeekIdx>=0&&bestWeekR1>0)?('Semaine '+(bestWeekIdx+1)+' — '+bestWeekR1+' R1, conv. '+fmtPct(weekTotals[bestWeekIdx].r1,weekTotals[bestWeekIdx].firstmsg)):'—';
-    el.monthSynth.innerHTML=
-      '<div class="synth-card"><div class="cl">Meilleure semaine (R1 bookés)</div><div class="cv">'+bestWeekTxt+'</div></div>'+
-      '<div class="synth-card"><div class="cl">Point fort du mois</div><div class="cv" style="color:var(--accent)">'+(monthIns?monthIns.strong.label+' ('+monthIns.strong.v.toFixed(2).replace(".",",")+'%)':'—')+'</div></div>'+
-      '<div class="synth-card"><div class="cl">À retravailler en priorité</div><div class="cv" style="color:var(--amber)">'+(monthIns&&monthIns.weak?monthIns.weak.label+' ('+monthIns.weak.v.toFixed(2).replace(".",",")+'%)':'—')+'</div></div>';
+    var weakListHTML=(monthIns&&monthIns.weakList.length)
+      ? monthIns.weakList.map(function(w){return '<div class="cv" style="color:var(--amber)">'+w.label+' ('+w.v.toFixed(2).replace(".",",")+'%)</div>';}).join("")
+      : '<div class="cv">—</div>';
+    var synthCardHTML='<div class="week-card synth-card-inline"><h3>Synthèse du mois</h3>'+
+      '<div class="rng">Vue d\'ensemble</div>'+
+      '<div class="cl" style="margin-top:6px">Meilleure semaine (R1 bookés)</div><div class="cv">'+bestWeekTxt+'</div>'+
+      '<div class="cl" style="margin-top:12px">Point fort du mois</div><div class="cv" style="color:var(--accent)">'+(monthIns?monthIns.strong.label+' ('+monthIns.strong.v.toFixed(2).replace(".",",")+'%)':'—')+'</div>'+
+      '<div class="cl" style="margin-top:12px">À retravailler en priorité</div>'+weakListHTML+
+      '</div>';
+    el.weeksGrid.innerHTML=weekCardsHTML+synthCardHTML;
 
     var idsMonth=leadIdsInMonth(dataMonth);
     var total=idsMonth.length;
