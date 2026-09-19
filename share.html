@@ -278,6 +278,12 @@
 
   <!-- ============ CLOSING ============ -->
   <section id="page-closing" style="display:none">
+    <div class="periodbar">
+      <button class="navbtn" id="cm-prev" aria-label="Mois précédent">‹</button>
+      <span class="pm num" id="cm-lbl">—</span>
+      <button class="navbtn" id="cm-next" aria-label="Mois suivant">›</button>
+      <button class="ghost-btn" id="cm-now" hidden>Ce mois-ci</button>
+    </div>
     <div class="closing-head">
       <div class="cash-strip">
         <div class="cash-card contract"><div class="cl">Cash contracté</div><div class="cv" id="cash-contract">0 €</div></div>
@@ -381,7 +387,7 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
   /* ---------------- state ---------------- */
   var serverEntries={}, optimistic={};
   var leads={}, leadsOpt={};
-  var selected=todayKey(), viewMonth=todayKey().slice(0,7);
+  var selected=todayKey(), viewMonth=todayKey().slice(0,7), closingMonth=todayKey().slice(0,7);
   var page="setting", readOnly=false;
   var writing={}, redo={}, timers={};
   var dayListeners={}; // "Y-M" -> [{ref, day}]
@@ -463,6 +469,8 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
   /* ---------------- Firebase: leads (shareClosing/{ENT_KEY}/{id}) ---------------- */
   function effLead(id){var s=leads[id]||{},o=leadsOpt[id]||{},out={};LEAD_COLS.forEach(function(c){out[c.f]=(o[c.f]!==undefined?o[c.f]:(s[c.f]!==undefined?s[c.f]:(c.type==="euro"?0:"")));});out.order=(o.order!==undefined?o.order:(s.order!==undefined?s.order:0));return out;}
   function sortedLeadIds(){var s={};Object.keys(leads).forEach(function(k){s[k]=1;});Object.keys(leadsOpt).forEach(function(k){s[k]=1;});return Object.keys(s).sort(function(a,b){var oa=effLead(a).order,ob=effLead(b).order;return oa-ob|| (a<b?-1:1);});}
+  function leadMonthKey(dateStr){var m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(dateStr||"").trim());if(!m)return null;return m[3]+"-"+p2(+m[2]);}
+  function leadIdsInMonth(vm){return sortedLeadIds().filter(function(id){return leadMonthKey(effLead(id).date)===vm;});}
   function setLeadField(id,field,val){if(readOnly)return;if(!leadsOpt[id])leadsOpt[id]={};leadsOpt[id][field]=val;flushLead(id);renderCashBilan();}
   function flushLead(id){
     var patch=leadsOpt[id];if(!patch||!Object.keys(patch).length)return;
@@ -508,7 +516,8 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
     bilanSub:document.getElementById("bilan-sub"),status:document.getElementById("status"),statusTxt:document.getElementById("status-txt"),
     leadsHead:document.getElementById("leads-head"),leadsBody:document.getElementById("leads-body"),leadsEmpty:document.getElementById("leads-empty"),
     cashContract:document.getElementById("cash-contract"),cashCollect:document.getElementById("cash-collect"),
-    rootwrap:document.getElementById("rootwrap")
+    rootwrap:document.getElementById("rootwrap"),
+    cmLbl:document.getElementById("cm-lbl"),cmNext:document.getElementById("cm-next"),cmNow:document.getElementById("cm-now")
   };
   var encInputs={}, encRovals={}, leadRows={};
 
@@ -634,19 +643,26 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
     elc.value=(val||"");
     if(field==="reseau"){var link=elc.parentNode.querySelector(".openlink");if(link){if(isUrl(val)){link.href=val;link.hidden=false;}else{link.hidden=true;}}}
   }
+  function renderClosingPeriod(){
+    el.cmLbl.textContent=monthLabel(closingMonth);
+    el.cmNow.hidden=(closingMonth===todayKey().slice(0,7));
+    el.cmNext.disabled=(closingMonth>=todayKey().slice(0,7));
+  }
   function syncLeads(){
-    var ids=sortedLeadIds();
-    Object.keys(leadRows).forEach(function(id){if(ids.indexOf(id)<0){leadRows[id].tr.remove();delete leadRows[id];}});
-    ids.forEach(function(id){if(!leadRows[id])buildLeadRow(id);el.leadsBody.appendChild(leadRows[id].tr);});
-    ids.forEach(function(id,i){
+    renderClosingPeriod();
+    var idsInMonth=leadIdsInMonth(closingMonth);
+    var visible={};idsInMonth.forEach(function(id){visible[id]=1;});
+    Object.keys(leadRows).forEach(function(id){if(!visible[id]){leadRows[id].tr.remove();delete leadRows[id];}});
+    idsInMonth.forEach(function(id){if(!leadRows[id])buildLeadRow(id);el.leadsBody.appendChild(leadRows[id].tr);});
+    idsInMonth.forEach(function(id,i){
       var row=leadRows[id],data=effLead(id);row.idx.textContent=(i+1);
       LEAD_COLS.forEach(function(c){var elc=row.ctrls[c.f];if(!elc||document.activeElement===elc)return;setControlValue(elc,c.f,data[c.f]);});
     });
-    el.leadsEmpty.hidden=(ids.length>0);
+    el.leadsEmpty.hidden=(idsInMonth.length>0);
     renderCashBilan();
   }
   function renderCashBilan(){
-    var c=0,col=0;sortedLeadIds().forEach(function(id){var d=effLead(id);c+=num(d.cashContracte);col+=num(d.cashCollecte);});
+    var c=0,col=0;leadIdsInMonth(closingMonth).forEach(function(id){var d=effLead(id);c+=num(d.cashContracte);col+=num(d.cashCollecte);});
     el.cashContract.textContent=EUR.format(c);el.cashCollect.textContent=EUR.format(col);
   }
 
@@ -663,6 +679,10 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
   document.getElementById("pm-prev").addEventListener("click",function(){viewMonth=shiftMonth(viewMonth,-1);attachMonthListeners(viewMonth);renderSetting();});
   el.pmNext.addEventListener("click",function(){if(viewMonth>=todayKey().slice(0,7))return;viewMonth=shiftMonth(viewMonth,1);attachMonthListeners(viewMonth);renderSetting();});
   el.pmNow.addEventListener("click",function(){viewMonth=todayKey().slice(0,7);attachMonthListeners(viewMonth);renderSetting();});
+
+  document.getElementById("cm-prev").addEventListener("click",function(){closingMonth=shiftMonth(closingMonth,-1);syncLeads();});
+  el.cmNext.addEventListener("click",function(){if(closingMonth>=todayKey().slice(0,7))return;closingMonth=shiftMonth(closingMonth,1);syncLeads();});
+  el.cmNow.addEventListener("click",function(){closingMonth=todayKey().slice(0,7);syncLeads();});
 
   el.leadsBody.addEventListener("change",function(ev){
     var t=ev.target;var id=t.getAttribute("data-id"),field=t.getAttribute("data-field");if(!id||!field)return;
