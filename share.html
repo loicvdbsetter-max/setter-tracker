@@ -87,7 +87,7 @@
   .chart-wrap svg{display:block; width:100%; height:auto; min-width:460px;}
   .chart-gridline{stroke:var(--line-soft); stroke-width:1;}
   .chart-gridlabel{fill:var(--text-3); font-size:10px; font-family:var(--sans);}
-  .chart-weeklabel{fill:var(--text-2); font-size:11px; font-family:var(--sans);}
+  .chart-weeklabel{fill:var(--text); font-size:11.5px; font-weight:600; font-family:var(--sans); letter-spacing:.02em;}
   .chart-datelabel{fill:var(--text-3); font-size:9.5px; font-family:var(--mono-num);}
   .chart-vlabel{font-family:var(--mono-num); font-weight:700; font-size:12px;}
   .chart-empty{padding:40px 10px; text-align:center; color:var(--text-2); font-size:13px;}
@@ -470,12 +470,12 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
   var selected=todayKey(), viewMonth=todayKey().slice(0,7), closingMonth=todayKey().slice(0,7), dataMonth=todayKey().slice(0,7);
 
   var CHART_METRICS=[
-    {id:"msgrep",   label:"Message → Réponse",       color:"#5E9BF6", num:"replies",  den:"firstmsg", kind:"setting"},
-    {id:"fuprep",   label:"Follow-up → Réponse FUP",  color:"#8B5CF6", num:"repliesfu",den:"followup", kind:"setting"},
-    {id:"proplien", label:"Call proposé → Lien",      color:"#F2894E", num:"lien",     den:"callprop", kind:"setting"},
-    {id:"lienr1",   label:"Lien → R1 booké",          color:"#EF6D6D", num:"r1",       den:"lien",     kind:"setting"},
-    {id:"r1pres",   label:"R1 booké → Présent",       color:"#22D3EE", num:"present",  den:"r1",       kind:"setting"},
-    {id:"presr2",   label:"Présent → R2 booké",       color:"#35D9A0", num:"r2",       den:"present",  kind:"setting"},
+    {id:"msgrep",   label:"Message → Réponse",       color:"#5E9BF6", num:"replies",  den:"firstmsg", kind:"setting", min:15},
+    {id:"fuprep",   label:"Follow-up → Réponse FUP",  color:"#8B5CF6", num:"repliesfu",den:"followup", kind:"setting", min:10},
+    {id:"proplien", label:"Call proposé → Lien",      color:"#F2894E", num:"lien",     den:"callprop", kind:"setting", min:50},
+    {id:"lienr1",   label:"Lien → R1 booké",          color:"#EF6D6D", num:"r1",       den:"lien",     kind:"setting", min:70},
+    {id:"r1pres",   label:"R1 booké → Présent",       color:"#22D3EE", num:"present",  den:"r1",       kind:"setting", min:75},
+    {id:"presr2",   label:"Présent → R2 booké",       color:"#35D9A0", num:"r2",       den:"present",  kind:"setting", min:60},
     {id:"closing",  label:"Taux de closing",          color:"#F2B441", kind:"closing"}
   ];
   var activeChartMetric="msgrep";
@@ -834,6 +834,19 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
     }
     return d;
   }
+  function dayRateForMetric(m,dateStr){
+    if(m.kind==="closing"){
+      var dObj=parseKey(dateStr);
+      var ids=leadIdsInRange(dObj,dObj);
+      if(!ids.length)return null;
+      var closed=ids.filter(function(id){return effLead(id).etat==="Closé";}).length;
+      return closed/ids.length*100;
+    }
+    var e=eff(dateStr);
+    var d=e[m.den];
+    if(!d)return null;
+    return e[m.num]/d*100;
+  }
   function renderEvolutionChart(weeks,weekTotals){
     el.chartPills.innerHTML=CHART_METRICS.map(function(m){
       var active=m.id===activeChartMetric;
@@ -844,55 +857,67 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
     });
 
     var m=chartMetricById(activeChartMetric);
-    var vals=weeks.map(function(w,i){return weekValueForMetric(m,w,weekTotals[i]);});
-    var validVals=vals.filter(function(v){return v!==null;});
+    var dim=daysInMonth(dataMonth);
+    var dayVals=[];
+    for(var d=1;d<=dim;d++)dayVals.push(dayRateForMetric(m,dataMonth+"-"+p2(d)));
+    var validVals=dayVals.filter(function(v){return v!==null;});
     if(!validVals.length){
       el.chartWrap.innerHTML='<div class="chart-empty">Pas encore assez de données ce mois-ci pour ce graphique.</div>';
       return;
     }
 
-    var W=720,H=220,padL=36,padR=14,padT=18,padB=34;
+    var W=720,H=170,padL=16,padR=16,padT=40,padB=22;
     var innerW=W-padL-padR,innerH=H-padT-padB;
     var maxV=Math.max(100,Math.ceil(Math.max.apply(null,validVals)/10)*10);
     function yFor(v){return padT+innerH-(v/maxV)*innerH;}
-    function xFor(i){return padL+(weeks.length>1?i/(weeks.length-1)*innerW:innerW/2);}
+    function xFor(dayIdx){return padL+(dim>1?dayIdx/(dim-1)*innerW:innerW/2);}
 
     var pts=[];
-    weeks.forEach(function(w,i){if(vals[i]!==null)pts.push({x:xFor(i),y:yFor(vals[i]),v:vals[i]});});
-
+    dayVals.forEach(function(v,i){if(v!==null)pts.push({x:xFor(i),y:yFor(v)});});
     var linePath=smoothPath(pts);
     var areaPath=pts.length>1?(linePath+'L'+pts[pts.length-1].x+','+(padT+innerH)+' L'+pts[0].x+','+(padT+innerH)+' Z'):'';
 
-    var grid=[0,25,50,75,100].filter(function(g){return g<=maxV;}).map(function(g){
-      var y=yFor(g);
-      return '<line class="chart-gridline" x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'"></line>'+
-        '<text class="chart-gridlabel" x="'+(padL-6)+'" y="'+(y+3)+'" text-anchor="end">'+g+'%</text>';
-    }).join("");
+    // Ligne de référence = seuil objectif (uniquement pour les indicateurs Setting)
+    var refSvg='';
+    if(m.kind==="setting"&&m.min!==undefined){
+      var ry=yFor(m.min);
+      if(ry>=padT-1&&ry<=padT+innerH+1){
+        refSvg='<line x1="'+padL+'" y1="'+ry+'" x2="'+(W-padR)+'" y2="'+ry+'" stroke="'+m.color+'" stroke-width="1" stroke-dasharray="4,4" opacity="0.4"></line>'+
+          '<text x="'+(W-padR)+'" y="'+(ry-5)+'" text-anchor="end" class="chart-gridlabel" fill="'+m.color+'" opacity="0.75">Objectif '+m.min+'%</text>';
+      }
+    }
 
-    var weekLabels=weeks.map(function(w,i){
-      var x=xFor(i);
-      return '<text class="chart-weeklabel" x="'+x+'" y="'+(H-18)+'" text-anchor="middle">S'+(i+1)+'</text>'+
-        '<text class="chart-datelabel" x="'+x+'" y="'+(H-6)+'" text-anchor="middle">'+FR_DAYNUM.format(w.start)+'</text>';
-    }).join("");
+    // Marqueurs de semaine : séparateur + % total de la semaine
+    var yy=+dataMonth.slice(0,4),mo=+dataMonth.slice(5,7);
+    var weekSvg='';
+    weeks.forEach(function(w,i){
+      var startInMonth=(w.start.getFullYear()===yy&&w.start.getMonth()===mo-1)?w.start.getDate():1;
+      var endInMonth=(w.end.getFullYear()===yy&&w.end.getMonth()===mo-1)?w.end.getDate():dim;
+      if(startInMonth>dim)return;
+      var xStart=xFor(startInMonth-1);
+      var xMid=xFor(((startInMonth+endInMonth)/2)-1);
+      var val=weekValueForMetric(m,w,weekTotals[i]);
+      if(i>0)weekSvg+='<line x1="'+xStart+'" y1="'+padT+'" x2="'+xStart+'" y2="'+(padT+innerH)+'" stroke="var(--line)" stroke-width="1" stroke-dasharray="2,3" opacity="0.5"></line>';
+      weekSvg+='<text x="'+xMid+'" y="16" text-anchor="middle" class="chart-weeklabel">S'+(i+1)+(val!==null?' · '+val.toFixed(0)+'%':'')+'</text>';
+    });
 
-    var dots=pts.map(function(p){
-      return '<circle cx="'+p.x+'" cy="'+p.y+'" r="9" fill="'+m.color+'" opacity="0.16"></circle>'+
-        '<circle cx="'+p.x+'" cy="'+p.y+'" r="4" fill="'+m.color+'"></circle>'+
-        '<text class="chart-vlabel" x="'+p.x+'" y="'+(p.y-13)+'" text-anchor="middle" fill="'+m.color+'">'+p.v.toFixed(0)+'%</text>';
-    }).join("");
-
-    var gradId='cg_'+m.id;
+    var gradId='cg_'+m.id,glowId='glow_'+m.id;
     el.chartWrap.innerHTML=
       '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet">'+
-        '<defs><linearGradient id="'+gradId+'" x1="0" y1="0" x2="0" y2="1">'+
-          '<stop offset="0%" stop-color="'+m.color+'" stop-opacity="0.30"></stop>'+
-          '<stop offset="100%" stop-color="'+m.color+'" stop-opacity="0"></stop>'+
-        '</linearGradient></defs>'+
-        grid+
+        '<defs>'+
+          '<linearGradient id="'+gradId+'" x1="0" y1="0" x2="0" y2="1">'+
+            '<stop offset="0%" stop-color="'+m.color+'" stop-opacity="0.35"></stop>'+
+            '<stop offset="100%" stop-color="'+m.color+'" stop-opacity="0"></stop>'+
+          '</linearGradient>'+
+          '<filter id="'+glowId+'" x="-50%" y="-50%" width="200%" height="200%">'+
+            '<feGaussianBlur stdDeviation="2.6" result="b"></feGaussianBlur>'+
+            '<feMerge><feMergeNode in="b"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>'+
+          '</filter>'+
+        '</defs>'+
+        weekSvg+
+        refSvg+
         (areaPath?'<path d="'+areaPath+'" fill="url(#'+gradId+')" stroke="none"></path>':'')+
-        (linePath?'<path d="'+linePath+'" fill="none" stroke="'+m.color+'" stroke-width="2.5" stroke-linecap="round"></path>':'')+
-        dots+
-        weekLabels+
+        (linePath?'<path d="'+linePath+'" fill="none" stroke="'+m.color+'" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#'+glowId+')"></path>':'')+
       '</svg>';
   }
 
