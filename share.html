@@ -78,6 +78,20 @@
   .closing-stat .cl{font-size:12px; color:var(--text-2); margin-bottom:6px;}
   .closing-stat .cv{font-family:var(--mono-num); font-weight:700; font-size:24px;}
 
+  /* ---------- evolution chart ---------- */
+  .chart-pills{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;}
+  .chart-pill{border:1px solid var(--line); background:var(--surface-2); color:var(--text-2); font-family:var(--sans); font-size:12.5px; font-weight:500; padding:7px 13px; border-radius:999px; cursor:pointer; display:inline-flex; align-items:center; gap:7px;}
+  .chart-pill .dot{width:8px; height:8px; border-radius:50%; flex:none;}
+  .chart-pill.active{background:var(--raise); color:var(--text); box-shadow:inset 0 0 0 1px var(--pill-c, var(--line));}
+  .chart-wrap{width:100%; overflow-x:auto;}
+  .chart-wrap svg{display:block; width:100%; height:auto; min-width:460px;}
+  .chart-gridline{stroke:var(--line-soft); stroke-width:1;}
+  .chart-gridlabel{fill:var(--text-3); font-size:10px; font-family:var(--sans);}
+  .chart-weeklabel{fill:var(--text-2); font-size:11px; font-family:var(--sans);}
+  .chart-datelabel{fill:var(--text-3); font-size:9.5px; font-family:var(--mono-num);}
+  .chart-vlabel{font-family:var(--mono-num); font-weight:700; font-size:12px;}
+  .chart-empty{padding:40px 10px; text-align:center; color:var(--text-2); font-size:13px;}
+
   .periodbar{display:flex; align-items:center; justify-content:center; gap:10px; margin:0 0 20px;}
   .periodbar .pm{font-family:var(--mono-num); font-weight:600; font-size:18px; letter-spacing:-.01em; min-width:190px; text-align:center;}
   .navbtn{width:34px; height:34px; border-radius:9px; border:1px solid var(--line); background:var(--surface-2); color:var(--text-2); font-size:17px; cursor:pointer; display:grid; place-items:center; flex:none;}
@@ -339,6 +353,14 @@
     </div>
 
     <section class="panel" style="margin-bottom:16px">
+      <div class="head"><h2>Évolution par semaine</h2></div>
+      <div class="body">
+        <div class="chart-pills" id="chart-pills"></div>
+        <div class="chart-wrap" id="chart-wrap"></div>
+      </div>
+    </section>
+
+    <section class="panel" style="margin-bottom:16px">
       <div class="head"><h2>Analyse par semaine</h2></div>
       <div class="body">
         <div class="weeks-grid" id="weeks-grid"></div>
@@ -446,6 +468,17 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
   var serverEntries={}, optimistic={};
   var leads={}, leadsOpt={};
   var selected=todayKey(), viewMonth=todayKey().slice(0,7), closingMonth=todayKey().slice(0,7), dataMonth=todayKey().slice(0,7);
+
+  var CHART_METRICS=[
+    {id:"msgrep",   label:"Message → Réponse",       color:"#5E9BF6", num:"replies",  den:"firstmsg", kind:"setting"},
+    {id:"fuprep",   label:"Follow-up → Réponse FUP",  color:"#8B5CF6", num:"repliesfu",den:"followup", kind:"setting"},
+    {id:"proplien", label:"Call proposé → Lien",      color:"#F2894E", num:"lien",     den:"callprop", kind:"setting"},
+    {id:"lienr1",   label:"Lien → R1 booké",          color:"#EF6D6D", num:"r1",       den:"lien",     kind:"setting"},
+    {id:"r1pres",   label:"R1 booké → Présent",       color:"#22D3EE", num:"present",  den:"r1",       kind:"setting"},
+    {id:"presr2",   label:"Présent → R2 booké",       color:"#35D9A0", num:"r2",       den:"present",  kind:"setting"},
+    {id:"closing",  label:"Taux de closing",          color:"#F2B441", kind:"closing"}
+  ];
+  var activeChartMetric="msgrep";
 
   /* ---------------- analyse par semaine : seuils de référence ---------------- */
   var BENCH=[
@@ -576,6 +609,8 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
   function sortedLeadIds(){var s={};Object.keys(leads).forEach(function(k){s[k]=1;});Object.keys(leadsOpt).forEach(function(k){s[k]=1;});return Object.keys(s).sort(function(a,b){var oa=effLead(a).order,ob=effLead(b).order;return oa-ob|| (a<b?-1:1);});}
   function leadMonthKey(dateStr){var m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(dateStr||"").trim());if(!m)return null;return m[3]+"-"+p2(+m[2]);}
   function leadIdsInMonth(vm){return sortedLeadIds().filter(function(id){return leadMonthKey(effLead(id).date)===vm;});}
+  function leadDateObj(dateStr){var m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(dateStr||"").trim());if(!m)return null;return new Date(+m[3],+m[2]-1,+m[1]);}
+  function leadIdsInRange(start,end){return sortedLeadIds().filter(function(id){var d=leadDateObj(effLead(id).date);return d&&d>=start&&d<=end;});}
   function setLeadField(id,field,val){if(readOnly)return;if(!leadsOpt[id])leadsOpt[id]={};leadsOpt[id][field]=val;flushLead(id);renderCashBilan();}
   function flushLead(id){
     var patch=leadsOpt[id];if(!patch||!Object.keys(patch).length)return;
@@ -625,7 +660,8 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
     rootwrap:document.getElementById("rootwrap"),
     cmLbl:document.getElementById("cm-lbl"),cmNext:document.getElementById("cm-next"),cmNow:document.getElementById("cm-now"),
     dmLbl:document.getElementById("dm-lbl"),dmNext:document.getElementById("dm-next"),dmNow:document.getElementById("dm-now"),
-    weeksGrid:document.getElementById("weeks-grid"),monthSynth:document.getElementById("month-synth"),closingStats:document.getElementById("closing-stats")
+    weeksGrid:document.getElementById("weeks-grid"),monthSynth:document.getElementById("month-synth"),closingStats:document.getElementById("closing-stats"),
+    chartPills:document.getElementById("chart-pills"),chartWrap:document.getElementById("chart-wrap")
   };
   var encInputs={}, encRovals={}, leadRows={};
 
@@ -774,6 +810,92 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
     el.cashContract.textContent=EUR.format(c);el.cashCollect.textContent=EUR.format(col);
   }
 
+  /* ---------------- data / graphique d'évolution ---------------- */
+  function chartMetricById(id){for(var i=0;i<CHART_METRICS.length;i++){if(CHART_METRICS[i].id===id)return CHART_METRICS[i];}return CHART_METRICS[0];}
+  function weekValueForMetric(m,week,weekTotal){
+    if(m.kind==="closing"){
+      var ids=leadIdsInRange(week.start,week.end);
+      if(!ids.length)return null;
+      var closed=ids.filter(function(id){return effLead(id).etat==="Closé";}).length;
+      return closed/ids.length*100;
+    }
+    var d=weekTotal[m.den];
+    if(!d)return null;
+    return weekTotal[m.num]/d*100;
+  }
+  function smoothPath(pts){
+    if(pts.length<2)return '';
+    var d='M'+pts[0].x+','+pts[0].y+' ';
+    for(var i=0;i<pts.length-1;i++){
+      var p0=pts[i-1]||pts[i],p1=pts[i],p2=pts[i+1],p3=pts[i+2]||p2;
+      var c1x=p1.x+(p2.x-p0.x)/6,c1y=p1.y+(p2.y-p0.y)/6;
+      var c2x=p2.x-(p3.x-p1.x)/6,c2y=p2.y-(p3.y-p1.y)/6;
+      d+='C'+c1x+','+c1y+' '+c2x+','+c2y+' '+p2.x+','+p2.y+' ';
+    }
+    return d;
+  }
+  function renderEvolutionChart(weeks,weekTotals){
+    el.chartPills.innerHTML=CHART_METRICS.map(function(m){
+      var active=m.id===activeChartMetric;
+      return '<button type="button" class="chart-pill'+(active?' active':'')+'" data-metric="'+m.id+'" style="'+(active?'--pill-c:'+m.color+';color:'+m.color+';':'')+'"><span class="dot" style="background:'+m.color+'"></span>'+m.label+'</button>';
+    }).join("");
+    Array.prototype.forEach.call(el.chartPills.querySelectorAll(".chart-pill"),function(btn){
+      btn.addEventListener("click",function(){activeChartMetric=btn.getAttribute("data-metric");renderEvolutionChart(weeks,weekTotals);});
+    });
+
+    var m=chartMetricById(activeChartMetric);
+    var vals=weeks.map(function(w,i){return weekValueForMetric(m,w,weekTotals[i]);});
+    var validVals=vals.filter(function(v){return v!==null;});
+    if(!validVals.length){
+      el.chartWrap.innerHTML='<div class="chart-empty">Pas encore assez de données ce mois-ci pour ce graphique.</div>';
+      return;
+    }
+
+    var W=720,H=220,padL=36,padR=14,padT=18,padB=34;
+    var innerW=W-padL-padR,innerH=H-padT-padB;
+    var maxV=Math.max(100,Math.ceil(Math.max.apply(null,validVals)/10)*10);
+    function yFor(v){return padT+innerH-(v/maxV)*innerH;}
+    function xFor(i){return padL+(weeks.length>1?i/(weeks.length-1)*innerW:innerW/2);}
+
+    var pts=[];
+    weeks.forEach(function(w,i){if(vals[i]!==null)pts.push({x:xFor(i),y:yFor(vals[i]),v:vals[i]});});
+
+    var linePath=smoothPath(pts);
+    var areaPath=pts.length>1?(linePath+'L'+pts[pts.length-1].x+','+(padT+innerH)+' L'+pts[0].x+','+(padT+innerH)+' Z'):'';
+
+    var grid=[0,25,50,75,100].filter(function(g){return g<=maxV;}).map(function(g){
+      var y=yFor(g);
+      return '<line class="chart-gridline" x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'"></line>'+
+        '<text class="chart-gridlabel" x="'+(padL-6)+'" y="'+(y+3)+'" text-anchor="end">'+g+'%</text>';
+    }).join("");
+
+    var weekLabels=weeks.map(function(w,i){
+      var x=xFor(i);
+      return '<text class="chart-weeklabel" x="'+x+'" y="'+(H-18)+'" text-anchor="middle">S'+(i+1)+'</text>'+
+        '<text class="chart-datelabel" x="'+x+'" y="'+(H-6)+'" text-anchor="middle">'+FR_DAYNUM.format(w.start)+'</text>';
+    }).join("");
+
+    var dots=pts.map(function(p){
+      return '<circle cx="'+p.x+'" cy="'+p.y+'" r="9" fill="'+m.color+'" opacity="0.16"></circle>'+
+        '<circle cx="'+p.x+'" cy="'+p.y+'" r="4" fill="'+m.color+'"></circle>'+
+        '<text class="chart-vlabel" x="'+p.x+'" y="'+(p.y-13)+'" text-anchor="middle" fill="'+m.color+'">'+p.v.toFixed(0)+'%</text>';
+    }).join("");
+
+    var gradId='cg_'+m.id;
+    el.chartWrap.innerHTML=
+      '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet">'+
+        '<defs><linearGradient id="'+gradId+'" x1="0" y1="0" x2="0" y2="1">'+
+          '<stop offset="0%" stop-color="'+m.color+'" stop-opacity="0.30"></stop>'+
+          '<stop offset="100%" stop-color="'+m.color+'" stop-opacity="0"></stop>'+
+        '</linearGradient></defs>'+
+        grid+
+        (areaPath?'<path d="'+areaPath+'" fill="url(#'+gradId+')" stroke="none"></path>':'')+
+        (linePath?'<path d="'+linePath+'" fill="none" stroke="'+m.color+'" stroke-width="2.5" stroke-linecap="round"></path>':'')+
+        dots+
+        weekLabels+
+      '</svg>';
+  }
+
   /* ---------------- data / analyse par semaine ---------------- */
   function insightHTML(ins){
     if(!ins)return '<div class="empty-week-txt">Pas assez de données pour analyser.</div>';
@@ -788,6 +910,8 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
 
     var weeks=weeksOfMonth(dataMonth);
     var weekTotals=weeks.map(function(w){return totalsOf(datesInRangeAndMonth(w.start,w.end,dataMonth));});
+
+    renderEvolutionChart(weeks,weekTotals);
 
     el.weeksGrid.innerHTML=weeks.map(function(w,i){
       var t=weekTotals[i];
