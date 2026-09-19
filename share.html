@@ -51,6 +51,32 @@
   .tab.active{background:var(--surface-2); color:var(--text); box-shadow:inset 0 0 0 1px var(--line);}
   .tab .tdot{width:6px; height:6px; border-radius:50%; background:var(--accent);}
   .tab.closing .tdot{background:var(--amber);}
+  .tab.data .tdot{background:var(--blue);}
+
+  /* ---------- data / weekly analysis ---------- */
+  .weeks-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:12px;}
+  .week-card{background:var(--surface-2); border:1px solid var(--line-soft); border-radius:12px; padding:14px 16px;}
+  .week-card.empty h3,.week-card.empty .rng{opacity:.5;}
+  .week-card h3{margin:0 0 2px; font-size:14px; font-weight:600;}
+  .week-card .rng{font-size:11px; color:var(--text-3); margin-bottom:10px;}
+  .week-stats{display:grid; grid-template-columns:repeat(2,1fr); gap:8px 12px; margin-bottom:2px;}
+  .week-stats .ws{font-size:11px; color:var(--text-2);}
+  .week-stats .wv{font-family:var(--mono-num); font-weight:700; font-size:16px; color:var(--text); margin-top:2px;}
+  .empty-week-txt{color:var(--text-3); font-size:13px; margin-top:2px;}
+  .insight{border-radius:9px; padding:9px 12px; font-size:12.5px; margin-top:8px; line-height:1.4;}
+  .insight.good{background:var(--accent-soft); color:var(--accent);}
+  .insight.bad{background:var(--amber-soft); color:var(--amber);}
+  .insight b{font-weight:700;}
+  .synth-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}
+  @media (max-width:820px){ .synth-grid{grid-template-columns:1fr;} }
+  .synth-card{background:var(--surface-2); border:1px solid var(--line-soft); border-radius:12px; padding:14px 16px;}
+  .synth-card .cl{font-size:12px; color:var(--text-2); margin-bottom:6px;}
+  .synth-card .cv{font-size:15px; font-weight:600;}
+  .closing-stats{display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}
+  @media (max-width:820px){ .closing-stats{grid-template-columns:1fr;} }
+  .closing-stat{background:var(--surface-2); border:1px solid var(--line-soft); border-radius:12px; padding:14px 16px; text-align:center;}
+  .closing-stat .cl{font-size:12px; color:var(--text-2); margin-bottom:6px;}
+  .closing-stat .cv{font-family:var(--mono-num); font-weight:700; font-size:24px;}
 
   .periodbar{display:flex; align-items:center; justify-content:center; gap:10px; margin:0 0 20px;}
   .periodbar .pm{font-family:var(--mono-num); font-weight:600; font-size:18px; letter-spacing:-.01em; min-width:190px; text-align:center;}
@@ -226,6 +252,7 @@
   <div class="tabs" role="tablist">
     <button class="tab active" id="tab-setting" data-page="setting"><span class="tdot"></span>Setting</button>
     <button class="tab closing" id="tab-closing" data-page="closing"><span class="tdot"></span>Closing</button>
+    <button class="tab data" id="tab-data" data-page="data"><span class="tdot"></span>Data</button>
   </div>
 
   <!-- ============ SETTING ============ -->
@@ -300,6 +327,37 @@
       </div>
       <div id="leads-empty" hidden>Aucun lead pour l'instant. Clique sur « + Ajouter un lead » pour commencer.</div>
     </div>
+  </section>
+
+  <!-- ============ DATA ============ -->
+  <section id="page-data" style="display:none">
+    <div class="periodbar">
+      <button class="navbtn" id="dm-prev" aria-label="Mois précédent">‹</button>
+      <span class="pm num" id="dm-lbl">—</span>
+      <button class="navbtn" id="dm-next" aria-label="Mois suivant">›</button>
+      <button class="ghost-btn" id="dm-now" hidden>Ce mois-ci</button>
+    </div>
+
+    <section class="panel" style="margin-bottom:16px">
+      <div class="head"><h2>Analyse par semaine</h2></div>
+      <div class="body">
+        <div class="weeks-grid" id="weeks-grid"></div>
+      </div>
+    </section>
+
+    <section class="panel" style="margin-bottom:16px">
+      <div class="head"><h2>Synthèse du mois</h2></div>
+      <div class="body">
+        <div class="synth-grid" id="month-synth"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="head"><h2>Closing — répartition des leads du mois</h2></div>
+      <div class="body">
+        <div class="closing-stats" id="closing-stats"></div>
+      </div>
+    </section>
   </section>
 
   <p class="footnote">Chaque mois est indépendant. Tout se synchronise en temps réel pour les personnes ayant accès au lien.</p>
@@ -387,7 +445,54 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
   /* ---------------- state ---------------- */
   var serverEntries={}, optimistic={};
   var leads={}, leadsOpt={};
-  var selected=todayKey(), viewMonth=todayKey().slice(0,7), closingMonth=todayKey().slice(0,7);
+  var selected=todayKey(), viewMonth=todayKey().slice(0,7), closingMonth=todayKey().slice(0,7), dataMonth=todayKey().slice(0,7);
+
+  /* ---------------- analyse par semaine : seuils de référence ---------------- */
+  var BENCH=[
+    {num:"replies",  den:"firstmsg", min:15, exc:30, good:"Bon taux de réponse au 1er message",       great:"Excellent taux de réponse au 1er message",       bad:"Taux de réponse au 1er message à retravailler"},
+    {num:"repliesfu",den:"followup", min:10, exc:20, good:"Follow-up efficaces",                       great:"Follow-up très efficaces",                       bad:"Follow-up à retravailler"},
+    {num:"lien",     den:"callprop", min:50, exc:70, good:"Bonne conversion call → lien",               great:"Excellente conversion call → lien",              bad:"Proposition de call à retravailler"},
+    {num:"r1",       den:"lien",     min:70, exc:85, good:"Bon taux de transformation en R1",           great:"Excellent taux de transformation en R1",         bad:"Transformation en R1 à retravailler"},
+    {num:"present",  den:"r1",       min:75, exc:85, good:"Bon taux de présence aux calls",             great:"Excellent taux de présence aux calls",           bad:"Taux de présence à retravailler"},
+    {num:"r2",       den:"present",  min:60, exc:75, good:"Bonne transformation en R2",                 great:"Excellente transformation en R2",                bad:"Transformation en R2 à retravailler"}
+  ];
+  function analyzeItems(t){
+    var items=[];
+    BENCH.forEach(function(b){
+      var d=t[b.den];
+      if(d>0){var v=t[b.num]/d*100;items.push({b:b,v:v,margin:v-b.min});}
+    });
+    return items;
+  }
+  function pickInsight(t){
+    var items=analyzeItems(t);
+    if(!items.length)return null;
+    items.sort(function(a,b){return b.margin-a.margin;});
+    var best=items[0];
+    var strong={label:(best.v>=best.b.exc?best.b.great:best.b.good),v:best.v};
+    var weak=null;
+    if(items.length>1){
+      var worst=items[items.length-1];
+      weak={label:worst.b.bad,v:worst.v};
+    }
+    return {strong:strong,weak:weak};
+  }
+  function weeksOfMonth(vm){
+    var y=+vm.slice(0,4),m=+vm.slice(5,7)-1;
+    var first=new Date(y,m,1),last=new Date(y,m+1,0);
+    var w=mondayOf(first),weeks=[];
+    while(w<=last){
+      var end=new Date(w);end.setDate(end.getDate()+6);
+      weeks.push({start:new Date(w),end:end});
+      w=new Date(w);w.setDate(w.getDate()+7);
+    }
+    return weeks;
+  }
+  function datesInRangeAndMonth(start,end,vm){
+    var out=[];
+    datesIn(vm).forEach(function(dt){var d=parseKey(dt);if(d>=start&&d<=end)out.push(dt);});
+    return out;
+  }
   var page="setting", readOnly=false;
   var writing={}, redo={}, timers={};
   var dayListeners={}; // "Y-M" -> [{ref, day}]
@@ -435,7 +540,7 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
           var opt=optimistic[dateStr];
           if(opt){Object.keys(opt).forEach(function(k){if(Number(o[k]||0)===Number(opt[k]))delete opt[k];});if(!Object.keys(opt).length)delete optimistic[dateStr];}
           setStatus("ok");
-          renderSetting();
+          if(page==="data")renderDataTab();else renderSetting();
         });
         list.push(r);
       })(d);
@@ -504,6 +609,7 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
       Object.keys(leadsOpt).forEach(function(id){var o=leadsOpt[id],sv=leads[id]||{};Object.keys(o).forEach(function(k){if(String(sv[k]!==undefined?sv[k]:"")===String(o[k]))delete o[k];});if(!Object.keys(o).length)delete leadsOpt[id];});
       setStatus("ok");
       syncLeads();
+      if(page==="data")renderDataTab();
     });
   }
 
@@ -517,7 +623,9 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
     leadsHead:document.getElementById("leads-head"),leadsBody:document.getElementById("leads-body"),leadsEmpty:document.getElementById("leads-empty"),
     cashContract:document.getElementById("cash-contract"),cashCollect:document.getElementById("cash-collect"),
     rootwrap:document.getElementById("rootwrap"),
-    cmLbl:document.getElementById("cm-lbl"),cmNext:document.getElementById("cm-next"),cmNow:document.getElementById("cm-now")
+    cmLbl:document.getElementById("cm-lbl"),cmNext:document.getElementById("cm-next"),cmNow:document.getElementById("cm-now"),
+    dmLbl:document.getElementById("dm-lbl"),dmNext:document.getElementById("dm-next"),dmNow:document.getElementById("dm-now"),
+    weeksGrid:document.getElementById("weeks-grid"),monthSynth:document.getElementById("month-synth"),closingStats:document.getElementById("closing-stats")
   };
   var encInputs={}, encRovals={}, leadRows={};
 
@@ -666,6 +774,68 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
     el.cashContract.textContent=EUR.format(c);el.cashCollect.textContent=EUR.format(col);
   }
 
+  /* ---------------- data / analyse par semaine ---------------- */
+  function insightHTML(ins){
+    if(!ins)return '<div class="empty-week-txt">Pas assez de données pour analyser.</div>';
+    var html='<div class="insight good"><b>Point fort :</b> '+ins.strong.label+' ('+ins.strong.v.toFixed(2).replace(".",",")+'%)</div>';
+    if(ins.weak)html+='<div class="insight bad"><b>À retravailler :</b> '+ins.weak.label+' ('+ins.weak.v.toFixed(2).replace(".",",")+'%)</div>';
+    return html;
+  }
+  function renderDataTab(){
+    el.dmLbl.textContent=monthLabel(dataMonth);
+    el.dmNow.hidden=(dataMonth===todayKey().slice(0,7));
+    el.dmNext.disabled=(dataMonth>=todayKey().slice(0,7));
+
+    var weeks=weeksOfMonth(dataMonth);
+    var weekTotals=weeks.map(function(w){return totalsOf(datesInRangeAndMonth(w.start,w.end,dataMonth));});
+
+    el.weeksGrid.innerHTML=weeks.map(function(w,i){
+      var t=weekTotals[i];
+      var hasData=FIELDS.some(function(f){return t[f.k]>0;});
+      if(!hasData){
+        return '<div class="week-card empty"><h3>Semaine '+(i+1)+'</h3>'+
+          '<div class="rng">'+FR_DAYNUM.format(w.start)+' – '+FR_DAYNUM.format(w.end)+'</div>'+
+          '<div class="empty-week-txt">Pas d\'activité cette semaine.</div></div>';
+      }
+      var ins=pickInsight(t);
+      return '<div class="week-card"><h3>Semaine '+(i+1)+'</h3>'+
+        '<div class="rng">'+FR_DAYNUM.format(w.start)+' – '+FR_DAYNUM.format(w.end)+'</div>'+
+        '<div class="week-stats">'+
+          '<div><div class="ws">Messages</div><div class="wv">'+fmtInt(t.firstmsg)+'</div></div>'+
+          '<div><div class="ws">Réponses</div><div class="wv">'+fmtInt(t.replies)+'</div></div>'+
+          '<div><div class="ws">R1</div><div class="wv">'+fmtInt(t.r1)+'</div></div>'+
+          '<div><div class="ws">R2</div><div class="wv">'+fmtInt(t.r2)+'</div></div>'+
+          '<div><div class="ws">Taux de réponse</div><div class="wv">'+fmtPct(t.replies,t.firstmsg)+'</div></div>'+
+          '<div><div class="ws">Conv. 1er → R1</div><div class="wv">'+fmtPct(t.r1,t.firstmsg)+'</div></div>'+
+        '</div>'+
+        insightHTML(ins)+
+        '</div>';
+    }).join("");
+
+    var monthTotals=totalsOf(datesIn(dataMonth));
+    var monthIns=pickInsight(monthTotals);
+    var bestWeekIdx=-1,bestWeekR1=-1;
+    weekTotals.forEach(function(t,i){if(t.r1>bestWeekR1){bestWeekR1=t.r1;bestWeekIdx=i;}});
+    var bestWeekTxt=(bestWeekIdx>=0&&bestWeekR1>0)?('Semaine '+(bestWeekIdx+1)+' — '+bestWeekR1+' R1, conv. '+fmtPct(weekTotals[bestWeekIdx].r1,weekTotals[bestWeekIdx].firstmsg)):'—';
+    el.monthSynth.innerHTML=
+      '<div class="synth-card"><div class="cl">Meilleure semaine (R1 bookés)</div><div class="cv">'+bestWeekTxt+'</div></div>'+
+      '<div class="synth-card"><div class="cl">Point fort du mois</div><div class="cv" style="color:var(--accent)">'+(monthIns?monthIns.strong.label+' ('+monthIns.strong.v.toFixed(2).replace(".",",")+'%)':'—')+'</div></div>'+
+      '<div class="synth-card"><div class="cl">À retravailler en priorité</div><div class="cv" style="color:var(--amber)">'+(monthIns&&monthIns.weak?monthIns.weak.label+' ('+monthIns.weak.v.toFixed(2).replace(".",",")+'%)':'—')+'</div></div>';
+
+    var idsMonth=leadIdsInMonth(dataMonth);
+    var total=idsMonth.length;
+    var counts={};idsMonth.forEach(function(id){var e=effLead(id).etat||"—";counts[e]=(counts[e]||0)+1;});
+    function pctOf(etat){return total>0?(100*(counts[etat]||0)/total):null;}
+    var stats=[
+      {l:"% Closé",v:pctOf("Closé"),c:"var(--accent)"},
+      {l:"% No show",v:pctOf("No show"),c:"var(--danger)"},
+      {l:"% No close",v:pctOf("No close"),c:"var(--amber)"}
+    ];
+    el.closingStats.innerHTML=stats.map(function(s){
+      return '<div class="closing-stat"><div class="cl">'+s.l+'</div><div class="cv" style="color:'+s.c+'">'+(s.v===null?'—':s.v.toFixed(2).replace(".",",")+'%')+'</div></div>';
+    }).join("")+(total===0?'<div class="empty-week-txt" style="grid-column:1/-1">Aucun lead ce mois-ci.</div>':'');
+  }
+
   /* ---------------- status ---------------- */
   function setStatus(m){el.status.className="status"+(m==="ok"?" ok":m==="busy"?" busy":"");var txt=m==="ok"?"Synchronisé":m==="busy"?"Enregistrement…":m==="err"?"Erreur":"Connexion…";if(readOnly)txt="Lecture seule";el.statusTxt.textContent=txt;}
 
@@ -699,13 +869,22 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
     page=p;
     document.getElementById("page-setting").style.display=(p==="setting")?"":"none";
     document.getElementById("page-closing").style.display=(p==="closing")?"":"none";
+    document.getElementById("page-data").style.display=(p==="data")?"":"none";
     document.getElementById("tab-setting").classList.toggle("active",p==="setting");
     document.getElementById("tab-closing").classList.toggle("active",p==="closing");
+    document.getElementById("tab-data").classList.toggle("active",p==="data");
     el.rootwrap.classList.add("wide");
-    if(p==="setting")renderSetting();else{attachLeadsListener();syncLeads();}
+    if(p==="setting")renderSetting();
+    else if(p==="closing"){attachLeadsListener();syncLeads();}
+    else{attachLeadsListener();attachMonthListeners(dataMonth);renderDataTab();}
   }
   document.getElementById("tab-setting").addEventListener("click",function(){showPage("setting");});
   document.getElementById("tab-closing").addEventListener("click",function(){showPage("closing");});
+  document.getElementById("tab-data").addEventListener("click",function(){showPage("data");});
+
+  document.getElementById("dm-prev").addEventListener("click",function(){dataMonth=shiftMonth(dataMonth,-1);attachMonthListeners(dataMonth);renderDataTab();});
+  el.dmNext.addEventListener("click",function(){if(dataMonth>=todayKey().slice(0,7))return;dataMonth=shiftMonth(dataMonth,1);attachMonthListeners(dataMonth);renderDataTab();});
+  el.dmNow.addEventListener("click",function(){dataMonth=todayKey().slice(0,7);attachMonthListeners(dataMonth);renderDataTab();});
 
   /* ---------------- boot ---------------- */
   function boot(){
