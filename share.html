@@ -893,29 +893,27 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
 
     // Repères de semaine : % hebdo affiché au-dessus de la courbe + label Sn en bas (dédoublonné)
     var yy=+dataMonth.slice(0,4),mo=+dataMonth.slice(5,7);
-    var weekSvg='',lastEndInMonth=0,weekIdx=0;
+    var weekSvg='';
     weeks.forEach(function(w,i){
       var endInMonth=(w.end.getFullYear()===yy&&w.end.getMonth()===mo-1)?w.end.getDate():dim;
       var startInMonth=(w.start.getFullYear()===yy&&w.start.getMonth()===mo-1)?w.start.getDate():1;
       if(startInMonth>dim)return;
       endInMonth=Math.min(endInMonth,dim);
-      if(endInMonth<=lastEndInMonth)return;
-      lastEndInMonth=endInMonth;
-      weekIdx++;
       var dayIdx=endInMonth-1;
-      var curveV=null,seekIdx=dayIdx;
-      while(seekIdx>=0&&dayVals[seekIdx]===null)seekIdx--;
-      if(seekIdx>=0)curveV=dayVals[seekIdx];
+      // position du label bas = jour calendaire réel de fin de semaine (jamais partagé entre 2 semaines)
+      var x=xFor(dayIdx);
+      weekSvg+='<text x="'+x+'" y="'+(H-10)+'" text-anchor="middle" class="chart-weeklabel">S'+(i+1)+'</text>';
+      // dot + % : uniquement si cette semaine a au moins un jour avec des données réelles
+      var seekIdx=dayIdx;
+      while(seekIdx>=startInMonth-1&&dayVals[seekIdx]===null)seekIdx--;
+      if(seekIdx<startInMonth-1)return;
+      var curveV=dayVals[seekIdx],dotX=xFor(seekIdx);
       var val=weekValueForMetric(m,w,weekTotals[i]);
-      var x=xFor(seekIdx>=0?seekIdx:dayIdx);
-      if(curveV!==null){
-        var y=yFor(curveV);
-        weekSvg+='<circle cx="'+x+'" cy="'+y+'" r="10" fill="'+m.color+'" opacity="0.14"></circle>'+
-          '<circle cx="'+x+'" cy="'+y+'" r="5.5" fill="none" stroke="'+m.color+'" stroke-width="1.4" opacity="0.55"></circle>'+
-          '<circle cx="'+x+'" cy="'+y+'" r="3" fill="#fff"></circle>';
-        if(val!==null)weekSvg+='<text x="'+x+'" y="'+(y-16)+'" text-anchor="middle" class="chart-pct-label" fill="'+m.color+'">'+val.toFixed(0)+'%</text>';
-      }
-      weekSvg+='<text x="'+x+'" y="'+(H-10)+'" text-anchor="middle" class="chart-weeklabel">S'+weekIdx+'</text>';
+      var y=yFor(curveV);
+      weekSvg+='<circle cx="'+dotX+'" cy="'+y+'" r="10" fill="'+m.color+'" opacity="0.14"></circle>'+
+        '<circle cx="'+dotX+'" cy="'+y+'" r="5.5" fill="none" stroke="'+m.color+'" stroke-width="1.4" opacity="0.55"></circle>'+
+        '<circle cx="'+dotX+'" cy="'+y+'" r="3" fill="#fff"></circle>';
+      if(val!==null)weekSvg+='<text x="'+dotX+'" y="'+(y-16)+'" text-anchor="middle" class="chart-pct-label" fill="'+m.color+'">'+val.toFixed(0)+'%</text>';
     });
 
     var gradId='cg_'+m.id,glowId='glow_'+m.id,vignId='vig_'+m.id;
