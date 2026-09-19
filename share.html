@@ -483,18 +483,27 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
 
   /* ---------------- analyse par semaine : seuils de référence ---------------- */
   var BENCH=[
-    {num:"replies",  den:"firstmsg", min:15, exc:30, good:"Bon taux de réponse au 1er message",       great:"Excellent taux de réponse au 1er message",       bad:"Taux de réponse au 1er message à retravailler"},
-    {num:"repliesfu",den:"followup", min:10, exc:20, good:"Follow-up efficaces",                       great:"Follow-up très efficaces",                       bad:"Follow-up à retravailler"},
-    {num:"lien",     den:"callprop", min:50, exc:70, good:"Bonne conversion call → lien",               great:"Excellente conversion call → lien",              bad:"Proposition de call à retravailler"},
-    {num:"r1",       den:"lien",     min:70, exc:85, good:"Bon taux de transformation en R1",           great:"Excellent taux de transformation en R1",         bad:"Transformation en R1 à retravailler"},
-    {num:"present",  den:"r1",       min:75, exc:85, good:"Bon taux de présence aux calls",             great:"Excellent taux de présence aux calls",           bad:"Taux de présence à retravailler"},
-    {num:"r2",       den:"present",  min:60, exc:75, good:"Bonne transformation en R2",                 great:"Excellente transformation en R2",                bad:"Transformation en R2 à retravailler"}
-  ];
+    {label:"Message → Réponse",        num:"replies",  den:"firstmsg", min:15, exc:30},
+    {label:"Follow-up → Réponse FUP",  num:"repliesfu",den:"followup", min:10, exc:20},
+    {label:"Call proposé → Lien",      num:"lien",     den:"callprop", min:50, exc:70},
+    {label:"Lien → R1 booké",          num:"r1",       den:"lien",     min:70, exc:85},
+    {label:"R1 booké → Présent",       num:"present",  den:"r1",       min:75, exc:85},
+    {label:"Présent → R2 booké",       num:"r2",       den:"present",  min:60, exc:75}
+  ].map(function(b){
+    b.good="Bon taux de conversion "+b.label;
+    b.great="Excellent taux de conversion "+b.label;
+    b.bad=b.label+" à retravailler";
+    return b;
+  });
+  // Un dénominateur trop petit (< 3) ou un ratio > 100% (deux étapes du funnel
+  // qui ne concernent pas les mêmes leads cette semaine-là, ex: R1 bookés issus
+  // de liens envoyés la semaine précédente) rendent le % non fiable : on l'exclut
+  // des points forts / à retravailler plutôt que d'afficher un chiffre absurde.
   function analyzeItems(t){
     var items=[];
     BENCH.forEach(function(b){
       var d=t[b.den];
-      if(d>0){var v=t[b.num]/d*100;items.push({b:b,v:v,margin:v-b.min});}
+      if(d>=3){var v=t[b.num]/d*100;if(v<=100)items.push({b:b,v:v,margin:v-b.min});}
     });
     return items;
   }
