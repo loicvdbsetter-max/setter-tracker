@@ -926,7 +926,7 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
       barsSvg+='<rect x="'+bx+'" y="'+barTop+'" width="'+barW+'" height="'+barH+'" fill="url(#'+gid+')"></rect>';
       // face top (claire)
       barsSvg+='<polygon points="'+bx+','+barTop+' '+(bx+DX)+','+(barTop+DY)+' '+(bx+barW+DX)+','+(barTop+DY)+' '+(bx+barW)+','+barTop+'" fill="rgba('+Math.min(rr+110,255)+','+Math.min(gg+110,255)+','+Math.min(bb+110,255)+',0.95)"></polygon>';
-      barsSvg+='<text x="'+(bx+barW/2+DX/2)+'" y="'+(barTop+DY/2-10)+'" text-anchor="middle" class="chart-pct-label" fill="'+m.color+'">'+wc.val.toFixed(0)+'%</text>';
+      barsSvg+='<text x="'+(bx+barW/2+DX/2)+'" y="'+(barTop+DY/2-10)+'" text-anchor="middle" class="chart-pct-label" fill="'+m.color+'">'+wc.val.toFixed(2).replace(".",",")+'%</text>';
     });
 
     el.chartWrap.innerHTML=
