@@ -236,6 +236,17 @@
   #leads-table td .cin,#leads-table td .csel,#leads-table td .linkcell{margin-top:0;}
   .cin[data-field="date"]{min-width:100px;}
   .cin.area{min-width:150px; resize:none; overflow:hidden; white-space:pre-wrap; word-break:break-word; line-height:1.4; display:block;}
+  .areapreview{min-width:150px; max-width:220px; min-height:34px; padding:7px 8px; border-radius:7px; border:1px solid transparent; cursor:pointer; line-height:1.4; white-space:pre-wrap; word-break:break-word; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+  .areapreview:hover{background:var(--surface-2); border-color:var(--line-soft);}
+  .areapreview:empty::before{content:"—"; color:var(--text-3);}
+  .area-modal{position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:80; padding:20px;}
+  .area-modal[hidden]{display:none;}
+  .area-modal-box{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px; width:min(560px,100%); max-height:80vh; display:flex; flex-direction:column; gap:10px;}
+  .area-modal-head{display:flex; justify-content:space-between; align-items:center; gap:12px;}
+  .area-modal-head .t{font-weight:600; font-size:14px;}
+  .area-modal-head .s{font-size:12px; color:var(--text-2);}
+  #area-modal-close{flex:none; width:28px; height:28px; border-radius:8px; border:1px solid var(--line-soft); background:var(--surface-2); color:var(--text-2); cursor:pointer; font-size:13px;}
+  #area-modal-textarea{flex:1; min-height:260px; resize:vertical; background:var(--surface-2); border:1px solid var(--line-soft); border-radius:8px; padding:10px; color:var(--text); font-family:var(--sans); font-size:13.5px; line-height:1.5;}
   #leads-table thead th{color:var(--text-3); font-weight:500; font-size:11.5px; letter-spacing:.02em; background:var(--bg-2); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:1;}
   #leads-table td.idx,#leads-table th.idx{position:sticky; left:0; background:var(--surface); z-index:2; text-align:right; color:var(--text-3); font-family:var(--mono-num); width:40px; padding-right:10px;}
   #leads-table thead th.idx{background:var(--bg-2); z-index:3;}
@@ -383,6 +394,16 @@
   </section>
 
   <p class="footnote">Chaque mois est indépendant. Tout se synchronise en temps réel pour les personnes ayant accès au lien.</p>
+
+  <div class="area-modal" id="area-modal" hidden>
+    <div class="area-modal-box">
+      <div class="area-modal-head">
+        <div><div class="t" id="area-modal-title"></div><div class="s" id="area-modal-sub"></div></div>
+        <button type="button" id="area-modal-close">✕</button>
+      </div>
+      <textarea id="area-modal-textarea"></textarea>
+    </div>
+  </div>
 
 </div>
 
@@ -672,6 +693,7 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
     cmLbl:document.getElementById("cm-lbl"),cmNext:document.getElementById("cm-next"),cmNow:document.getElementById("cm-now"),
     dmLbl:document.getElementById("dm-lbl"),dmNext:document.getElementById("dm-next"),dmNow:document.getElementById("dm-now"),
     weeksGrid:document.getElementById("weeks-grid"),closingStats:document.getElementById("closing-stats"),
+    areaModal:document.getElementById("area-modal"),areaModalTitle:document.getElementById("area-modal-title"),areaModalSub:document.getElementById("area-modal-sub"),areaModalTextarea:document.getElementById("area-modal-textarea"),areaModalClose:document.getElementById("area-modal-close"),
     chartPills:document.getElementById("chart-pills"),chartWrap:document.getElementById("chart-wrap")
   };
   var encInputs={}, encRovals={}, leadRows={};
@@ -776,7 +798,7 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
   }
   function cellHTML(id,c){
     var dl=' data-label="'+c.label+'"';
-    if(c.type==="area")return '<td class="areacell"'+dl+'><textarea class="cin area" rows="1" data-field="'+c.f+'" data-id="'+id+'"></textarea></td>';
+    if(c.type==="area")return '<td class="areacell"'+dl+'><div class="areapreview" data-field="'+c.f+'" data-id="'+id+'" tabindex="0"></div></td>';
     if(c.type==="tag")return '<td'+dl+'><select class="csel" data-field="tag" data-id="'+id+'">'+optionsFor(TAGS)+'</select></td>';
     if(c.type==="etat")return '<td'+dl+'><select class="csel" data-field="etat" data-id="'+id+'">'+optionsFor(ETATS)+'</select></td>';
     if(c.type==="euro")return '<td'+dl+'><input class="cin euro" type="number" step="0.01" min="0" inputmode="decimal" data-field="'+c.f+'" data-id="'+id+'"></td>';
@@ -793,6 +815,10 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
   function setControlValue(elc,field,val){
     if(elc.tagName==="SELECT"){elc.value=(val||"");paintSelect(elc);return;}
     if(elc.tagName==="TEXTAREA"){elc.value=(val||"");autoGrow(elc);return;}
+    if(elc.classList.contains("areapreview")){
+      if(!areaModalOpenFor||areaModalOpenFor.id!==elc.getAttribute("data-id")||areaModalOpenFor.field!==field)elc.textContent=(val||"");
+      return;
+    }
     var col=null;LEAD_COLS.forEach(function(c){if(c.f===field)col=c;});
     if(col&&col.type==="euro"){elc.value=(num(val)?num(val):"");return;}
     elc.value=(val||"");
@@ -1036,8 +1062,48 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
     setLeadField(id,field,val);
   });
   el.leadsBody.addEventListener("input",function(ev){if(ev.target.tagName==="TEXTAREA")autoGrow(ev.target);});
-  el.leadsBody.addEventListener("click",function(ev){var b=ev.target.closest('[data-action="del"]');if(!b)return;deleteLead(b.getAttribute("data-id"));});
+  el.leadsBody.addEventListener("click",function(ev){
+    var b=ev.target.closest('[data-action="del"]');if(b){deleteLead(b.getAttribute("data-id"));return;}
+    var prev=ev.target.closest(".areapreview");if(prev)openAreaModal(prev.getAttribute("data-id"),prev.getAttribute("data-field"));
+  });
+  el.leadsBody.addEventListener("keydown",function(ev){
+    if(ev.key!=="Enter"&&ev.key!==" ")return;
+    var prev=ev.target.closest(".areapreview");if(!prev)return;
+    ev.preventDefault();openAreaModal(prev.getAttribute("data-id"),prev.getAttribute("data-field"));
+  });
   document.getElementById("add-lead").addEventListener("click",addLead);
+
+  /* ---------------- modale d'édition Objections / Commentaire / To do ---------------- */
+  var areaModalOpenFor=null,areaSaveTimer=null;
+  function openAreaModal(id,field){
+    var col=null;LEAD_COLS.forEach(function(c){if(c.f===field)col=c;});
+    areaModalOpenFor={id:id,field:field};
+    el.areaModalTitle.textContent=col?col.label:"";
+    var d=effLead(id);
+    el.areaModalSub.textContent=(d.prenom||"Lead")+" — "+(d.date||"");
+    el.areaModalTextarea.value=d[field]||"";
+    el.areaModal.hidden=false;
+    if(!readOnly)el.areaModalTextarea.focus();else el.areaModalTextarea.setAttribute("readonly","readonly");
+  }
+  function closeAreaModal(){
+    if(areaSaveTimer){clearTimeout(areaSaveTimer);areaSaveTimer=null;flushAreaModal();}
+    el.areaModal.hidden=true;el.areaModalTextarea.removeAttribute("readonly");areaModalOpenFor=null;
+  }
+  function flushAreaModal(){
+    if(!areaModalOpenFor||readOnly)return;
+    var val=el.areaModalTextarea.value;
+    setLeadField(areaModalOpenFor.id,areaModalOpenFor.field,val);
+    var row=leadRows[areaModalOpenFor.id];
+    if(row&&row.ctrls[areaModalOpenFor.field])row.ctrls[areaModalOpenFor.field].textContent=val;
+  }
+  el.areaModalTextarea.addEventListener("input",function(){
+    if(readOnly)return;
+    if(areaSaveTimer)clearTimeout(areaSaveTimer);
+    areaSaveTimer=setTimeout(flushAreaModal,400);
+  });
+  el.areaModalClose.addEventListener("click",closeAreaModal);
+  el.areaModal.addEventListener("click",function(ev){if(ev.target===el.areaModal)closeAreaModal();});
+  document.addEventListener("keydown",function(ev){if(ev.key==="Escape"&&!el.areaModal.hidden)closeAreaModal();});
 
   function showPage(p){
     page=p;
