@@ -239,6 +239,13 @@
   .areapreview{min-width:150px; max-width:220px; height:34px; padding:7px 8px; border-radius:7px; border:1px solid transparent; cursor:pointer; line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .areapreview:hover{background:var(--surface-2); border-color:var(--line-soft);}
   .areapreview:empty::before{content:"—"; color:var(--text-3);}
+  .th-legend{position:relative; display:inline-flex; align-items:center; gap:4px; cursor:help; border-bottom:1px dashed var(--text-3);}
+  .legend-pop{position:absolute; top:calc(100% + 8px); left:50%; transform:translateX(-50%); width:300px; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; box-shadow:0 10px 30px rgba(0,0,0,.4); z-index:10; text-align:left; font-weight:400; font-size:12px; color:var(--text-2); display:none;}
+  .th-legend:hover .legend-pop{display:block;}
+  .leg-row{display:flex; align-items:flex-start; gap:7px; padding:3px 0;}
+  .leg-row+.leg-row{border-top:1px solid var(--line-soft);}
+  .leg-row b{color:var(--text); font-size:11.5px;}
+  .leg-dot{flex:none; width:9px; height:9px; border-radius:50%; margin-top:4px;}
   .area-modal{position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:80; padding:20px;}
   .area-modal[hidden]{display:none;}
   .area-modal-box{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px; width:min(560px,100%); max-height:80vh; display:flex; flex-direction:column; gap:10px;}
@@ -470,8 +477,21 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
     {v:"No show",  bg:"#374151", fg:"#ffffff"},
     {v:"A book",   bg:"#E5E7EB", fg:"#374151"}
   ];
-  var TAG_MAP={}, ETAT_MAP={};
-  TAGS.forEach(function(o){TAG_MAP[o.v]=o;}); ETATS.forEach(function(o){ETAT_MAP[o.v]=o;});
+  var OBJECTIONS=[
+    {v:"PRIX",        bg:"#D4A017", fg:"#ffffff", desc:"« C'est trop cher. »"},
+    {v:"RÉFLEXION",   bg:"#9B8AE6", fg:"#ffffff", desc:"« Je dois réfléchir. »"},
+    {v:"BUDGET",      bg:"#2F7D4F", fg:"#ffffff", desc:"« Je n'ai pas l'argent. »"},
+    {v:"CONJOINT",    bg:"#D6457A", fg:"#ffffff", desc:"« Je dois en parler à mon mari ou ma femme. »"},
+    {v:"DÉCIDEUR",    bg:"#1F3A8A", fg:"#ffffff", desc:"« Ce n'est pas moi qui décide. »"},
+    {v:"TIMING",      bg:"#F2762E", fg:"#ffffff", desc:"« Ce n'est pas le moment. »"},
+    {v:"TEMPS",       bg:"#64748B", fg:"#ffffff", desc:"« Je n'ai pas le temps de suivre le programme. »"},
+    {v:"CONCURRENCE", bg:"#C0392B", fg:"#ffffff", desc:"« Je compare ou je travaille déjà avec quelqu'un. »"},
+    {v:"CONFIANCE",   bg:"#14B8A6", fg:"#ffffff", desc:"« Je ne vous connais pas » ou « Ça marche vraiment ? »"},
+    {v:"BESOIN",      bg:"#7B2D8E", fg:"#ffffff", desc:"« Je n'en ai pas l'utilité » ou « Je ne vois pas la valeur. »"}
+  ];
+  var TAG_MAP={}, ETAT_MAP={}, OBJ_MAP={};
+  TAGS.forEach(function(o){TAG_MAP[o.v]=o;}); ETATS.forEach(function(o){ETAT_MAP[o.v]=o;}); OBJECTIONS.forEach(function(o){OBJ_MAP[o.v]=o;});
+  var FIELD_MAP={tag:TAG_MAP, etat:ETAT_MAP, commentaire:OBJ_MAP};
   var LEAD_COLS=[
     {f:"date",label:"Date",type:"text"},
     {f:"prenom",label:"Prénom",type:"text"},
@@ -481,7 +501,7 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
     {f:"objections",label:"Infos",type:"area"},
     {f:"cashContracte",label:"Cash contracté (€)",type:"euro"},
     {f:"cashCollecte",label:"Cash collecté (€)",type:"euro"},
-    {f:"commentaire",label:"Objections",type:"area"},
+    {f:"commentaire",label:"Objections",type:"objection"},
     {f:"todo",label:"To do",type:"area"},
     {f:"closer",label:"Closer",type:"text"},
     {f:"setter",label:"Setter",type:"text"}
@@ -789,12 +809,16 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
   function renderSetting(){renderPeriod();renderKpis();renderDateNav();syncEncode();renderConv();renderChain();renderRecap();}
 
   /* ---------------- closing render ---------------- */
+  var OBJ_LEGEND=OBJECTIONS.map(function(o){return '<div class="leg-row"><span class="leg-dot" style="background:'+o.bg+'"></span><b>'+o.v+'</b> — '+o.desc+'</div>';}).join("");
   function buildLeadsHead(){
-    el.leadsHead.innerHTML='<th class="idx">#</th>'+LEAD_COLS.map(function(c){return '<th data-field="'+c.f+'">'+c.label+'</th>';}).join("")+'<th></th>';
+    el.leadsHead.innerHTML='<th class="idx">#</th>'+LEAD_COLS.map(function(c){
+      if(c.f==="commentaire")return '<th data-field="'+c.f+'"><span class="th-legend">'+c.label+'<div class="legend-pop">'+OBJ_LEGEND+'</div></span></th>';
+      return '<th data-field="'+c.f+'">'+c.label+'</th>';
+    }).join("")+'<th></th>';
   }
   function optionsFor(list){return '<option value="">—</option>'+list.map(function(o){return '<option value="'+o.v+'" style="background:'+o.bg+';color:'+o.fg+'">'+o.v+'</option>';}).join("");}
   function paintSelect(sel){
-    var map=sel.getAttribute("data-field")==="tag"?TAG_MAP:ETAT_MAP;var o=map[sel.value];
+    var map=FIELD_MAP[sel.getAttribute("data-field")]||ETAT_MAP;var o=map[sel.value];
     if(o){sel.style.background=o.bg;sel.style.color=o.fg;}
     else{sel.style.background="var(--surface-2)";sel.style.color="var(--text-2)";}
   }
@@ -803,6 +827,7 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
     if(c.type==="area")return '<td class="areacell"'+dl+'><div class="areapreview" data-field="'+c.f+'" data-id="'+id+'" tabindex="0"></div></td>';
     if(c.type==="tag")return '<td'+dl+'><select class="csel" data-field="tag" data-id="'+id+'">'+optionsFor(TAGS)+'</select></td>';
     if(c.type==="etat")return '<td'+dl+'><select class="csel" data-field="etat" data-id="'+id+'">'+optionsFor(ETATS)+'</select></td>';
+    if(c.type==="objection")return '<td'+dl+'><select class="csel" data-field="commentaire" data-id="'+id+'">'+optionsFor(OBJECTIONS)+'</select></td>';
     if(c.type==="euro")return '<td'+dl+'><input class="cin euro" type="number" step="0.01" min="0" inputmode="decimal" data-field="'+c.f+'" data-id="'+id+'"></td>';
     if(c.type==="link")return '<td'+dl+'><div class="linkcell"><input class="cin" type="text" data-field="reseau" data-id="'+id+'" placeholder="lien / contact"><a class="openlink" target="_blank" rel="noopener" hidden>↗</a></div></td>';
     return '<td'+dl+'><input class="cin" type="text" data-field="'+c.f+'" data-id="'+id+'"></td>';
