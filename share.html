@@ -248,6 +248,7 @@
   #area-modal-close{flex:none; width:28px; height:28px; border-radius:8px; border:1px solid var(--line-soft); background:var(--surface-2); color:var(--text-2); cursor:pointer; font-size:13px;}
   #area-modal-textarea{flex:1; min-height:260px; resize:vertical; background:var(--surface-2); border:1px solid var(--line-soft); border-radius:8px; padding:10px; color:var(--text); font-family:var(--sans); font-size:13.5px; line-height:1.5;}
   #leads-table thead th{color:var(--text-3); font-weight:500; font-size:11.5px; letter-spacing:.02em; background:var(--bg-2); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:1; text-align:center;}
+  #leads-table thead th[data-field="reseau"]{padding-right:38px;}
   #leads-table td.idx,#leads-table th.idx{position:sticky; left:0; background:var(--surface); z-index:2; text-align:right; color:var(--text-3); font-family:var(--mono-num); width:40px; padding-right:10px;}
   #leads-table thead th.idx{background:var(--bg-2); z-index:3;}
   #leads-table tbody tr:hover td{background:var(--bg-2);}
@@ -789,7 +790,7 @@ const ENT_NAME=qs.get('name')||ENT_KEY||'—';
 
   /* ---------------- closing render ---------------- */
   function buildLeadsHead(){
-    el.leadsHead.innerHTML='<th class="idx">#</th>'+LEAD_COLS.map(function(c){return '<th>'+c.label+'</th>';}).join("")+'<th></th>';
+    el.leadsHead.innerHTML='<th class="idx">#</th>'+LEAD_COLS.map(function(c){return '<th data-field="'+c.f+'">'+c.label+'</th>';}).join("")+'<th></th>';
   }
   function optionsFor(list){return '<option value="">—</option>'+list.map(function(o){return '<option value="'+o.v+'" style="background:'+o.bg+';color:'+o.fg+'">'+o.v+'</option>';}).join("");}
   function paintSelect(sel){
