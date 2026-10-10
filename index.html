@@ -6029,7 +6029,7 @@ async function repairAndInit(){
 // ── 4. Card 3D mouse tilt (desktop only) ──────────────────────────
 ;(function initTilt(){
   if(matchMedia('(hover:none),(max-width:768px)').matches)return;
-  const SEL='.kpi-card,.graph-card,.funnel-card,.dash-ent-card,.rev-card-dash';
+  const SEL='.kpi-card,.graph-card:not(.pcard),.funnel-card,.dash-ent-card,.rev-card-dash';
   document.addEventListener('mousemove',e=>{
     document.querySelectorAll(SEL).forEach(card=>{
       const r=card.getBoundingClientRect();
