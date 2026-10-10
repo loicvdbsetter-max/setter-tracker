@@ -108,8 +108,8 @@ body{
 .kpi-sub{font-size:8px;color:rgba(180,220,255,0.4);margin-top:3px;}
 .kpi-sub{font-size:8px;color:rgba(0,170,255,0.3);margin-top:3px;}
 .kpi-spark{width:100%;margin-top:6px;opacity:0.45;}
-.pcard-stat-row{display:flex;align-items:flex-end;justify-content:space-between;gap:6px;}
-.pcard-spark{width:52px;height:20px;flex:none;opacity:0.7;}
+.pcard-spark-wrap{height:34px;margin-top:8px;}
+.pcard-spark{width:100%;height:100%;display:block;}
 
 /* RING KPI CARD */
 .kpi-ring-card{background:rgba(4,12,8,0.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:10px;padding:12px 12px 8px;position:relative;overflow:hidden;border:none;display:flex;flex-direction:column;align-items:center;box-shadow:var(--glow);}
@@ -174,7 +174,8 @@ body{
 .graph-legend span{font-size:9px;font-family:'Space Mono',monospace;font-weight:600;letter-spacing:0.5px;}
 .personal-section{margin-bottom:14px;}
 .pcard{min-height:unset;margin-top:8px;}
-.pcard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px 18px;margin-top:4px;}
+.pcard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-top:4px;}
+.pcard-stat{background:rgba(0,170,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px 14px;}
 .conv-flow{display:flex;align-items:center;flex-wrap:wrap;gap:4px;height:100%;justify-content:center;padding:14px 0;}
 .flow-node{position:relative;width:76px;height:76px;border-radius:50%;border:1px solid var(--c);display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,0.08),rgba(0,0,0,0.3));box-shadow:0 0 18px rgba(var(--cr),0.45);flex-shrink:0;}
 .flow-node-v{font-family:'Space Mono',monospace;font-weight:700;font-size:15px;color:#fff;}
@@ -5224,7 +5225,7 @@ async function computeFunnelSteps(ek,period){
   return[
     {l:'MSG → RÉP',              v:pct(trep,tfm),                      c:'#00d4ff'},
     {l:'F/U → RÉP F/U',          v:pct(trfu,tfu),                      c:'#3b82f6'},
-    {l:'MSG+F/U → CALL PROPOSÉ', v:pct(tcp,tfm+tfu),                   c:'#818cf8'},
+    {l:'MSG → CALL PROPOSÉ',     v:pct(tcp,tfm),                       c:'#818cf8'},
     {l:'CALL PROPOSÉ → LIEN',    v:pct(tln,tcp),                       c:'#34d399'},
     {l:'LIEN → R1 BOOKÉ',        v:pct(tc,tln),                        c:'#a78bfa'},
     {l:'R1 BOOKÉ → PRÉSENT',     v:pct(tpres,tc),                      c:'#22d3ee'},
@@ -5237,7 +5238,7 @@ const FUNNEL_ICONS=['✉','💬','📤','🔗','☎','👁','🏆','💰'];
 const DASH_CHART_METRICS=[
   {id:'msgrep',  label:'MSG → RÉP',          color:'#00d4ff', num:'replies',  den:'firstmsg'},
   {id:'fuprep',  label:'F/U → RÉP F/U',      color:'#3b82f6', num:'repliesfu',den:'followup'},
-  {id:'propcall',label:'MSG+F/U → PROPOSÉ',  color:'#818cf8', num:'callprop', den:'msgfu'},
+  {id:'propcall',label:'MSG → PROPOSÉ',      color:'#818cf8', num:'callprop', den:'firstmsg'},
   {id:'proplien',label:'PROPOSÉ → LIEN',     color:'#34d399', num:'lien',     den:'callprop'},
   {id:'lienr1',  label:'LIEN → R1 BOOKÉ',    color:'#a78bfa', num:'calls',    den:'lien'},
   {id:'r1pres',  label:'R1 → PRÉSENT',       color:'#22d3ee', num:'present',  den:'calls'},
@@ -5267,7 +5268,7 @@ async function computeWeeklyFunnelTotals(ek){
       callprop+=gv(md,d,ek,'callprop');lien+=gv(md,d,ek,'lien');
       calls+=getTotalCalls(ek,md[d]);present+=gv(md,d,ek,'present');r2+=gv(md,d,ek,'r2');
     }
-    clipped.push({i,totals:{firstmsg,replies,followup,repliesfu,callprop,lien,calls,present,r2,msgfu:firstmsg+followup}});
+    clipped.push({i,totals:{firstmsg,replies,followup,repliesfu,callprop,lien,calls,present,r2}});
   });
   return clipped;
 }
@@ -5421,11 +5422,28 @@ async function computeRecentDailySeries(ek){
   }
   return out;
 }
-function miniSpark(data,color){
+function miniSpark(data,color,id){
   if(!data||data.length<2)return '';
+  const W=100,H=36,padY=4;
   const m=Math.max(...data,1);
-  const pts=data.map((v,i)=>`${i/(data.length-1)*60},${22-(v/m)*20}`).join(' ');
-  return `<svg viewBox="0 0 60 22" class="pcard-spark"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+  const pts=data.map((v,i)=>({x:i/(data.length-1)*W,y:H-padY-(v/m)*(H-padY*2)}));
+  // Lissage Catmull-Rom -> Bézier, pour une vraie courbe plutôt qu'une ligne brisée
+  let d='M'+pts[0].x+','+pts[0].y+' ';
+  for(let i=0;i<pts.length-1;i++){
+    const p0=pts[i-1]||pts[i],p1=pts[i],p2=pts[i+1],p3=pts[i+2]||p2;
+    const c1x=p1.x+(p2.x-p0.x)/6,c1y=p1.y+(p2.y-p0.y)/6;
+    const c2x=p2.x-(p3.x-p1.x)/6,c2y=p2.y-(p3.y-p1.y)/6;
+    d+='C'+c1x+','+c1y+' '+c2x+','+c2y+' '+p2.x+','+p2.y+' ';
+  }
+  const area=d+'L'+pts[pts.length-1].x+','+H+' L'+pts[0].x+','+H+' Z';
+  const gid='spk_'+id;
+  return `<svg viewBox="0 0 ${W} ${H}" class="pcard-spark" preserveAspectRatio="none">`
+    +`<defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">`
+    +`<stop offset="0%" stop-color="${color}" stop-opacity="0.45"></stop>`
+    +`<stop offset="100%" stop-color="${color}" stop-opacity="0"></stop></linearGradient></defs>`
+    +`<path d="${area}" fill="url(#${gid})" stroke="none"></path>`
+    +`<path d="${d}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round"></path>`
+    +`</svg>`;
 }
 async function renderPersonalSection(){
   const wrap=document.getElementById('personalCardWrap');
@@ -5440,7 +5458,7 @@ async function renderPersonalSection(){
   const periodLbl={jour:'Jour',semaine:'Semaine',mois:'Mois',annee:'Année'}[period];
   const periodTabs=periods.map(([k,l])=>`<button class="funnel-filter-btn${period===k?' active':''}" onclick="window.setDashPeriod('${k}')">${l}</button>`).join('');
   const entTabs=ENTS.map(e=>{const active=e.key===ent.key;return `<button class="funnel-filter-btn${active?' active':''}" onclick="window.setDashPersonalEnt('${e.key}')" style="${active?`background:${e.hex};color:#000;border-color:${e.hex}`:`color:${e.hex};border-color:${e.hex}44`}">${e.name.toUpperCase()}</button>`;}).join('');
-  const stat=(lbl,val,color,spark)=>`<div class="pcard-stat"><div class="kpi-label">${lbl}</div><div class="pcard-stat-row"><div class="kpi-val"${color?` style="color:${color}"`:''}>${val}</div>${spark||''}</div></div>`;
+  const stat=(id,lbl,val,color,spark)=>`<div class="pcard-stat"><div class="kpi-label">${lbl}</div><div class="kpi-val"${color?` style="color:${color}"`:''}>${val}</div>${spark?`<div class="pcard-spark-wrap">${miniSpark(spark,color,id)}</div>`:''}</div>`;
   wrap.innerHTML=
     `<div class="funnel-filters">${periodTabs}</div>`
     +`<div class="funnel-filters">${entTabs}</div>`
@@ -5448,13 +5466,13 @@ async function renderPersonalSection(){
     +`<div class="gc-bl"></div><div class="gc-br"></div>`
     +`<div class="graph-title">TABLEAU DE BORD PERSONNEL — ${ent.name.toUpperCase()} (${periodLbl.toUpperCase()})</div>`
     +`<div class="pcard-grid">`
-    +stat('Messages',t.fm,'#00d4ff',miniSpark(daily.fm,'#00d4ff'))
-    +stat('Réponses',t.rep,'#a78bfa',miniSpark(daily.rep,'#a78bfa'))
-    +stat('Liens envoyés',t.ln,'#34d399',miniSpark(daily.ln,'#34d399'))
-    +stat('Follow-ups',t.fu,'#fb923c',miniSpark(daily.fu,'#fb923c'))
-    +stat('Réponses F/U',t.rfu,'#f472b6',miniSpark(daily.rfu,'#f472b6'))
-    +stat('Appels réalisés',t.calls,'#22d3ee',miniSpark(daily.calls,'#22d3ee'))
-    +stat('Taux de conversion',fmtPct(t.conv),ent.hex)
+    +stat('fm','Messages',t.fm,'#00d4ff',daily.fm)
+    +stat('rep','Réponses',t.rep,'#a78bfa',daily.rep)
+    +stat('ln','Liens envoyés',t.ln,'#34d399',daily.ln)
+    +stat('fu','Follow-ups',t.fu,'#fb923c',daily.fu)
+    +stat('rfu','Réponses F/U',t.rfu,'#f472b6',daily.rfu)
+    +stat('calls','Appels réalisés',t.calls,'#22d3ee',daily.calls)
+    +stat('conv','Taux de conversion',fmtPct(t.conv),ent.hex,null)
     +`</div></div>`;
 }
 window.setDashPeriod=function(p){window.dashPeriod=p;renderPersonalSection();renderConversionSection();};
