@@ -170,6 +170,9 @@ body{
 .graph-title{font-size:8px;color:rgba(0,170,255,0.4);letter-spacing:2px;}
 .graph-legend{display:flex;gap:12px;align-items:center;}
 .graph-legend span{font-size:9px;font-family:'Space Mono',monospace;font-weight:600;letter-spacing:0.5px;}
+.personal-section{margin-bottom:14px;}
+.pcard{min-height:unset;margin-top:8px;}
+.pcard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px 18px;margin-top:4px;}
 .graph-canvas-wrap{flex:1;position:relative;min-height:160px;}
 .graph-canvas-wrap canvas{display:block;width:100%;height:100%;min-height:160px;}
 .funnel-card{
@@ -4515,6 +4518,9 @@ async function renderDash(){
       </div>
     </div>
 
+    <!-- TABLEAU DE BORD PERSONNEL -->
+    <div class="personal-section" id="personalCardWrap"></div>
+
     <!-- GRAPH + FUNNEL -->
     <details class="mobile-fold" open>
       <summary class="mobile-fold-summary">Funnel &amp; conversion</summary>
@@ -4531,10 +4537,7 @@ async function renderDash(){
       </div>
       <div class="funnel-card gold-corner" id="funnelCard">
         <div class="gc-bl"></div><div class="gc-br"></div>
-        <div class="funnel-title">FUNNEL CONVERSION</div>
-        <div class="funnel-filters">
-          ${ENTS.map(e=>{const active=ff===e.key;return `<button class="funnel-filter-btn${active?' active':''}" onclick="window.setDashFunnelFilter('${e.key}')" style="${active?`background:${e.hex};color:#000;border-color:${e.hex}`:`color:${e.hex};border-color:${e.hex}44`}">${e.name}</button>`;}).join('')}
-        </div>
+        <div class="funnel-title">FUNNEL CONVERSION — ${ENTS.find(e=>e.key===ff)?.name.toUpperCase()||''}</div>
         <div class="funnel-3d">${(()=>{
           const fs=[
             {l:'MSG → RÉP',              v:pct(trep,tfm),     c:'#00d4ff'},
@@ -4687,6 +4690,7 @@ async function renderDash(){
   updateClock();
   // Force canvas dimensions immediately after DOM injection — don't rely on CSS % resolution
   syncConvChartWidth();
+  renderPersonalSection();
 
   // Draw conversion chart on canvas
   // Sparklines once
@@ -5235,7 +5239,7 @@ function drawConvChart(){
       ctx.fillStyle=delta>=0?'rgba(52,211,153,0.95)':'rgba(239,68,68,0.95)';
       ctx.shadowBlur=3;ctx.shadowColor='rgba(0,0,0,0.9)';
       ctx.textAlign='center';ctx.textBaseline='alphabetic';
-      ctx.fillText((delta>=0?'▲':'▼')+Math.abs(delta)+'%',bx,by-BR-6);
+      ctx.fillText((delta>=0?'▲':'▼')+fmtPct(Math.abs(delta)),bx,by-BR-6);
       ctx.shadowBlur=0;
     }
   });
@@ -5471,15 +5475,71 @@ function rebuildFunnel(ff){
       +'<div class="fstat-fill" style="width:'+w+'%;background:linear-gradient(90deg,'+f.c+','+f.c+'77);box-shadow:0 0 8px '+f.c+'55,0 0 2px '+f.c+'"></div>'
       +'</div></div>'+conn;
   }).join('');
+  const ffEnt=ENTS.find(e=>e.key===ff);
   card.innerHTML='<div class="gc-bl"></div><div class="gc-br"></div>'
-    +'<div class="funnel-title">FUNNEL CONVERSION</div>'
-    +'<div class="funnel-filters">'
-    +ENTS.map(e=>{const active=ff===e.key;return`<button class="funnel-filter-btn${active?' active':''}" onclick="window.setDashFunnelFilter('${e.key}')" style="${active?`background:${e.hex};color:#000;border-color:${e.hex}`:`color:${e.hex};border-color:${e.hex}44`}">${e.name}</button>`;}).join('')
-    +'</div>'
+    +'<div class="funnel-title">FUNNEL CONVERSION — '+(ffEnt?ffEnt.name.toUpperCase():'')+'</div>'
     +'<div class="funnel-3d">'+rows+'</div>';
 }
 
 window.setDashFunnelFilter=function(k){window.dashFunnelFilter=k;rebuildFunnel(k);};
+
+// ===== TABLEAU DE BORD PERSONNEL (jour / semaine / mois / année) =====
+window.dashPeriod='mois';
+async function computePersonalTotals(ek,period){
+  const base=new Date(cY,cM,selDay);
+  let ranges=[];
+  if(period==='jour'){
+    ranges=[{y:cY,mo:cM,day:selDay}];
+  } else if(period==='semaine'){
+    const dow=(base.getDay()+6)%7; // 0=lundi
+    const mon=new Date(base);mon.setDate(base.getDate()-dow);
+    for(let i=0;i<7;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);ranges.push({y:d.getFullYear(),mo:d.getMonth(),day:d.getDate()});}
+  } else if(period==='annee'){
+    for(let mo=0;mo<12;mo++){const dim=new Date(cY,mo+1,0).getDate();for(let d=1;d<=dim;d++)ranges.push({y:cY,mo,day:d});}
+  } else { // mois
+    const dim=new Date(cY,cM+1,0).getDate();
+    for(let d=1;d<=dim;d++)ranges.push({y:cY,mo:cM,day:d});
+  }
+  const monthKeys=[...new Set(ranges.map(r=>r.y+'_'+r.mo))];
+  const mdByKey={};
+  for(const key of monthKeys){const[y,mo]=key.split('_').map(Number);mdByKey[key]=await loadMonth(y,mo);}
+  let fm=0,rep=0,ln=0,fu=0,rfu=0,calls=0;
+  ranges.forEach(r=>{
+    const md=mdByKey[r.y+'_'+r.mo];
+    fm+=gv(md,r.day,ek,'firstmsg');rep+=gv(md,r.day,ek,'replies');
+    ln+=gv(md,r.day,ek,'lien');fu+=gv(md,r.day,ek,'followup');
+    rfu+=gv(md,r.day,ek,'repliesfu');calls+=getTotalCalls(ek,md[r.day]);
+  });
+  return{fm,rep,ln,fu,rfu,calls,conv:fm>0?calls/fm*100:0};
+}
+async function renderPersonalSection(){
+  const wrap=document.getElementById('personalCardWrap');
+  if(!wrap)return;
+  const period=window.dashPeriod||'mois';
+  const wanted=window.dashPersonalEnt||window.dashFunnelFilter;
+  const ent=ENTS.find(e=>e.key===wanted)||ENTS[0];
+  if(!ent)return;
+  window.dashPersonalEnt=ent.key;window.dashFunnelFilter=ent.key;
+  const t=await computePersonalTotals(ent.key,period);
+  const periods=[['jour','JOUR'],['semaine','SEMAINE'],['mois','MOIS'],['annee','ANNÉE']];
+  const periodLbl={jour:'Jour',semaine:'Semaine',mois:'Mois',annee:'Année'}[period];
+  const periodTabs=periods.map(([k,l])=>`<button class="funnel-filter-btn${period===k?' active':''}" onclick="window.setDashPeriod('${k}')">${l}</button>`).join('');
+  const entTabs=ENTS.map(e=>{const active=e.key===ent.key;return `<button class="funnel-filter-btn${active?' active':''}" onclick="window.setDashPersonalEnt('${e.key}')" style="${active?`background:${e.hex};color:#000;border-color:${e.hex}`:`color:${e.hex};border-color:${e.hex}44`}">${e.name.toUpperCase()}</button>`;}).join('');
+  const stat=(lbl,val,color)=>`<div class="pcard-stat"><div class="kpi-label">${lbl}</div><div class="kpi-val"${color?` style="color:${color}"`:''}>${val}</div></div>`;
+  wrap.innerHTML=
+    `<div class="funnel-filters">${periodTabs}</div>`
+    +`<div class="funnel-filters">${entTabs}</div>`
+    +`<div class="graph-card gold-corner pcard">`
+    +`<div class="gc-bl"></div><div class="gc-br"></div>`
+    +`<div class="graph-title">TABLEAU DE BORD PERSONNEL — ${ent.name.toUpperCase()} (${periodLbl.toUpperCase()})</div>`
+    +`<div class="pcard-grid">`
+    +stat('Messages',t.fm)+stat('Réponses',t.rep)+stat('Liens envoyés',t.ln)+stat('Follow-ups',t.fu)
+    +stat('Réponses F/U',t.rfu)+stat('Appels réalisés',t.calls)
+    +stat('Taux de conversion',fmtPct(t.conv),ent.hex)
+    +`</div></div>`;
+}
+window.setDashPeriod=function(p){window.dashPeriod=p;renderPersonalSection();};
+window.setDashPersonalEnt=function(k){window.dashPersonalEnt=k;window.dashFunnelFilter=k;renderPersonalSection();rebuildFunnel(k);};
 
 // ===== LEADS =====
 window.leadsFilter='all';
