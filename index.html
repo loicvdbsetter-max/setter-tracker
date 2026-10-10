@@ -173,6 +173,11 @@ body{
 .personal-section{margin-bottom:14px;}
 .pcard{min-height:unset;margin-top:8px;}
 .pcard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px 18px;margin-top:4px;}
+.conv-flow{display:flex;align-items:center;flex-wrap:wrap;gap:4px;height:100%;justify-content:center;padding:14px 0;}
+.flow-node{position:relative;width:76px;height:76px;border-radius:50%;border:1px solid var(--c);display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,0.08),rgba(0,0,0,0.3));box-shadow:0 0 18px rgba(var(--cr),0.45);flex-shrink:0;}
+.flow-node-v{font-family:'Space Mono',monospace;font-weight:700;font-size:15px;color:#fff;}
+.flow-node-l{font-size:8px;letter-spacing:1.5px;color:var(--c);margin-top:2px;}
+.flow-arrow{font-size:9px;font-family:'Space Mono',monospace;color:var(--muted2);white-space:nowrap;padding:0 2px;}
 .graph-canvas-wrap{flex:1;position:relative;min-height:160px;}
 .graph-canvas-wrap canvas{display:block;width:100%;height:100%;min-height:160px;}
 .funnel-card{
@@ -4028,7 +4033,6 @@ function startUnifiedLoop(){
     if(ts-_uLastT>50){
       _uLastT=ts;_uFrame++;
       if(window._ringCanvas&&window._ringProgressFn)drawRingFrame(window._ringCanvas,window._ringProgressFn(),window._ringSize||90);
-      if(window._convWeekly)drawConvChart();
       if(_uFrame%2===0&&window._lastEntData)drawHexDash(window._lastEntData);
     }
     _uRaf=requestAnimationFrame(loop);
@@ -4358,27 +4362,6 @@ async function renderDash(){
     myPart+=rMan>0?rMan:rLead;
   });
 
-  // Funnel
-  const funnelEnts=ENTS.filter(e=>e.key===(window.dashFunnelFilter||'gael'));
-  let tfm=0,trep=0,tfu=0,trfu=0,tcp=0,tln=0,tc=0,tpres=0,tr2=0;
-  for(let d=1;d<=dim;d++)funnelEnts.forEach(e=>{
-    tfm+=gv(md,d,e.key,'firstmsg');trep+=gv(md,d,e.key,'replies');
-    tfu+=gv(md,d,e.key,'followup');trfu+=gv(md,d,e.key,'repliesfu');
-    tcp+=gv(md,d,e.key,'callprop');tln+=gv(md,d,e.key,'lien');
-    tc+=getTotalCalls(e.key,md[d]);
-    tpres+=gv(md,d,e.key,'present');tr2+=gv(md,d,e.key,'r2');
-  });
-  const pct=(a,b)=>b>0?a/b*100:0;
-
-  // Ventes from leads (with installment deduplication)
-  const _installTags=['x2','x3','à compte'];
-  const _fLeads=Object.values(leads).filter(l=>funnelEnts.some(e=>e.key===l.entKey));
-  const _isInst=l=>Array.isArray(l.tags)&&l.tags.some(t=>_installTags.includes(t));
-  const _instLeads=_fLeads.filter(_isInst);
-  const _normLeads=_fLeads.filter(l=>!_isInst(l));
-  const _uniqueInstNames=new Set(_instLeads.map(l=>(l.name||'').trim().toLowerCase()));
-  const tventes=_normLeads.length+_uniqueInstNames.size;
-
   // Task history for monthly pie
   const taskHistory=await loadTasksHistory(cY,cM);
   const daysElapsed=(cY===now.getFullYear()&&cM===now.getMonth())?now.getDate():dim;
@@ -4406,17 +4389,6 @@ async function renderDash(){
   const callsRaw=[];
   for(let d=Math.max(1,dim-sparkDays+1);d<=dim;d++){let t=0;ENTS.forEach(e=>{t+=getTotalCalls(e.key,md[d]);});callsRaw.push(t);}
 
-  // Graph conversion — hebdomadaire par entrepreneur (msgs → calls)
-  const _wkDefs=[{label:'S1',s:1,e:7},{label:'S2',s:8,e:14},{label:'S3',s:15,e:21},{label:'S4',s:22,e:dim}];
-  window._convWeekly=ENTS.map(e=>{
-    const weeks=_wkDefs.map(({label,s,e:end})=>{
-      let fm=0,calls=0;
-      for(let d=s;d<=end;d++){fm+=gv(md,d,e.key,'firstmsg');calls+=getTotalCalls(e.key,md[d]);}
-      return{label,msgs:fm,pct:fm>0?calls/fm*100:null};
-    });
-    return{e,weeks};
-  });
-
   // Ents data
   const entData=ENTS.map(e=>{
     let calls=0,fm=0,rep=0,ln=0,fu=0,rfu=0;
@@ -4436,9 +4408,6 @@ async function renderDash(){
   // Tasks
   const tDone=TASKS.filter(t=>t.done).length;
   const tPct=tDone/TASKS.length;
-
-  // Funnel filter state
-  const ff=window.dashFunnelFilter||'gael';
 
   div.innerHTML=`
   <div class="dash-page">
@@ -4521,79 +4490,8 @@ async function renderDash(){
     <!-- TABLEAU DE BORD PERSONNEL -->
     <div class="personal-section" id="personalCardWrap"></div>
 
-    <!-- GRAPH + FUNNEL -->
-    <details class="mobile-fold" open>
-      <summary class="mobile-fold-summary">Funnel &amp; conversion</summary>
-      <div class="fold-body">
-    <div class="mid-row">
-      <div class="graph-card gold-corner">
-        <div class="gc-bl"></div><div class="gc-br"></div>
-        <div class="graph-head" style="position:relative;z-index:2">
-          <div class="graph-title">TAUX DE CONVERSION — msgs → calls</div>
-        </div>
-        <div class="graph-canvas-wrap">
-          <canvas id="convChart" style="width:100%;height:200px;display:block;position:relative"></canvas>
-        </div>
-      </div>
-      <div class="funnel-card gold-corner" id="funnelCard">
-        <div class="gc-bl"></div><div class="gc-br"></div>
-        <div class="funnel-title">FUNNEL CONVERSION — ${ENTS.find(e=>e.key===ff)?.name.toUpperCase()||''}</div>
-        <div class="funnel-3d">${(()=>{
-          const fs=[
-            {l:'MSG → RÉP',              v:pct(trep,tfm),     c:'#00d4ff'},
-            {l:'F/U → RÉP F/U',          v:pct(trfu,tfu),     c:'#3b82f6'},
-            {l:'MSG+F/U → CALL PROPOSÉ', v:pct(tcp,tfm+tfu),  c:'#818cf8'},
-            {l:'CALL PROPOSÉ → LIEN',    v:pct(tln,tcp),      c:'#34d399'},
-            {l:'LIEN → R1 BOOKÉ',        v:pct(tc,tln),       c:'#a78bfa'},
-            {l:'R1 BOOKÉ → PRÉSENT',     v:pct(tpres,tc),     c:'#22d3ee'},
-            {l:'PRÉSENT → R2 BOOKÉ',     v:pct(tr2,tpres),    c:'#fb923c'},
-            {l:'R2 BOOKÉ → VENTE',       v:pct(tventes,tr2),  c:'#f472b6'},
-          ];
-          const rows=fs.map((f,i)=>{
-            const w=Math.min(Math.max(f.v,0),100);
-            const connector=i<fs.length-1?'<div class="fstat-connector">↓</div>':'';
-            return '<div class="fstat-step">'
-              +'<div class="fstat-header">'
-              +'<span class="fstat-num" style="color:'+f.c+'">0'+(i+1)+'</span>'
-              +'<span class="fstat-lbl">'+f.l+'</span>'
-              +'<span class="fstat-pct" style="color:'+f.c+'">'+fmtPct(f.v)+'</span>'
-              +'</div>'
-              +'<div class="fstat-track">'
-              +'<div class="fstat-fill" style="width:'+w+'%;background:linear-gradient(90deg,'+f.c+','+f.c+'77);box-shadow:0 0 8px '+f.c+'55,0 0 2px '+f.c+'"></div>'
-              +'</div>'
-              +'</div>'
-              +connector;
-          }).join('');
-          return rows;
-        })()}</div>
-      </div>
-    </div>
-      </div>
-    </details>
-
-    <!-- ENT CARDS HEX -->
-    <div class="ents-row">
-      ${entData.map(d=>`
-        <div class="ent-hex-card" style="--c:${d.e.hex};--cr:${hex2rgb(d.e.hex)}">
-          <div class="hex-bg-img" style="filter:hue-rotate(${hex2hueRot(d.e.hex)}deg) saturate(1.4)"></div>
-          <div class="hex-overlay"></div>
-          <div class="hex-data">
-            <div class="hname" style="color:${d.e.hex}">${d.e.name.toUpperCase()}</div>
-            <div class="hstats">
-              <div class="hrow"><span class="hlbl">MSG</span><span class="hval">${d.fm}</span></div>
-              <div class="hrow"><span class="hlbl">RÉP</span><span class="hval">${d.rep}</span></div>
-              <div class="hrow"><span class="hlbl">LIEN</span><span class="hval">${d.ln}</span></div>
-              <div class="hrow"><span class="hlbl">F/U</span><span class="hval">${d.fu}</span></div>
-              <div class="hrow"><span class="hlbl">RÉP F/U</span><span class="hval">${d.rfu}</span></div>
-              <div class="hrow"><span class="hcall-lbl">CALLS</span><span class="hcall-val" style="color:${d.e.hex}">${d.calls}</span></div>
-            </div>
-            <div class="hconv-row" style="border-top-color:${d.e.hex}">
-              <div class="hbar-label-row"><span class="hbar-lbl">CONV</span><span class="hconv" style="color:${d.e.hex}">${fmtPct(d.conv)}</span></div>
-              <div class="hbar"><div class="hbar-fill" style="width:${Math.min(d.conv,100)}%;background:${d.e.hex}"></div></div>
-            </div>
-          </div>
-        </div>`).join('')}
-    </div>
+    <!-- CONVERSION + FUNNEL (redessiné, piloté par les onglets période/entrepreneur) -->
+    <div class="conv-section" id="convSectionWrap"></div>
 
     <!-- REVENUS + OBJECTIFS -->
     <details class="mobile-fold" open>
@@ -4688,11 +4586,9 @@ async function renderDash(){
 
   const svg=document.getElementById('chameoSvg');if(svg)drawChameo(svg);
   updateClock();
-  // Force canvas dimensions immediately after DOM injection — don't rely on CSS % resolution
-  syncConvChartWidth();
   renderPersonalSection();
+  renderConversionSection();
 
-  // Draw conversion chart on canvas
   // Sparklines once
   setTimeout(()=>{
     const sD=Math.min(dim,14);
@@ -4710,7 +4606,6 @@ async function renderDash(){
 
   setTimeout(()=>{
     drawHexDash(entData);
-    if(window._convWeekly)drawConvChart();
     startUnifiedLoop();
   },250);
 }
@@ -5081,172 +4976,6 @@ function draw3DActivity(md, dim){
   _tickParts();
 }
 
-function syncConvChartWidth(){
-  const cv=document.getElementById('convChart');
-  if(!cv)return;
-  const pw=cv.parentElement;
-  const fw=(pw&&pw.offsetWidth)||(pw&&pw.parentElement&&pw.parentElement.offsetWidth)||(window.innerWidth-28);
-  cv.style.width=fw+'px';cv.style.height='200px';
-  drawConvChart();
-}
-addEventListener('resize',()=>{if(curTab==='dash')syncConvChartWidth();},{passive:true});
-
-function drawConvChart(){
-  const canvas=document.getElementById('convChart');
-  if(!canvas)return;
-  const data=window._convWeekly;
-  if(!data||!data.length)return;
-  const wrap=canvas.parentElement;
-  const W=canvas.getBoundingClientRect().width||canvas.offsetWidth||wrap&&wrap.getBoundingClientRect().width||wrap&&wrap.offsetWidth||(window.innerWidth-32)||300;
-  const H=canvas.getBoundingClientRect().height||canvas.offsetHeight||wrap&&wrap.getBoundingClientRect().height||wrap&&wrap.offsetHeight||200;
-  if(W<10||H<10)return;
-  if(!canvas.style.width||canvas.style.width==='100%')canvas.style.width=W+'px';
-  const dpr=window.devicePixelRatio||1;
-  const nW=Math.round(W*dpr),nH=Math.round(H*dpr);
-  if(canvas.width!==nW||canvas.height!==nH){canvas.width=nW;canvas.height=nH;}
-  const ctx=canvas.getContext('2d');
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-  ctx.shadowBlur=0;ctx.shadowColor='transparent';
-  ctx.clearRect(0,0,W,H);
-
-  function rgb(h){return[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
-
-  const pTop=28,pBot=38;
-  const chartH=H-pTop-pBot;
-  const secW=W/data.length;
-  const nWk=(data[0]&&data[0].weeks.length)||4;
-  const BR=Math.max(6,Math.min(17,(secW-20)/(2*nWk)));
-  const sPad=BR+10;
-
-  const allPcts=data.flatMap(d=>d.weeks.filter(w=>w.pct!==null).map(w=>w.pct));
-  const rawMax=allPcts.length>0?Math.max(...allPcts):20;
-  const scaleMax=rawMax<=15?20:rawMax<=30?40:rawMax<=50?60:rawMax<=75?80:100;
-  function yFor(p){
-    const raw=pTop+chartH-((p||0)/scaleMax)*chartH;
-    return Math.max(pTop+BR+10,Math.min(H-pBot-BR-10,raw));
-  }
-
-  // ── SEPARATEURS ──────────────────────────────────────────────────
-  for(let i=1;i<data.length;i++){
-    const sx=i*secW;
-    ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=1;ctx.setLineDash([3,4]);
-    ctx.beginPath();ctx.moveTo(sx,pTop-6);ctx.lineTo(sx,H-pBot+6);ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  // ── SECTIONS ─────────────────────────────────────────────────────
-  data.forEach(({e,weeks},si)=>{
-    const[cr,cg,cb]=rgb(e.hex);
-    const sLeft=si*secW;
-    const innerW=secW-sPad*2;
-    const n=weeks.length;
-    const bxs=weeks.map((_,j)=>sLeft+sPad+(n>1?j/(n-1):0.5)*innerW);
-    const bys=weeks.map(w=>yFor(w.pct!==null?w.pct:0));
-
-    // Nom entrepreneur — gravure métallique, gradient dans les lettres
-    const _nm=e.name.toUpperCase();
-    ctx.font=`700 10px "Orbitron",monospace`;
-    const _nx=sLeft+secW/2,_ny=18;
-    const _mg=ctx.createLinearGradient(_nx,_ny-11,_nx,_ny+1);
-    _mg.addColorStop(0,'rgba(235,248,255,0.97)');
-    _mg.addColorStop(0.38,`rgba(${Math.round(cr*0.35+158)},${Math.round(cg*0.35+155)},${Math.round(cb*0.35+158)},0.92)`);
-    _mg.addColorStop(1,'rgba(105,125,148,0.82)');
-    ctx.fillStyle=_mg;
-    ctx.textAlign='center';ctx.textBaseline='alphabetic';
-    ctx.shadowBlur=0;ctx.fillText(_nm,_nx,_ny);
-
-    // Connecteur — fil d'énergie avec gradient
-    ctx.save();
-    const lg=ctx.createLinearGradient(bxs[0],0,bxs[n-1],0);
-    lg.addColorStop(0,`rgba(${cr},${cg},${cb},0.15)`);
-    lg.addColorStop(0.5,`rgba(${cr},${cg},${cb},0.55)`);
-    lg.addColorStop(1,`rgba(${cr},${cg},${cb},0.15)`);
-    ctx.beginPath();
-    bxs.forEach((bx,j)=>{
-      if(j===0){ctx.moveTo(bx,bys[j]);}
-      else{const cpx=(bxs[j-1]+bx)/2;ctx.bezierCurveTo(cpx,bys[j-1],cpx,bys[j],bx,bys[j]);}
-    });
-    ctx.strokeStyle=lg;ctx.lineWidth=1.5;ctx.lineCap='round';ctx.stroke();
-    ctx.restore();
-
-    // Bulles — effet sphère 3D
-    weeks.forEach((w,j)=>{
-      const bx=bxs[j],by=bys[j];
-      const has=w.msgs>0;
-
-      // Halo externe (glow)
-      if(has){
-        ctx.shadowBlur=20;ctx.shadowColor=`rgba(${cr},${cg},${cb},0.55)`;
-      }
-      // Anneau extérieur
-      ctx.beginPath();ctx.arc(bx,by,BR,0,Math.PI*2);
-      ctx.strokeStyle=`rgba(${cr},${cg},${cb},${has?0.95:0.35})`;
-      ctx.lineWidth=has?2:1;ctx.stroke();
-      ctx.shadowBlur=0;
-
-      // Fond sphère — radial gradient (lumière en haut-gauche)
-      const rg=ctx.createRadialGradient(bx-BR*0.35,by-BR*0.35,BR*0.05,bx,by,BR);
-      if(has){
-        rg.addColorStop(0,`rgba(${Math.min(cr+60,255)},${Math.min(cg+40,255)},${Math.min(cb+40,255)},0.35)`);
-        rg.addColorStop(0.5,`rgba(${cr},${cg},${cb},0.12)`);
-        rg.addColorStop(1,`rgba(2,6,16,0.96)`);
-      } else {
-        rg.addColorStop(0,'rgba(30,35,50,0.5)');
-        rg.addColorStop(1,'rgba(2,6,16,0.95)');
-      }
-      ctx.beginPath();ctx.arc(bx,by,BR-0.5,0,Math.PI*2);
-      ctx.fillStyle=rg;ctx.fill();
-
-      // Reflet spéculaire — tache lumineuse en haut-gauche
-      if(has){
-        const sg=ctx.createRadialGradient(bx-BR*0.38,by-BR*0.38,0,bx-BR*0.38,by-BR*0.38,BR*0.55);
-        sg.addColorStop(0,'rgba(255,255,255,0.45)');
-        sg.addColorStop(0.5,'rgba(255,255,255,0.12)');
-        sg.addColorStop(1,'rgba(255,255,255,0)');
-        ctx.beginPath();ctx.arc(bx,by,BR-0.5,0,Math.PI*2);
-        ctx.fillStyle=sg;ctx.fill();
-      }
-
-      // Texte %
-      const txt=w.pct!==null?(Math.round(w.pct)+'%'):'—';
-      ctx.font=`700 ${Math.max(6,Math.round(BR*0.55))}px "Orbitron",monospace`;
-      ctx.shadowBlur=4;ctx.shadowColor='rgba(0,0,10,0.95)';
-      ctx.fillStyle=has?'rgba(255,255,255,0.97)':'rgba(255,255,255,0.25)';
-      ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText(txt,bx,by+0.5);
-      ctx.shadowBlur=0;ctx.textBaseline='alphabetic';
-
-      // Label semaine
-      ctx.font=`600 7.5px "Space Mono",monospace`;
-      ctx.fillStyle=`rgba(0,190,255,0.80)`;
-      ctx.textAlign='center';
-      ctx.fillText(w.label,bx,H-pBot+13);
-
-      // Volume msgs
-      ctx.font=`500 7px "Space Mono",monospace`;
-      ctx.fillStyle=has?`rgba(${cr},${cg},${cb},0.70)`:'rgba(255,255,255,0.35)';
-      ctx.fillText(w.msgs+'m',bx,H-pBot+24);
-    });
-
-    // Delta semaine
-    const wd=weeks.filter(w=>w.msgs>0);
-    if(wd.length>=2){
-      const last=wd[wd.length-1],prev=wd[wd.length-2];
-      const delta=(last.pct||0)-(prev.pct||0);
-      const lj=weeks.indexOf(last);
-      const bx=bxs[lj],by=bys[lj];
-      ctx.font=`700 8.5px "Space Mono",monospace`;
-      ctx.fillStyle=delta>=0?'rgba(52,211,153,0.95)':'rgba(239,68,68,0.95)';
-      ctx.shadowBlur=3;ctx.shadowColor='rgba(0,0,0,0.9)';
-      ctx.textAlign='center';ctx.textBaseline='alphabetic';
-      ctx.fillText((delta>=0?'▲':'▼')+fmtPct(Math.abs(delta)),bx,by-BR-6);
-      ctx.shadowBlur=0;
-    }
-  });
-  ctx.shadowBlur=0;ctx.shadowColor='transparent';
-}
-
-
 // ===== JOURNALIER =====
 async function renderJour(){
   if(rafId){cancelAnimationFrame(rafId);rafId=null;}
@@ -5433,55 +5162,108 @@ window.toggleTask=toggleTask;
 // ===== DASH FUNNEL FILTER =====
 window.dashFunnelFilter='gael';
 
-function rebuildFunnel(ff){
-  const card=document.getElementById('funnelCard');
-  if(!card||!window._dashCache)return;
-  const {md,leads,dim}=window._dashCache;
-  const funnelEnts=ENTS.filter(e=>e.key===ff);
+// Même calcul que computePersonalTotals, mais pour les 8 étapes détaillées du
+// funnel. Le dernier maillon (R2 BOOKÉ -> VENTE) dépend des leads, qui ne sont
+// chargés que pour le mois en cours : hors période "mois", on l'affiche à "—"
+// plutôt que d'inventer un chiffre sur une plage qu'on n'a pas chargée.
+async function computeFunnelSteps(ek,period){
+  const base=new Date(cY,cM,selDay);
+  let ranges=[];
+  if(period==='jour'){
+    ranges=[{y:cY,mo:cM,day:selDay}];
+  } else if(period==='semaine'){
+    const dow=(base.getDay()+6)%7;
+    const mon=new Date(base);mon.setDate(base.getDate()-dow);
+    for(let i=0;i<7;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);ranges.push({y:d.getFullYear(),mo:d.getMonth(),day:d.getDate()});}
+  } else if(period==='annee'){
+    for(let mo=0;mo<12;mo++){const dim=new Date(cY,mo+1,0).getDate();for(let d=1;d<=dim;d++)ranges.push({y:cY,mo,day:d});}
+  } else {
+    const dim=new Date(cY,cM+1,0).getDate();
+    for(let d=1;d<=dim;d++)ranges.push({y:cY,mo:cM,day:d});
+  }
+  const monthKeys=[...new Set(ranges.map(r=>r.y+'_'+r.mo))];
+  const mdByKey={};
+  for(const key of monthKeys){const[y,mo]=key.split('_').map(Number);mdByKey[key]=await loadMonth(y,mo);}
   let tfm=0,trep=0,tfu=0,trfu=0,tcp=0,tln=0,tc=0,tpres=0,tr2=0;
-  for(let d=1;d<=dim;d++)funnelEnts.forEach(e=>{
-    tfm+=gv(md,d,e.key,'firstmsg');trep+=gv(md,d,e.key,'replies');
-    tfu+=gv(md,d,e.key,'followup');trfu+=gv(md,d,e.key,'repliesfu');
-    tcp+=gv(md,d,e.key,'callprop');tln+=gv(md,d,e.key,'lien');
-    tc+=getTotalCalls(e.key,md[d]);
-    tpres+=gv(md,d,e.key,'present');tr2+=gv(md,d,e.key,'r2');
+  ranges.forEach(r=>{
+    const md=mdByKey[r.y+'_'+r.mo];
+    tfm+=gv(md,r.day,ek,'firstmsg');trep+=gv(md,r.day,ek,'replies');
+    tfu+=gv(md,r.day,ek,'followup');trfu+=gv(md,r.day,ek,'repliesfu');
+    tcp+=gv(md,r.day,ek,'callprop');tln+=gv(md,r.day,ek,'lien');
+    tc+=getTotalCalls(ek,md[r.day]);
+    tpres+=gv(md,r.day,ek,'present');tr2+=gv(md,r.day,ek,'r2');
   });
   const pct=(a,b)=>b>0?a/b*100:0;
-  const _installTags=['x2','x3','à compte'];
-  const _fLeads=Object.values(leads).filter(l=>funnelEnts.some(e=>e.key===l.entKey));
-  const _isInst=l=>Array.isArray(l.tags)&&l.tags.some(t=>_installTags.includes(t));
-  const _instLeads=_fLeads.filter(_isInst);
-  const _normLeads=_fLeads.filter(l=>!_isInst(l));
-  const _uniqueInstNames=new Set(_instLeads.map(l=>(l.name||'').trim().toLowerCase()));
-  const tventes=_normLeads.length+_uniqueInstNames.size;
-  const fs=[
-    {l:'MSG → RÉP',              v:pct(trep,tfm),     c:'#00d4ff'},
-    {l:'F/U → RÉP F/U',          v:pct(trfu,tfu),     c:'#3b82f6'},
-    {l:'MSG+F/U → CALL PROPOSÉ', v:pct(tcp,tfm+tfu),  c:'#818cf8'},
-    {l:'CALL PROPOSÉ → LIEN',    v:pct(tln,tcp),      c:'#34d399'},
-    {l:'LIEN → R1 BOOKÉ',        v:pct(tc,tln),       c:'#a78bfa'},
-    {l:'R1 BOOKÉ → PRÉSENT',     v:pct(tpres,tc),     c:'#22d3ee'},
-    {l:'PRÉSENT → R2 BOOKÉ',     v:pct(tr2,tpres),    c:'#fb923c'},
-    {l:'R2 BOOKÉ → VENTE',       v:pct(tventes,tr2),  c:'#f472b6'},
+  let tventes=null;
+  if(period==='mois'){
+    const leads=await loadLeads(cY,cM);
+    const installTags=['x2','x3','à compte'];
+    const fLeads=Object.values(leads).filter(l=>l.entKey===ek);
+    const isInst=l=>Array.isArray(l.tags)&&l.tags.some(t=>installTags.includes(t));
+    const instLeads=fLeads.filter(isInst);
+    const normLeads=fLeads.filter(l=>!isInst(l));
+    const uniqueInstNames=new Set(instLeads.map(l=>(l.name||'').trim().toLowerCase()));
+    tventes=normLeads.length+uniqueInstNames.size;
+  }
+  return[
+    {l:'MSG → RÉP',              v:pct(trep,tfm),                      c:'#00d4ff'},
+    {l:'F/U → RÉP F/U',          v:pct(trfu,tfu),                      c:'#3b82f6'},
+    {l:'MSG+F/U → CALL PROPOSÉ', v:pct(tcp,tfm+tfu),                   c:'#818cf8'},
+    {l:'CALL PROPOSÉ → LIEN',    v:pct(tln,tcp),                       c:'#34d399'},
+    {l:'LIEN → R1 BOOKÉ',        v:pct(tc,tln),                        c:'#a78bfa'},
+    {l:'R1 BOOKÉ → PRÉSENT',     v:pct(tpres,tc),                      c:'#22d3ee'},
+    {l:'PRÉSENT → R2 BOOKÉ',     v:pct(tr2,tpres),                     c:'#fb923c'},
+    {l:'R2 BOOKÉ → VENTE',       v:tventes===null?null:pct(tventes,tr2),c:'#f472b6'},
   ];
+}
+
+// Flux condensé (4 maillons) + funnel détaillé (8 étapes), un seul bloc,
+// pilotés par les mêmes onglets période/entrepreneur que le Tableau de Bord.
+async function renderConversionSection(){
+  const wrap=document.getElementById('convSectionWrap');
+  if(!wrap)return;
+  const period=window.dashPeriod||'mois';
+  const ent=ENTS.find(e=>e.key===window.dashPersonalEnt)||ENTS.find(e=>e.key===window.dashFunnelFilter)||ENTS[0];
+  if(!ent)return;
+  const [t,fs]=await Promise.all([computePersonalTotals(ent.key,period),computeFunnelSteps(ent.key,period)]);
+
+  const nodes=[
+    {l:'MSG',v:t.fm},{l:'RÉP',v:t.rep},{l:'LIEN',v:t.ln},{l:'CALLS',v:t.calls}
+  ];
+  const flow=nodes.map((n,i)=>{
+    const prev=nodes[i-1];
+    const r=prev&&prev.v>0?fmtPct(n.v/prev.v*100):null;
+    const arrow=i>0?'<div class="flow-arrow">'+(r?('&rarr; '+r):'&rarr;')+'</div>':'';
+    return arrow+'<div class="flow-node" style="--c:'+ent.hex+';--cr:'+hex2rgb(ent.hex)+'"><div class="flow-node-v">'+n.v+'</div><div class="flow-node-l">'+n.l+'</div></div>';
+  }).join('');
+
   const rows=fs.map((f,i)=>{
-    const w=Math.min(Math.max(f.v,0),100);
+    const empty=f.v===null;
+    const w=empty?0:Math.min(Math.max(f.v,0),100);
     const conn=i<fs.length-1?'<div class="fstat-connector">↓</div>':'';
     return'<div class="fstat-step"><div class="fstat-header">'
       +'<span class="fstat-num" style="color:'+f.c+'">0'+(i+1)+'</span>'
       +'<span class="fstat-lbl">'+f.l+'</span>'
-      +'<span class="fstat-pct" style="color:'+f.c+'">'+fmtPct(f.v)+'</span>'
+      +'<span class="fstat-pct" style="color:'+(empty?'var(--muted2)':f.c)+'">'+(empty?'—':fmtPct(f.v))+'</span>'
       +'</div><div class="fstat-track">'
       +'<div class="fstat-fill" style="width:'+w+'%;background:linear-gradient(90deg,'+f.c+','+f.c+'77);box-shadow:0 0 8px '+f.c+'55,0 0 2px '+f.c+'"></div>'
       +'</div></div>'+conn;
   }).join('');
-  const ffEnt=ENTS.find(e=>e.key===ff);
-  card.innerHTML='<div class="gc-bl"></div><div class="gc-br"></div>'
-    +'<div class="funnel-title">FUNNEL CONVERSION — '+(ffEnt?ffEnt.name.toUpperCase():'')+'</div>'
-    +'<div class="funnel-3d">'+rows+'</div>';
-}
 
-window.setDashFunnelFilter=function(k){window.dashFunnelFilter=k;rebuildFunnel(k);};
+  wrap.innerHTML=
+    '<div class="mid-row">'
+    +'<div class="graph-card gold-corner">'
+    +'<div class="gc-bl"></div><div class="gc-br"></div>'
+    +'<div class="graph-title">TAUX DE CONVERSION — '+ent.name.toUpperCase()+'</div>'
+    +'<div class="conv-flow">'+flow+'</div>'
+    +'</div>'
+    +'<div class="funnel-card gold-corner">'
+    +'<div class="gc-bl"></div><div class="gc-br"></div>'
+    +'<div class="funnel-title">FUNNEL CONVERSION — '+ent.name.toUpperCase()+'</div>'
+    +'<div class="funnel-3d">'+rows+'</div>'
+    +'</div>'
+    +'</div>';
+}
 
 // ===== TABLEAU DE BORD PERSONNEL (jour / semaine / mois / année) =====
 window.dashPeriod='mois';
@@ -5538,8 +5320,8 @@ async function renderPersonalSection(){
     +stat('Taux de conversion',fmtPct(t.conv),ent.hex)
     +`</div></div>`;
 }
-window.setDashPeriod=function(p){window.dashPeriod=p;renderPersonalSection();};
-window.setDashPersonalEnt=function(k){window.dashPersonalEnt=k;window.dashFunnelFilter=k;renderPersonalSection();rebuildFunnel(k);};
+window.setDashPeriod=function(p){window.dashPeriod=p;renderPersonalSection();renderConversionSection();};
+window.setDashPersonalEnt=function(k){window.dashPersonalEnt=k;window.dashFunnelFilter=k;renderPersonalSection();renderConversionSection();};
 
 // ===== LEADS =====
 window.leadsFilter='all';
