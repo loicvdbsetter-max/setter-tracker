@@ -3635,10 +3635,15 @@ let TASKS=[
   {id:'t7',label:'Remplir Setter Tracker',color:'rgba(0,212,255,0.5)',badge:'📊',done:false},
 ];
 
+// Protocole journalier — blocs horaires (indépendant des Daily Tasks existants,
+// même mécanisme de complétion tasks_done/{date}/{id} pour ne rien casser).
+let DAILY_BLOCKS=[];
+window._editingBlockId=null;
+
 const now=new Date();
 let cY=now.getFullYear(),cM=now.getMonth(),selDay=now.getDate();
 function todayKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
-const _paramsOpen={ents:{},metrics:{},tasks:false};
+const _paramsOpen={ents:{},metrics:{},tasks:false,blocks:false};
 
 let curTab='dash';
 let mCache={},lCache={},oCache={},rCache={};
@@ -3870,6 +3875,55 @@ async function saveTasksConfig(){
     await set(ref(db,'config/tasks'),obj);
   }catch(e){}
 }
+
+async function loadDailyBlocksConfig(){
+  try{
+    const s=await get(ref(db,'config/dailyBlocks'));
+    if(s.exists()){
+      DAILY_BLOCKS=Object.values(s.val()).sort((a,b)=>(a.start||'').localeCompare(b.start||''));
+    }
+  }catch(e){}
+}
+async function saveDailyBlocksConfig(){
+  try{
+    const obj={};DAILY_BLOCKS.forEach(b=>obj[b.id]=b);
+    await set(ref(db,'config/dailyBlocks'),obj);
+  }catch(e){}
+}
+window.toggleParamsBlocks=function(){_paramsOpen.blocks=!_paramsOpen.blocks;renderParams();};
+window.blockEdit=function(id){window._editingBlockId=id;_paramsOpen.blocks=true;renderParams();};
+window.blockCancelEdit=function(){window._editingBlockId=null;renderParams();};
+window.blockDel=async function(id){
+  if(!confirm('Supprimer ce bloc ?'))return;
+  DAILY_BLOCKS=DAILY_BLOCKS.filter(b=>b.id!==id);
+  if(window._editingBlockId===id)window._editingBlockId=null;
+  await saveDailyBlocksConfig();
+  renderParams();
+};
+window.blockSave=async function(){
+  const start=document.getElementById('blkStart')?.value;
+  const end=document.getElementById('blkEnd')?.value||'';
+  const label=document.getElementById('blkLabel')?.value?.trim();
+  const type=document.querySelector('input[name="blkType"]:checked')?.value||'simple';
+  const subsRaw=document.getElementById('blkSubs')?.value||'';
+  if(!start||!label){alert('Indique au moins une heure de début et un nom.');return;}
+  const editingId=window._editingBlockId;
+  const id=editingId||('b'+Date.now());
+  const subtasks=type==='group'
+    ?subsRaw.split('\n').map(s=>s.trim()).filter(Boolean).map((l,i)=>({id:id+'_s'+i,label:l}))
+    :[];
+  const block={id,start,end,label,type,subtasks};
+  if(editingId){
+    const idx=DAILY_BLOCKS.findIndex(b=>b.id===editingId);
+    if(idx>=0)DAILY_BLOCKS[idx]=block;
+  } else {
+    DAILY_BLOCKS.push(block);
+  }
+  DAILY_BLOCKS.sort((a,b)=>(a.start||'').localeCompare(b.start||''));
+  window._editingBlockId=null;
+  await saveDailyBlocksConfig();
+  renderParams();
+};
 
 let _taskDoneUnsub=null;
 function startTaskDoneListener(){
@@ -5775,6 +5829,37 @@ function renderParams(){
       </div>`;
   }).join('');
 
+  // PROTOCOLE JOURNALIER (blocs horaires)
+  const fmtT=t=>t?t.replace(':','h'):'';
+  const blockItems=DAILY_BLOCKS.map(b=>`
+    <div style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:6px;">
+      <span style="font-family:'Space Mono',monospace;font-size:11px;color:#00d4ff;min-width:92px;flex-shrink:0">${fmtT(b.start)}${b.end?' → '+fmtT(b.end):''}</span>
+      <span style="font-size:9px;color:var(--muted2);background:var(--border);padding:2px 8px;border-radius:4px;flex-shrink:0">${b.type==='group'?'GROUPE':'SIMPLE'}</span>
+      <span style="flex:1;font-size:13px">${b.label}${b.type==='group'?' <span style="color:var(--muted2);font-size:11px">('+(b.subtasks||[]).length+' sous-tâche'+((b.subtasks||[]).length>1?'s':'')+')</span>':''}</span>
+      <button onclick="window.blockEdit('${b.id}')" style="background:transparent;border:1px solid rgba(0,212,255,0.25);color:#00d4ff;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;transition:all 0.2s" title="Modifier">✏️</button>
+      <button onclick="window.blockDel('${b.id}')" style="background:transparent;border:1px solid rgba(244,63,94,0.25);color:#f43f5e;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;transition:all 0.2s" title="Supprimer">✕</button>
+    </div>`).join('')||'<div style="font-size:12px;color:var(--muted2);padding:6px 0">Aucun bloc pour l\'instant.</div>';
+
+  const editingBlock=window._editingBlockId?DAILY_BLOCKS.find(b=>b.id===window._editingBlockId):null;
+  const inpStyle='flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-family:\'Space Mono\',monospace;font-size:12px;outline:none';
+  const blockFormHtml=`
+    <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <input id="blkStart" type="time" value="${editingBlock?editingBlock.start:''}" style="${inpStyle};max-width:130px">
+        <input id="blkEnd" type="time" value="${editingBlock&&editingBlock.end?editingBlock.end:''}" style="${inpStyle};max-width:130px" placeholder="Fin (optionnel)">
+        <input id="blkLabel" placeholder="Nom du bloc (ex: Checking, Sport, Pause...)" value="${editingBlock?editingBlock.label.replace(/"/g,'&quot;'):''}" style="${inpStyle};min-width:160px">
+      </div>
+      <div style="display:flex;gap:16px;align-items:center;font-size:12px;color:var(--muted2)">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="radio" name="blkType" value="simple" ${(!editingBlock||editingBlock.type==='simple')?'checked':''}> Tâche simple</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="radio" name="blkType" value="group" ${(editingBlock&&editingBlock.type==='group')?'checked':''}> Groupe (plusieurs sous-tâches)</label>
+      </div>
+      <textarea id="blkSubs" placeholder="Si groupe : une sous-tâche par ligne" rows="3" style="${inpStyle};resize:vertical;font-family:'Space Mono',monospace">${editingBlock&&editingBlock.subtasks?editingBlock.subtasks.map(s=>s.label).join('\n'):''}</textarea>
+      <div style="display:flex;gap:8px;">
+        <button onclick="window.blockSave()" style="background:#00d4ff;color:#000;border:none;border-radius:8px;padding:8px 16px;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;cursor:pointer">${editingBlock?'💾 Enregistrer les modifications':'+ Ajouter le bloc'}</button>
+        ${editingBlock?'<button onclick="window.blockCancelEdit()" style="background:transparent;border:1px solid var(--border2);color:var(--muted2);border-radius:8px;padding:8px 16px;font-family:\'Space Mono\',monospace;font-size:12px;cursor:pointer">Annuler</button>':''}
+      </div>
+    </div>`;
+
   // TASK CONFIG
   const taskItems=TASKS.map((t,i)=>`
     <div style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:6px;">
@@ -5815,6 +5900,21 @@ function renderParams(){
           <input class="task-add-input" id="newTaskBadge" placeholder="Badge" style="max-width:110px">
           <button class="task-add-btn" onclick="addTask()">+ Ajouter</button>
         </div>
+      </div>
+    </div>
+
+    <div class="stitle" style="margin-bottom:8px;margin-top:8px">Protocole journalier</div>
+    <div class="acc-wrap">
+      <div class="acc-header${_paramsOpen.blocks?' open':''}" onclick="window.toggleParamsBlocks()">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:10px;color:var(--muted2);letter-spacing:2px">CONFIGURATION</span>
+          <span style="font-size:10px;color:var(--muted2);">${DAILY_BLOCKS.length} bloc${DAILY_BLOCKS.length>1?'s':''}</span>
+        </div>
+        <span class="acc-chevron">▼</span>
+      </div>
+      <div class="acc-body${_paramsOpen.blocks?' open':''}">
+        <div>${blockItems}</div>
+        ${blockFormHtml}
       </div>
     </div>
 
@@ -6003,6 +6103,7 @@ async function repairAndInit(){
     loadEntrepreneurs(),
     loadMetricOrders(),
     loadTasksConfig(),
+    loadDailyBlocksConfig(),
     loadObjectifRevenu(),
     loadMonth(cY,cM)
   ]);
