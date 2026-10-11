@@ -186,6 +186,18 @@ body{
 .dchart-weeklabel{fill:rgba(180,220,255,0.55);font-size:9px;font-family:'Space Mono',monospace;letter-spacing:0.5px;}
 .dchart-pctlabel{font-family:'Orbitron',monospace;font-weight:700;font-size:12px;}
 .chart-empty{padding:30px 10px;text-align:center;color:var(--muted2);font-size:12px;}
+.cmod{margin-top:4px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);display:flex;flex-wrap:wrap;gap:16px;align-items:center;}
+.cmod-stages{display:flex;align-items:center;gap:6px;flex:1;min-width:200px;}
+.cmod-stage{text-align:center;flex:1;}
+.cmod-stage-v{font-family:'Orbitron',monospace;font-weight:700;font-size:1.1rem;color:#fff;}
+.cmod-stage-l{font-size:7.5px;letter-spacing:1.5px;color:var(--muted2);margin-top:2px;}
+.cmod-arrow{color:var(--muted2);font-size:11px;flex:none;}
+.cmod-rates{flex:1;min-width:220px;display:flex;flex-direction:column;gap:5px;}
+.cmod-rate{display:flex;justify-content:space-between;align-items:center;font-size:9.5px;color:var(--muted2);font-family:'Space Mono',monospace;}
+.cmod-rate-v{font-family:'Orbitron',monospace;font-weight:700;font-size:11px;color:#fff;}
+.cmod-rate-main{margin-top:4px;padding:8px 10px;border-radius:8px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.3);}
+.cmod-rate-main .cmod-rate-l{color:#00d4ff;font-weight:700;letter-spacing:0.5px;}
+.cmod-rate-main .cmod-rate-v{font-size:16px;color:#00d4ff;}
 .graph-canvas-wrap{flex:1;position:relative;min-height:160px;}
 .graph-canvas-wrap canvas{display:block;width:100%;height:100%;min-height:160px;}
 .funnel-card{
@@ -5223,16 +5235,19 @@ async function computeFunnelSteps(ek,period){
     const uniqueInstNames=new Set(instLeads.map(l=>(l.name||'').trim().toLowerCase()));
     tventes=normLeads.length+uniqueInstNames.size;
   }
-  return[
-    {l:'MSG → RÉP',              v:pct(trep,tfm),                      c:'#00d4ff'},
-    {l:'F/U → RÉP F/U',          v:pct(trfu,tfu),                      c:'#3b82f6'},
-    {l:'MSG → CALL PROPOSÉ',     v:pct(tcp,tfm),                       c:'#818cf8'},
-    {l:'CALL PROPOSÉ → LIEN',    v:pct(tln,tcp),                       c:'#34d399'},
-    {l:'LIEN → R1 BOOKÉ',        v:pct(tc,tln),                        c:'#a78bfa'},
-    {l:'R1 BOOKÉ → PRÉSENT',     v:pct(tpres,tc),                      c:'#22d3ee'},
-    {l:'PRÉSENT → R2 BOOKÉ',     v:pct(tr2,tpres),                     c:'#fb923c'},
-    {l:'R2 BOOKÉ → VENTE',       v:tventes===null?null:pct(tventes,tr2),c:'#f472b6'},
+  const steps=[
+    {l:'MSG → RÉP',              v:pct(trep,tfm),  c:'#00d4ff'},
+    {l:'F/U → RÉP F/U',          v:pct(trfu,tfu),  c:'#3b82f6'},
+    {l:'MSG → CALL PROPOSÉ',     v:pct(tcp,tfm),   c:'#818cf8'},
+    {l:'CALL PROPOSÉ → LIEN',    v:pct(tln,tcp),   c:'#34d399'},
+    {l:'LIEN → R1 BOOKÉ',        v:pct(tc,tln),    c:'#a78bfa'},
   ];
+  // Module de conversion final : on ne sait pas si une vente est passée par
+  // un R2 ou closée direct au R1, donc le chiffre qui compte vraiment c'est
+  // le total Calls -> Vente (full funnel), pas un ratio R2 -> Vente isolé
+  // qui exclurait les closes directs.
+  const tail={calls:tc,present:tpres,r2:tr2,closed:tventes};
+  return{steps,tail};
 }
 
 const FUNNEL_ICONS=['✉','💬','📤','🔗','☎','👁','🏆','💰'];
@@ -5337,13 +5352,35 @@ window.setDashChartMetric=function(id){window.dashChartMetric=id;renderConversio
 // Funnel détaillé (8 étapes) + graphique en barres hebdo (toujours sur le
 // mois en cours, même principe que le graphique de la fiche partagée),
 // pilotés par les mêmes onglets période/entrepreneur que le Tableau de Bord.
+function renderConversionModule(tail){
+  const {calls,present,r2,closed}=tail;
+  const rate=(a,b)=>b>0?a/b*100:null;
+  const presenceRate=rate(present,calls);
+  const r2Rate=rate(r2,present);
+  const closingRate=closed===null?null:rate(closed,r2);
+  const totalConv=closed===null?null:rate(closed,calls);
+  const stage=(lbl,v)=>'<div class="cmod-stage"><div class="cmod-stage-v">'+v+'</div><div class="cmod-stage-l">'+lbl+'</div></div>';
+  const stages=stage('CALLS',calls)+'<div class="cmod-arrow">→</div>'
+    +stage('PRÉSENT',present)+'<div class="cmod-arrow">→</div>'
+    +stage('R2',r2)+'<div class="cmod-arrow">→</div>'
+    +stage('CLOSÉS',closed===null?'—':closed);
+  const rateRow=(lbl,v)=>'<div class="cmod-rate"><span class="cmod-rate-l">'+lbl+'</span><span class="cmod-rate-v">'+(v===null?'—':fmtPct(v))+'</span></div>';
+  return '<div class="cmod">'
+    +'<div class="cmod-stages">'+stages+'</div>'
+    +'<div class="cmod-rates">'
+    +rateRow('Présence',presenceRate)
+    +rateRow('Conversion en R2',r2Rate)
+    +rateRow('Closing (post-R2)',closingRate)
+    +'<div class="cmod-rate cmod-rate-main"><span class="cmod-rate-l">CALL → VENTE (FULL FUNNEL)</span><span class="cmod-rate-v">'+(totalConv===null?'—':fmtPct(totalConv))+'</span></div>'
+    +'</div></div>';
+}
 async function renderConversionSection(){
   const wrap=document.getElementById('convSectionWrap');
   if(!wrap)return;
   const period=window.dashPeriod||'mois';
   const ent=ENTS.find(e=>e.key===window.dashPersonalEnt)||ENTS.find(e=>e.key===window.dashFunnelFilter)||ENTS[0];
   if(!ent)return;
-  const [fs,weeklyTotals]=await Promise.all([computeFunnelSteps(ent.key,period),computeWeeklyFunnelTotals(ent.key)]);
+  const [{steps,tail},weeklyTotals]=await Promise.all([computeFunnelSteps(ent.key,period),computeWeeklyFunnelTotals(ent.key)]);
 
   const metricPills=DASH_CHART_METRICS.map(m=>{
     const active=m.id===window.dashChartMetric;
@@ -5351,17 +5388,16 @@ async function renderConversionSection(){
   }).join('');
   const chartSvg=renderDashBarChart(ent,weeklyTotals,window.dashChartMetric);
 
-  const rows=fs.map((f,i)=>{
+  const rows=steps.map((f,i)=>{
     const empty=f.v===null;
     const w=empty?0:Math.min(Math.max(f.v,0),100);
-    const conn=i<fs.length-1?'<div class="fstat-connector">↓</div>':'';
     return'<div class="fstat-step"><div class="fstat-header">'
       +'<span class="fstat-icon" style="background:'+f.c+'22;color:'+f.c+'">'+(FUNNEL_ICONS[i]||'●')+'</span>'
       +'<span class="fstat-lbl">'+f.l+'</span>'
       +'<span class="fstat-pct" style="color:'+(empty?'var(--muted2)':f.c)+'">'+(empty?'—':fmtPct(f.v))+'</span>'
       +'</div><div class="fstat-track">'
       +'<div class="fstat-fill" style="width:'+w+'%;background:linear-gradient(90deg,'+f.c+','+f.c+'77);box-shadow:0 0 8px '+f.c+'55,0 0 2px '+f.c+'"></div>'
-      +'</div></div>'+conn;
+      +'</div></div><div class="fstat-connector">↓</div>';
   }).join('');
 
   wrap.innerHTML=
@@ -5376,6 +5412,7 @@ async function renderConversionSection(){
     +'<div class="gc-bl"></div><div class="gc-br"></div>'
     +'<div class="funnel-title">FUNNEL CONVERSION — '+ent.name.toUpperCase()+'</div>'
     +'<div class="funnel-3d">'+rows+'</div>'
+    +renderConversionModule(tail)
     +'</div>'
     +'</div>';
 }
