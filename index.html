@@ -3859,21 +3859,38 @@ window.moveMetricDown=async function(ek,idx){
   await saveMetricOrder(ek,order);
   renderJour();
 };
-async function loadTasksConfig(){
+// Migration unique de l'ancien "Daily Tasks" (config/tasks) vers le nouveau
+// "Protocole journalier" (config/dailyBlocks) — même id conservé pour ne pas
+// perdre l'historique de complétion (tasks_done est indexé par id).
+async function migrateLegacyTasksIfNeeded(){
+  if(DAILY_BLOCKS.length>0)return;
   try{
+    const flagSnap=await get(ref(db,'config/dailyBlocksMigrated'));
+    if(flagSnap.exists()&&flagSnap.val()===true)return;
     const s=await get(ref(db,'config/tasks'));
     if(s.exists()){
-      const data=Object.values(s.val());
-      TASKS=data.map(t=>({...t,done:false}));
+      const legacy=Object.values(s.val());
+      if(legacy.length){
+        DAILY_BLOCKS=legacy.map(t=>({id:t.id,start:'',end:'',label:t.label,type:'simple',subtasks:[],color:t.color,badge:t.badge}));
+        await saveDailyBlocksConfig();
+      }
     }
+    await set(ref(db,'config/dailyBlocksMigrated'),true);
   }catch(e){}
-  startTaskDoneListener();
 }
-async function saveTasksConfig(){
-  try{
-    const obj={};TASKS.forEach(t=>obj[t.id]={id:t.id,label:t.label,color:t.color,badge:t.badge});
-    await set(ref(db,'config/tasks'),obj);
-  }catch(e){}
+// TASKS reste la liste "à plat" consommée par le camembert/anneau/page Jour
+// existants — elle est maintenant dérivée de DAILY_BLOCKS (groupes éclatés
+// en sous-tâches individuelles) au lieu d'être éditée directement.
+function rebuildTasksFromBlocks(){
+  const out=[];
+  DAILY_BLOCKS.forEach(b=>{
+    if(b.type==='group'){
+      (b.subtasks||[]).forEach(s=>out.push({id:s.id,label:s.label,color:b.color||'rgba(0,212,255,0.35)',badge:b.label,done:false}));
+    } else {
+      out.push({id:b.id,label:b.label,color:b.color||'rgba(0,212,255,0.35)',badge:b.badge||'',done:false});
+    }
+  });
+  TASKS=out;
 }
 
 async function loadDailyBlocksConfig(){
@@ -3891,6 +3908,8 @@ async function saveDailyBlocksConfig(){
   }catch(e){}
 }
 window.toggleParamsBlocks=function(){_paramsOpen.blocks=!_paramsOpen.blocks;renderParams();};
+window._openGroups={};
+window.toggleTaskGroup=function(id){window._openGroups[id]=!window._openGroups[id];renderJour();};
 window.blockEdit=function(id){window._editingBlockId=id;_paramsOpen.blocks=true;renderParams();};
 window.blockCancelEdit=function(){window._editingBlockId=null;renderParams();};
 window.blockDel=async function(id){
@@ -5128,16 +5147,46 @@ async function renderJour(){
     </div>`;
   }).join('');
 
-  // Tasks
+  // Tasks — rendu depuis DAILY_BLOCKS (groupes dépliables, blocs simples en
+  // ligne directe), l'état fait/pas-fait venant de TASKS (dérivé des blocs).
   const tDone=TASKS.filter(t=>t.done).length;
   const tPct=tDone/TASKS.length;
-  const taskItems=TASKS.map(t=>`
-    <div class="task-item${t.done?' done':''}" onclick="toggleTask('${t.id}')">
-      <div class="task-bar" style="background:linear-gradient(180deg,${t.color},transparent)"></div>
-      <div class="task-cb${t.done?' checked':''}">${t.done?`<svg width="8" height="8" viewBox="0 0 12 12"><path d="M2 6 L5 9 L10 3" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`:''}</div>
-      <span class="task-lbl">${t.label}</span>
-      <span class="task-badge" style="border-color:${t.color};color:${t.done?'rgba(255,255,255,0.15)':t.color}">${t.badge}</span>
-    </div>`).join('');
+  const findTaskDone=id=>{const t=TASKS.find(x=>x.id===id);return t?t.done:false;};
+  const checkSvg='<svg width="8" height="8" viewBox="0 0 12 12"><path d="M2 6 L5 9 L10 3" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const simpleRow=(id,label,color,badge)=>{
+    const done=findTaskDone(id);
+    return `<div class="task-item${done?' done':''}" onclick="toggleTask('${id}')">
+      <div class="task-bar" style="background:linear-gradient(180deg,${color},transparent)"></div>
+      <div class="task-cb${done?' checked':''}">${done?checkSvg:''}</div>
+      <span class="task-lbl">${label}</span>
+      <span class="task-badge" style="border-color:${color};color:${done?'rgba(255,255,255,0.15)':color}">${badge}</span>
+    </div>`;
+  };
+  const taskItems=DAILY_BLOCKS.map(b=>{
+    const color=b.color||'rgba(0,212,255,0.35)';
+    const timeLbl=b.start?(b.start.replace(':','h')+(b.end?' → '+b.end.replace(':','h'):'')):'';
+    if(b.type==='group'){
+      const subs=b.subtasks||[];
+      const doneCount=subs.filter(s=>findTaskDone(s.id)).length;
+      const isOpen=!!window._openGroups[b.id];
+      const rows=subs.map(s=>simpleRow(s.id,s.label,color,b.label)).join('');
+      return `<div class="acc-wrap" style="margin-bottom:6px">
+        <div class="acc-header${isOpen?' open':''}" onclick="window.toggleTaskGroup('${b.id}')">
+          <div style="display:flex;align-items:center;gap:10px;">
+            ${timeLbl?`<span style="font-family:'Space Mono',monospace;font-size:11px;color:#00d4ff">${timeLbl}</span>`:''}
+            <span style="font-size:13px">${b.label}</span>
+            <span style="font-size:10px;color:var(--muted2)">${doneCount}/${subs.length}</span>
+          </div>
+          <span class="acc-chevron">▼</span>
+        </div>
+        <div class="acc-body${isOpen?' open':''}">${rows}</div>
+      </div>`;
+    }
+    const row=simpleRow(b.id,b.label,color,b.badge||'');
+    return timeLbl
+      ?`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-family:'Space Mono',monospace;font-size:11px;color:#00d4ff;min-width:66px;flex-shrink:0">${timeLbl}</span><div style="flex:1">${row}</div></div>`
+      :row;
+  }).join('');
 
   div.innerHTML=`
   <div class="jour-page">
@@ -5860,18 +5909,6 @@ function renderParams(){
       </div>
     </div>`;
 
-  // TASK CONFIG
-  const taskItems=TASKS.map((t,i)=>`
-    <div style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:6px;">
-      <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">
-        <button onclick="window.taskMove('${t.id}',-1)" style="background:none;border:none;cursor:pointer;color:${i===0?'rgba(255,255,255,0.08)':'rgba(0,212,255,0.5)'};font-size:11px;padding:0;line-height:1" ${i===0?'disabled':''}>▲</button>
-        <button onclick="window.taskMove('${t.id}',1)" style="background:none;border:none;cursor:pointer;color:${i===TASKS.length-1?'rgba(255,255,255,0.08)':'rgba(0,212,255,0.5)'};font-size:11px;padding:0;line-height:1" ${i===TASKS.length-1?'disabled':''}>▼</button>
-      </div>
-      <div style="width:3px;height:32px;border-radius:2px;background:${t.color};flex-shrink:0"></div>
-      <span style="flex:1;font-size:13px">${t.label}</span>
-      <span style="font-size:10px;color:var(--muted2);background:var(--border);padding:2px 8px;border-radius:4px">${t.badge}</span>
-      <button onclick="window.delTask('${t.id}')" style="background:transparent;border:1px solid rgba(244,63,94,0.25);color:#f43f5e;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;transition:all 0.2s">✕</button>
-    </div>`).join('');
 
   div.innerHTML=`
   <div class="params-page">
@@ -5883,25 +5920,6 @@ function renderParams(){
 
     <div class="stitle" style="margin-bottom:8px;margin-top:8px">Actions journalières — par entrepreneur</div>
     <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">${metricEditors}</div>
-
-    <div class="stitle" style="margin-bottom:8px">Daily Tasks</div>
-    <div class="acc-wrap">
-      <div class="acc-header${_paramsOpen.tasks?' open':''}" onclick="window.toggleParamsTasks()">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span style="font-size:10px;color:var(--muted2);letter-spacing:2px">CONFIGURATION</span>
-          <span style="font-size:10px;color:var(--muted2);">${TASKS.length} tâche${TASKS.length>1?'s':''}</span>
-        </div>
-        <span class="acc-chevron">▼</span>
-      </div>
-      <div class="acc-body${_paramsOpen.tasks?' open':''}">
-        <div>${taskItems}</div>
-        <div class="task-add-row" style="margin-top:10px">
-          <input class="task-add-input" id="newTaskLbl" placeholder="Nouvelle tâche...">
-          <input class="task-add-input" id="newTaskBadge" placeholder="Badge" style="max-width:110px">
-          <button class="task-add-btn" onclick="addTask()">+ Ajouter</button>
-        </div>
-      </div>
-    </div>
 
     <div class="stitle" style="margin-bottom:8px;margin-top:8px">Protocole journalier</div>
     <div class="acc-wrap">
@@ -5947,7 +5965,6 @@ window.saveObjRevenu=async function(){
 // ===== PARAMS ACCORDION TOGGLES =====
 window.toggleParamsEnt=function(key){_paramsOpen.ents[key]=!_paramsOpen.ents[key];renderParams();};
 window.toggleParamsMetrics=function(key){_paramsOpen.metrics[key]=!_paramsOpen.metrics[key];renderParams();};
-window.toggleParamsTasks=function(){_paramsOpen.tasks=!_paramsOpen.tasks;renderParams();};
 
 // ===== METRIC MANAGEMENT =====
 window.metricAdd=async function(ek){
@@ -6006,15 +6023,6 @@ window.metricMoveDown=async function(ek,idx){
   window.renderParams();
 };
 
-window.taskMove=async function(id,dir){
-  const idx=TASKS.findIndex(t=>t.id===id);
-  if(idx<0)return;
-  const newIdx=idx+dir;
-  if(newIdx<0||newIdx>=TASKS.length)return;
-  [TASKS[idx],TASKS[newIdx]]=[TASKS[newIdx],TASKS[idx]];
-  await saveTasksConfig();
-  window.renderParams();
-};
 
 async function saveEnt(key){
   const name=document.getElementById(`pn_${key}`)?.value||'';
@@ -6045,23 +6053,6 @@ async function addEnt(){
 }
 window.addEnt=addEnt;
 
-async function delTask(id){
-  TASKS=TASKS.filter(t=>t.id!==id);
-  await saveTasksConfig();
-  renderParams();
-}
-window.delTask=delTask;
-
-async function addTask(){
-  const label=document.getElementById('newTaskLbl')?.value?.trim();
-  const badge=document.getElementById('newTaskBadge')?.value?.trim()||'All';
-  if(!label)return;
-  const id='t'+Date.now();
-  TASKS.push({id,label,color:'rgba(0,212,255,0.35)',badge,done:false});
-  await saveTasksConfig();
-  renderParams();
-}
-window.addTask=addTask;
 
 // Init icon
 setTabIconActive('dash',true);
@@ -6102,11 +6093,13 @@ async function repairAndInit(){
   await Promise.all([
     loadEntrepreneurs(),
     loadMetricOrders(),
-    loadTasksConfig(),
     loadDailyBlocksConfig(),
     loadObjectifRevenu(),
     loadMonth(cY,cM)
   ]);
+  await migrateLegacyTasksIfNeeded();
+  rebuildTasksFromBlocks();
+  startTaskDoneListener();
   render();
 }
 
