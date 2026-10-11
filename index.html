@@ -5365,9 +5365,23 @@ function renderConversionModule(tail){
     +'<div class="cmod-rate cmod-rate-main"><span class="cmod-rate-l">CALL → VENTE (FULL FUNNEL)</span><span class="cmod-rate-v">'+(totalConv===null?'—':fmtPct(totalConv))+'</span></div>'
     +'</div></div>';
 }
-function drawConversionFunnel(levels){
+var _funnelBgImg=null,_funnelBgLoading=null;
+function loadFunnelBg(){
+  if(_funnelBgImg)return Promise.resolve(_funnelBgImg);
+  if(_funnelBgLoading)return _funnelBgLoading;
+  _funnelBgLoading=new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>{_funnelBgImg=img;resolve(img);};
+    img.onerror=()=>resolve(null);
+    img.src='assets/funnel-bg.png';
+  });
+  return _funnelBgLoading;
+}
+async function drawConversionFunnel(levels){
   const canvas=document.getElementById('convFunnelCanvas');
   if(!canvas)return;
+  const bgImg=await loadFunnelBg();
+  if(!document.getElementById('convFunnelCanvas'))return; // re-rendu entre temps
   const dpr=window.devicePixelRatio||1;
   const W=canvas.offsetWidth||260,H=240;
   canvas.style.height=H+'px';
@@ -5382,25 +5396,29 @@ function drawConversionFunnel(levels){
   const rxs=levels.map(l=>minR+(maxR-minR)*(maxV>0?l.v/maxV:0));
   const ryOf=r=>r*0.26;
 
+  // Décor fixe : l'image fournie (tube en verre, poussière, bord texturé),
+  // jamais déformée — seuls les anneaux/texte par-dessus reflètent la donnée.
+  function drawBg(){
+    if(!bgImg)return;
+    const scale=Math.min(W/bgImg.width,H/bgImg.height);
+    const bw=bgImg.width*scale,bh=bgImg.height*scale;
+    ctx.globalAlpha=0.85;
+    ctx.drawImage(bgImg,(W-bw)/2,(H-bh)/2,bw,bh);
+    ctx.globalAlpha=1;
+  }
+
   function frame(prog){
     ctx.clearRect(0,0,W,H);
+    drawBg();
     const cx=W/2;
     for(let i=0;i<n-1;i++){
-      const r1=rxs[i]*prog,r2=rxs[i+1]*prog,y1=ys[i],y2=ys[i+1],ym=(y1+y2)/2;
-      const grad=ctx.createLinearGradient(0,y1,0,y2);
-      grad.addColorStop(0,`rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.22)`);
-      grad.addColorStop(1,`rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.07)`);
-      ctx.beginPath();
-      ctx.moveTo(cx-r1,y1);
-      ctx.bezierCurveTo(cx-r1,ym,cx-r2,ym,cx-r2,y2);
-      ctx.lineTo(cx+r2,y2);
-      ctx.bezierCurveTo(cx+r2,ym,cx+r1,ym,cx+r1,y1);
-      ctx.closePath();
-      ctx.fillStyle=grad;ctx.fill();
       if(prog>0.9&&levels[i+1].rate!==undefined){
+        const ym=(ys[i]+ys[i+1])/2;
         ctx.font=`600 8px 'Space Mono',monospace`;
-        ctx.fillStyle='rgba(180,220,255,0.55)';ctx.textAlign='center';
+        ctx.fillStyle='rgba(180,220,255,0.8)';ctx.textAlign='center';
+        ctx.shadowBlur=3;ctx.shadowColor='rgba(0,0,0,0.9)';
         ctx.fillText(levels[i+1].rate===null?'—':fmtPct(levels[i+1].rate),cx,ym+3);
+        ctx.shadowBlur=0;
       }
     }
     levels.forEach((l,i)=>{
@@ -5411,9 +5429,11 @@ function drawConversionFunnel(levels){
       ctx.strokeStyle='#00d4ff';ctx.lineWidth=1.6;ctx.stroke();
       ctx.restore();
       ctx.font=`700 14px 'Orbitron',monospace`;ctx.textAlign='center';ctx.textBaseline='alphabetic';
-      ctx.fillStyle='#fff';ctx.fillText(String(l.v),cx,y-8);
+      ctx.fillStyle='#fff';ctx.shadowBlur=4;ctx.shadowColor='rgba(0,0,0,0.9)';
+      ctx.fillText(String(l.v),cx,y-8);
       ctx.font=`600 7.5px 'Space Mono',monospace`;
-      ctx.fillStyle='rgba(180,220,255,0.7)';ctx.fillText(l.l,cx,y+12);
+      ctx.fillStyle='rgba(180,220,255,0.9)';ctx.fillText(l.l,cx,y+12);
+      ctx.shadowBlur=0;
     });
   }
   const t0=performance.now();
