@@ -187,11 +187,7 @@ body{
 .dchart-pctlabel{font-family:'Orbitron',monospace;font-weight:700;font-size:12px;}
 .chart-empty{padding:30px 10px;text-align:center;color:var(--muted2);font-size:12px;}
 .cmod{margin-top:4px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);display:flex;flex-wrap:wrap;gap:16px;align-items:center;}
-.cmod-stages{display:flex;align-items:center;gap:6px;flex:1;min-width:200px;}
-.cmod-stage{text-align:center;flex:1;}
-.cmod-stage-v{font-family:'Orbitron',monospace;font-weight:700;font-size:1.1rem;color:#fff;}
-.cmod-stage-l{font-size:7.5px;letter-spacing:1.5px;color:var(--muted2);margin-top:2px;}
-.cmod-arrow{color:var(--muted2);font-size:11px;flex:none;}
+.cmod-funnel-canvas{flex:1;min-width:220px;max-width:280px;width:100%;display:block;}
 .cmod-rates{flex:1;min-width:220px;display:flex;flex-direction:column;gap:5px;}
 .cmod-rate{display:flex;justify-content:space-between;align-items:center;font-size:9.5px;color:var(--muted2);font-family:'Space Mono',monospace;}
 .cmod-rate-v{font-family:'Orbitron',monospace;font-weight:700;font-size:11px;color:#fff;}
@@ -5359,20 +5355,73 @@ function renderConversionModule(tail){
   const r2Rate=rate(r2,present);
   const closingRate=closed===null?null:rate(closed,r2);
   const totalConv=closed===null?null:rate(closed,calls);
-  const stage=(lbl,v)=>'<div class="cmod-stage"><div class="cmod-stage-v">'+v+'</div><div class="cmod-stage-l">'+lbl+'</div></div>';
-  const stages=stage('CALLS',calls)+'<div class="cmod-arrow">→</div>'
-    +stage('PRÉSENT',present)+'<div class="cmod-arrow">→</div>'
-    +stage('R2',r2)+'<div class="cmod-arrow">→</div>'
-    +stage('CLOSÉS',closed===null?'—':closed);
   const rateRow=(lbl,v)=>'<div class="cmod-rate"><span class="cmod-rate-l">'+lbl+'</span><span class="cmod-rate-v">'+(v===null?'—':fmtPct(v))+'</span></div>';
   return '<div class="cmod">'
-    +'<div class="cmod-stages">'+stages+'</div>'
+    +'<canvas id="convFunnelCanvas" class="cmod-funnel-canvas"></canvas>'
     +'<div class="cmod-rates">'
     +rateRow('Présence',presenceRate)
     +rateRow('Conversion en R2',r2Rate)
     +rateRow('Closing (post-R2)',closingRate)
     +'<div class="cmod-rate cmod-rate-main"><span class="cmod-rate-l">CALL → VENTE (FULL FUNNEL)</span><span class="cmod-rate-v">'+(totalConv===null?'—':fmtPct(totalConv))+'</span></div>'
     +'</div></div>';
+}
+function drawConversionFunnel(levels){
+  const canvas=document.getElementById('convFunnelCanvas');
+  if(!canvas)return;
+  const dpr=window.devicePixelRatio||1;
+  const W=canvas.offsetWidth||260,H=240;
+  canvas.style.height=H+'px';
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);
+  const rgb=[0,212,255];
+  const n=levels.length;
+  const padT=24,padB=16;
+  const maxV=Math.max(levels[0].v,1);
+  const maxR=Math.min(W*0.4,100),minR=maxR*0.3;
+  const ys=levels.map((_,i)=>padT+i/(n-1)*(H-padT-padB));
+  const rxs=levels.map(l=>minR+(maxR-minR)*(maxV>0?l.v/maxV:0));
+  const ryOf=r=>r*0.26;
+
+  function frame(prog){
+    ctx.clearRect(0,0,W,H);
+    const cx=W/2;
+    for(let i=0;i<n-1;i++){
+      const r1=rxs[i]*prog,r2=rxs[i+1]*prog,y1=ys[i],y2=ys[i+1],ym=(y1+y2)/2;
+      const grad=ctx.createLinearGradient(0,y1,0,y2);
+      grad.addColorStop(0,`rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.22)`);
+      grad.addColorStop(1,`rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.07)`);
+      ctx.beginPath();
+      ctx.moveTo(cx-r1,y1);
+      ctx.bezierCurveTo(cx-r1,ym,cx-r2,ym,cx-r2,y2);
+      ctx.lineTo(cx+r2,y2);
+      ctx.bezierCurveTo(cx+r2,ym,cx+r1,ym,cx+r1,y1);
+      ctx.closePath();
+      ctx.fillStyle=grad;ctx.fill();
+      if(prog>0.9&&levels[i+1].rate!==undefined){
+        ctx.font=`600 8px 'Space Mono',monospace`;
+        ctx.fillStyle='rgba(180,220,255,0.55)';ctx.textAlign='center';
+        ctx.fillText(levels[i+1].rate===null?'—':fmtPct(levels[i+1].rate),cx,ym+3);
+      }
+    }
+    levels.forEach((l,i)=>{
+      const r=rxs[i]*prog,ry=ryOf(r),y=ys[i];
+      ctx.save();
+      ctx.shadowBlur=13;ctx.shadowColor=`rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.6)`;
+      ctx.beginPath();ctx.ellipse(cx,y,Math.max(r,2),Math.max(ry,1),0,0,Math.PI*2);
+      ctx.strokeStyle='#00d4ff';ctx.lineWidth=1.6;ctx.stroke();
+      ctx.restore();
+      ctx.font=`700 14px 'Orbitron',monospace`;ctx.textAlign='center';ctx.textBaseline='alphabetic';
+      ctx.fillStyle='#fff';ctx.fillText(String(l.v),cx,y-8);
+      ctx.font=`600 7.5px 'Space Mono',monospace`;
+      ctx.fillStyle='rgba(180,220,255,0.7)';ctx.fillText(l.l,cx,y+12);
+    });
+  }
+  const t0=performance.now();
+  (function anim(now){
+    const p=Math.min((now-t0)/650,1);
+    frame(1-Math.pow(1-p,3));
+    if(p<1)requestAnimationFrame(anim);
+  })(t0);
 }
 async function renderConversionSection(){
   const wrap=document.getElementById('convSectionWrap');
@@ -5415,6 +5464,14 @@ async function renderConversionSection(){
     +renderConversionModule(tail)
     +'</div>'
     +'</div>';
+
+  const rate=(a,b)=>b>0?a/b*100:null;
+  requestAnimationFrame(()=>drawConversionFunnel([
+    {l:'TOTAL CALLS',v:tail.calls},
+    {l:'PRÉSENTS',v:tail.present,rate:rate(tail.present,tail.calls)},
+    {l:'R2',v:tail.r2,rate:rate(tail.r2,tail.present)},
+    {l:'VENTES',v:tail.closed===null?0:tail.closed,rate:tail.closed===null?null:rate(tail.closed,tail.r2)},
+  ]));
 }
 
 // ===== TABLEAU DE BORD PERSONNEL (jour / semaine / mois / année) =====
