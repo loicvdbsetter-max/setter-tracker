@@ -524,6 +524,9 @@ body{
 .linput{background:transparent;border:none;color:var(--text);font-family:'Space Mono',monospace;font-size:13px;outline:none;width:100%;min-width:80px;}
 .linput:focus{background:var(--surface);border-radius:4px;padding:2px 4px;}
 .lcash{font-family:'Space Mono',monospace;font-size:12px;width:70px;background:transparent;border:none;color:var(--text);outline:none;}
+.lprog-track{width:70px;height:3px;border-radius:2px;background:rgba(255,255,255,0.08);margin-top:4px;overflow:hidden;}
+.lprog-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,#00d4ff,#34d399);box-shadow:0 0 6px rgba(0,212,255,0.5);transition:width 0.3s;}
+.lsum-label{font-size:8px;color:var(--muted2);letter-spacing:2px;margin-bottom:2px;}
 .lcash:focus{background:var(--surface);border-radius:4px;padding:2px 4px;}
 .lcomm{color:var(--cyan);font-family:'Space Mono',monospace;font-size:12px;text-shadow:0 0 6px rgba(0,212,255,0.4);}
 .ltag{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:11px;background:var(--surface);border:1px solid var(--border2);color:var(--muted2);margin:1px;font-family:'Space Mono',monospace;letter-spacing:0.5px;}
@@ -3605,6 +3608,13 @@ onAuthStateChanged(auth,user=>{
 
 const MFR=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const PRESET_TAGS=['Full','2x','3x','Acompte','Formation'];
+const PRESET_TAG_COLORS={
+  'Full':{bg:'#1E90FF',fg:'#ffffff'},
+  '2x':{bg:'#F2B441',fg:'#000000'},
+  '3x':{bg:'#F2762E',fg:'#ffffff'},
+  'Acompte':{bg:'#34d399',fg:'#000000'},
+  'Formation':{bg:'#A78BFA',fg:'#ffffff'}
+};
 const DEF_ENTS=[{key:'O',name:'Ozcan',hex:'#1E90FF',rate:5},{key:'J',name:'Jorann',hex:'#8B0000',rate:5},{key:'G',name:'Gaël',hex:'#FF8C00',rate:10},{key:'M',name:'Mika',hex:'#2E8B57',rate:5}];
 const formatAmount = v => (v === undefined || v === null || isNaN(v)) ? '0' : v.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 1 });
 const fmtPct = n => (n === undefined || n === null || isNaN(n)) ? '—' : n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
@@ -5677,19 +5687,28 @@ async function renderLeads(){
     const e=ENTS.find(x=>x.key===l.entKey)||ENTS[0];
     const cash=parseFloat(l.cashReceived)||0;
     const comm=cash*(e.rate/100);
-    const tagsHtml=(l.tags||[]).map(t=>`<span class="ltag">${t}<span class="ltag-x" data-y="${cY}" data-m="${cM}" data-id="${id}" data-tag="${t.replace(/"/g,'&quot;')}" onclick="removeTag(this)">×</span></span>`).join('');
+    const tagsHtml=(l.tags||[]).map(t=>{
+      const tc=PRESET_TAG_COLORS[t];
+      const style=tc?`background:${tc.bg};color:${tc.fg};border-color:${tc.bg}`:'';
+      return `<span class="ltag" style="${style}">${t}<span class="ltag-x" style="${tc?`color:${tc.fg}`:''}" data-y="${cY}" data-m="${cM}" data-id="${id}" data-tag="${t.replace(/"/g,'&quot;')}" onclick="removeTag(this)">×</span></span>`;
+    }).join('');
+    const collected=parseFloat(l.cashCollected)||0;
+    const receivedPct=collected>0?Math.min(cash/collected*100,100):0;
     rows+=`<tr>
       <td><input class="linput" value="${l.name||''}" onblur="upLead(${cY},${cM},'${id}','name',this.value)" placeholder="Nom"></td>
       <td><select style="background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:5px 8px;font-size:12px;outline:none;" onchange="upLead(${cY},${cM},'${id}','entKey',this.value)">${ENTS.map(x=>`<option value="${x.key}" ${l.entKey===x.key?'selected':''}>${x.name}</option>`).join('')}</select></td>
       <td><input class="lcash" type="number" value="${l.cashCollected||0}" onblur="upLead(${cY},${cM},'${id}','cashCollected',parseFloat(this.value)||0)">€</td>
-      <td><input class="lcash" type="number" value="${l.cashReceived||0}" onblur="upLead(${cY},${cM},'${id}','cashReceived',parseFloat(this.value)||0)">€</td>
+      <td>
+        <input class="lcash" type="number" value="${l.cashReceived||0}" onblur="upLead(${cY},${cM},'${id}','cashReceived',parseFloat(this.value)||0)">€
+        <div class="lprog-track" title="${formatAmount(cash)}€ encaissés sur ${formatAmount(collected)}€ collectés"><div class="lprog-fill" style="width:${receivedPct}%"></div></div>
+      </td>
       <td><span class="lcomm">${formatAmount(comm)}€</span></td>
       <td><div style="display:flex;flex-wrap:wrap;gap:2px;align-items:center">${tagsHtml}
         <select style="background:var(--surface2);border:1px solid var(--border2);color:var(--muted2);border-radius:20px;padding:2px 6px;font-size:11px;outline:none;" onchange="if(this.value){addTag(${cY},${cM},'${id}',this.value);this.value=''}">
           <option value="">+ tag</option>${PRESET_TAGS.map(t=>`<option value="${t}">${t}</option>`).join('')}
         </select>
       </div></td>
-      <td><input class="linput" value="${l.note||''}" onblur="upLead(${cY},${cM},'${id}','note',this.value)" placeholder="Note..."></td>
+      <td><input class="linput" value="${l.note||''}" title="${(l.note||'').replace(/"/g,'&quot;')}" onblur="upLead(${cY},${cM},'${id}','note',this.value)" placeholder="Note..."></td>
       <td style="font-size:10px;color:var(--muted2)">${l.date||''}</td>
       <td><button class="ldel" onclick="delLead(${cY},${cM},'${id}')">✕</button></td>
     </tr>`;
@@ -5703,6 +5722,7 @@ async function renderLeads(){
     const outlineStyle=active?'2px solid '+e.hex:'2px solid transparent';
     return `<div class="lsum-card" style="--c:${e.hex};cursor:pointer;outline:${outlineStyle};outline-offset:2px;transition:all 0.2s" onclick="window.setLeadsFilter(window.leadsFilter==='${e.key}'?'all':'${e.key}')">
       <div class="lsum-name">${e.name} · ${e.rate}%</div>
+      <div class="lsum-label">COMMISSION</div>
       <div class="lsum-val" style="color:var(--cyan)">${formatAmount(s.comm)}€</div>
       <div class="lsum-comm" style="color:var(--muted2)">Généré : ${formatAmount(s.cash)}€ · ${s.count} lead${s.count>1?'s':''}</div>
     </div>`;
@@ -5742,11 +5762,15 @@ async function renderLeads(){
       <span style="margin:0 8px;opacity:0.3">·</span>
       <span>${filtered.length} lead${filtered.length>1?'s':''} affichés</span>
     </div>
-    <div style="overflow-x:auto">
-      <table class="leads-table">
-        <thead><tr><th>Nom</th><th>Entrepreneur</th><th>Collecté</th><th>Encaissé</th><th>Commission</th><th>Tags</th><th>Note</th><th>Date</th><th></th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
+    <div class="graph-card gold-corner" style="overflow:visible;padding:14px 14px 4px">
+      <div class="gc-bl"></div><div class="gc-br"></div>
+      <div class="graph-title" style="margin-bottom:10px">DÉTAIL DES LEADS</div>
+      <div style="overflow-x:auto">
+        <table class="leads-table">
+          <thead><tr><th>Nom</th><th>Entrepreneur</th><th>Collecté</th><th>Encaissé</th><th>Commission</th><th>Tags</th><th>Note</th><th>Date</th><th></th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
     </div>
     <div class="leads-sum" style="margin-top:16px">${sumCards}</div>
 
