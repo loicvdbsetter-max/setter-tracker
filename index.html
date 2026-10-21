@@ -530,7 +530,8 @@ body{
 .lcash:focus{background:var(--surface);border-radius:4px;padding:2px 4px;}
 .lcomm{color:var(--cyan);font-family:'Space Mono',monospace;font-size:12px;text-shadow:0 0 6px rgba(0,212,255,0.4);}
 .ltag{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:11px;background:var(--surface);border:1px solid var(--border2);color:var(--muted2);margin:1px;font-family:'Space Mono',monospace;letter-spacing:0.5px;}
-.ltag-x{cursor:pointer;color:var(--muted2);transition:color 0.2s;}
+.ltag-x{cursor:pointer;color:inherit;opacity:0.65;transition:opacity 0.2s;}
+.ltag-x:hover{opacity:1;}
 .ltag-x:hover{color:#f43f5e;}
 .ldel{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:6px;transition:color 0.2s;}
 .ldel:hover{color:#f43f5e;}
@@ -3608,13 +3609,21 @@ onAuthStateChanged(auth,user=>{
 
 const MFR=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const PRESET_TAGS=['Full','2x','3x','Acompte','Formation'];
+// Teinte de base par tag — rendue en fond translucide + texte/bordure pleins
+// (pas de pastille flashy), cohérent avec le reste du langage visuel HUD.
 const PRESET_TAG_COLORS={
-  'Full':{bg:'#1E90FF',fg:'#ffffff'},
-  '2x':{bg:'#F2B441',fg:'#000000'},
-  '3x':{bg:'#F2762E',fg:'#ffffff'},
-  'Acompte':{bg:'#34d399',fg:'#000000'},
-  'Formation':{bg:'#A78BFA',fg:'#ffffff'}
+  'Full':'#00d4ff',
+  '2x':'#F2B441',
+  '3x':'#F2762E',
+  'Acompte':'#34d399',
+  'Formation':'#A78BFA'
 };
+function tagStyle(t){
+  const hex=PRESET_TAG_COLORS[t];
+  if(!hex)return'';
+  const rgb=hex2rgb(hex);
+  return `background:rgba(${rgb},0.14);color:${hex};border-color:rgba(${rgb},0.45)`;
+}
 const DEF_ENTS=[{key:'O',name:'Ozcan',hex:'#1E90FF',rate:5},{key:'J',name:'Jorann',hex:'#8B0000',rate:5},{key:'G',name:'Gaël',hex:'#FF8C00',rate:10},{key:'M',name:'Mika',hex:'#2E8B57',rate:5}];
 const formatAmount = v => (v === undefined || v === null || isNaN(v)) ? '0' : v.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 1 });
 const fmtPct = n => (n === undefined || n === null || isNaN(n)) ? '—' : n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
@@ -5687,11 +5696,7 @@ async function renderLeads(){
     const e=ENTS.find(x=>x.key===l.entKey)||ENTS[0];
     const cash=parseFloat(l.cashReceived)||0;
     const comm=cash*(e.rate/100);
-    const tagsHtml=(l.tags||[]).map(t=>{
-      const tc=PRESET_TAG_COLORS[t];
-      const style=tc?`background:${tc.bg};color:${tc.fg};border-color:${tc.bg}`:'';
-      return `<span class="ltag" style="${style}">${t}<span class="ltag-x" style="${tc?`color:${tc.fg}`:''}" data-y="${cY}" data-m="${cM}" data-id="${id}" data-tag="${t.replace(/"/g,'&quot;')}" onclick="removeTag(this)">×</span></span>`;
-    }).join('');
+    const tagsHtml=(l.tags||[]).map(t=>`<span class="ltag" style="${tagStyle(t)}">${t}<span class="ltag-x" data-y="${cY}" data-m="${cM}" data-id="${id}" data-tag="${t.replace(/"/g,'&quot;')}" onclick="removeTag(this)">×</span></span>`).join('');
     const collected=parseFloat(l.cashCollected)||0;
     const receivedPct=collected>0?Math.min(cash/collected*100,100):0;
     rows+=`<tr>
@@ -5707,6 +5712,7 @@ async function renderLeads(){
         <select style="background:var(--surface2);border:1px solid var(--border2);color:var(--muted2);border-radius:20px;padding:2px 6px;font-size:11px;outline:none;" onchange="if(this.value){addTag(${cY},${cM},'${id}',this.value);this.value=''}">
           <option value="">+ tag</option>${PRESET_TAGS.map(t=>`<option value="${t}">${t}</option>`).join('')}
         </select>
+        <input placeholder="perso..." style="width:56px;background:var(--surface2);border:1px solid var(--border2);color:var(--muted2);border-radius:20px;padding:2px 8px;font-size:11px;outline:none;font-family:'Space Mono',monospace" onkeydown="if(event.key==='Enter'&&this.value.trim()){addTag(${cY},${cM},'${id}',this.value.trim());this.value='';}">
       </div></td>
       <td><input class="linput" value="${l.note||''}" title="${(l.note||'').replace(/"/g,'&quot;')}" onblur="upLead(${cY},${cM},'${id}','note',this.value)" placeholder="Note..."></td>
       <td style="font-size:10px;color:var(--muted2)">${l.date||''}</td>
