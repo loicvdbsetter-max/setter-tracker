@@ -4469,9 +4469,10 @@ async function renderDash(){
   let myPart=0;
   ENTS.forEach(e=>{
     const rMan=parseFloat(rev[e.key]?.montant||0);
-    // Revenus manuels = directement ce que tu touches (pas de calcul %)
+    // Revenus manuels = montant fixe EN PLUS de la commission sur les leads,
+    // pas un remplacement — on additionne les deux.
     const rLead=Object.values(leads).filter(l=>l.entKey===e.key).reduce((s,l)=>s+(parseFloat(l.cashReceived)||0)*(e.rate/100),0);
-    myPart+=rMan>0?rMan:rLead;
+    myPart+=rMan+rLead;
   });
 
   // Task history for monthly pie — les tâches de même nom (ex: "Checking" à
@@ -4523,9 +4524,9 @@ async function renderDash(){
     const op=oc>0?Math.min(Math.round(calls/oc*100),100):0;
     const rMan=parseFloat(rev[e.key]?.montant||0);
     const rL=Object.values(leads).filter(l=>l.entKey===e.key).reduce((s,l)=>s+(parseFloat(l.cashReceived)||0),0);
-    const totR=rMan>0?rMan:rL;
-    // comm = revenu manuel direct OU commission calculée sur leads
-    const comm=rMan>0?rMan:rL*(e.rate/100);
+    const totR=rL; // cash généré par les leads (business), pas mélangé au revenu perso manuel
+    // comm = ce que je touche réellement : commission sur les leads + revenu manuel fixe (additionnés, pas l'un OU l'autre)
+    const comm=rL*(e.rate/100)+rMan;
     return{e,calls,fm,rep,ln,fu,rfu,conv,oc,op,totR,comm};
   });
   const totalRev=entData.reduce((s,d)=>s+d.totR,0);
