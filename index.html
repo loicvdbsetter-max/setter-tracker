@@ -5769,7 +5769,7 @@ async function renderLeads(){
       <span style="margin:0 8px;opacity:0.3">·</span>
       <span>${filtered.length} lead${filtered.length>1?'s':''} affichés</span>
     </div>
-    <div class="graph-card gold-corner" style="overflow:visible;padding:14px 14px 4px">
+    <div class="graph-card gold-corner no-tilt" style="overflow:visible;padding:14px 14px 4px">
       <div class="gc-bl"></div><div class="gc-br"></div>
       <div class="graph-title" style="margin-bottom:10px">DÉTAIL DES LEADS</div>
       <div style="overflow-x:auto">
@@ -6208,7 +6208,7 @@ async function repairAndInit(){
 // ── 4. Card 3D mouse tilt (desktop only) ──────────────────────────
 ;(function initTilt(){
   if(matchMedia('(hover:none),(max-width:768px)').matches)return;
-  const SEL='.kpi-card,.graph-card:not(.pcard),.funnel-card,.dash-ent-card,.rev-card-dash';
+  const SEL='.kpi-card,.graph-card:not(.pcard):not(.no-tilt),.funnel-card,.dash-ent-card,.rev-card-dash';
   document.addEventListener('mousemove',e=>{
     document.querySelectorAll(SEL).forEach(card=>{
       const r=card.getBoundingClientRect();
